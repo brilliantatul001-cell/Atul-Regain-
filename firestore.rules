@@ -1,0 +1,371 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny catch-all safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidRoomCode(code) {
+      return code is string && code.size() == 6 && code.matches('^[A-Z0-9]{6}$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedUser() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isVerifiedUser() && request.auth.uid == userId;
+    }
+
+    function isValidPlayer(data) {
+      return data.keys().hasAll([
+        'uid', 'username', 'displayName', 'xp', 'focusMinutes', 'streakDays',
+        'lastActiveDate', 'questionsSolved', 'questionsLeftOnTime', 'questionsOvertime',
+        'mockTestsCount', 'mockAccuracySum', 'duelWins', 'duelPlayed',
+        'todayKey', 'todayXp', 'todayFocusMinutes', 'todayQuestionsSolved',
+        'weekKey', 'weekXp', 'weekFocusMinutes', 'weekQuestionsSolved',
+        'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'username', 'displayName', 'xp', 'focusMinutes', 'streakDays',
+        'lastActiveDate', 'questionsSolved', 'questionsLeftOnTime', 'questionsOvertime',
+        'mockTestsCount', 'mockAccuracySum', 'duelWins', 'duelPlayed',
+        'todayKey', 'todayXp', 'todayFocusMinutes', 'todayQuestionsSolved',
+        'weekKey', 'weekXp', 'weekFocusMinutes', 'weekQuestionsSolved',
+        'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.uid) &&
+      data.username is string && data.username.size() >= 3 && data.username.size() <= 20 && data.username.matches('^[a-z0-9_.]{3,20}$') &&
+      data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 24 &&
+      data.xp is number && data.xp >= 0 &&
+      data.focusMinutes is number && data.focusMinutes >= 0 &&
+      data.streakDays is number && data.streakDays >= 0 && data.streakDays <= 3650 &&
+      data.lastActiveDate is string && data.lastActiveDate.size() <= 10 &&
+      data.questionsSolved is number && data.questionsSolved >= 0 &&
+      data.questionsLeftOnTime is number && data.questionsLeftOnTime >= 0 &&
+      data.questionsOvertime is number && data.questionsOvertime >= 0 &&
+      data.mockTestsCount is number && data.mockTestsCount >= 0 &&
+      data.mockAccuracySum is number && data.mockAccuracySum >= 0 &&
+      data.duelWins is number && data.duelWins >= 0 &&
+      data.duelPlayed is number && data.duelPlayed >= 0 &&
+      data.todayKey is string && data.todayKey.size() <= 10 &&
+      data.todayXp is number && data.todayXp >= 0 &&
+      data.todayFocusMinutes is number && data.todayFocusMinutes >= 0 &&
+      data.todayQuestionsSolved is number && data.todayQuestionsSolved >= 0 &&
+      data.weekKey is string && data.weekKey.size() <= 10 &&
+      data.weekXp is number && data.weekXp >= 0 &&
+      data.weekFocusMinutes is number && data.weekFocusMinutes >= 0 &&
+      data.weekQuestionsSolved is number && data.weekQuestionsSolved >= 0 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidActivity(data) {
+      return data.keys().hasAll([
+        'uid', 'clientSessionId', 'kind', 'roomCode', 'subject',
+        'xpDelta', 'focusMinutesDelta', 'solvedDelta', 'leftOnTimeDelta',
+        'overtimeDelta', 'mockAccuracy', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'clientSessionId', 'kind', 'roomCode', 'subject',
+        'xpDelta', 'focusMinutesDelta', 'solvedDelta', 'leftOnTimeDelta',
+        'overtimeDelta', 'mockAccuracy', 'createdAt'
+      ]) &&
+      isValidId(data.uid) &&
+      data.clientSessionId is string && data.clientSessionId.size() >= 4 && data.clientSessionId.size() <= 80 && data.clientSessionId.matches('^[a-zA-Z0-9_\\-]+$') &&
+      data.kind in ['focus_session', 'question_solved', 'question_left_on_time', 'question_overtime', 'mock_test', 'duel_win_bonus'] &&
+      data.roomCode is string && data.roomCode.size() <= 8 &&
+      data.subject is string && data.subject.size() <= 32 &&
+      data.xpDelta is number && data.xpDelta >= 0 && data.xpDelta <= 500 &&
+      data.focusMinutesDelta is number && data.focusMinutesDelta >= 0 && data.focusMinutesDelta <= 240 &&
+      data.solvedDelta is number && data.solvedDelta >= 0 && data.solvedDelta <= 10 &&
+      data.leftOnTimeDelta is number && data.leftOnTimeDelta >= 0 && data.leftOnTimeDelta <= 10 &&
+      data.overtimeDelta is number && data.overtimeDelta >= 0 && data.overtimeDelta <= 10 &&
+      data.mockAccuracy is number && data.mockAccuracy >= 0 && data.mockAccuracy <= 100 &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidRoom(data) {
+      return data.keys().hasAll([
+        'roomCode', 'mode', 'title', 'subject', 'durationSec', 'questionLimitSec',
+        'status', 'hostUserId', 'hostDisplayName', 'maxPlayers', 'isPublic',
+        'participantIds', 'participantCount', 'countdownEndsAtMs', 'startedAtMs',
+        'endsAtMs', 'winnerUserId', 'winnerDisplayName', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'roomCode', 'mode', 'title', 'subject', 'durationSec', 'questionLimitSec',
+        'status', 'hostUserId', 'hostDisplayName', 'maxPlayers', 'isPublic',
+        'participantIds', 'participantCount', 'countdownEndsAtMs', 'startedAtMs',
+        'endsAtMs', 'winnerUserId', 'winnerDisplayName', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidRoomCode(data.roomCode) &&
+      data.mode in ['study_room', 'sprint_1v1'] &&
+      data.title is string && data.title.size() >= 2 && data.title.size() <= 48 &&
+      data.subject is string && data.subject.size() >= 1 && data.subject.size() <= 24 &&
+      data.durationSec is number && data.durationSec >= 300 && data.durationSec <= 10800 &&
+      data.questionLimitSec is number && data.questionLimitSec >= 15 && data.questionLimitSec <= 600 &&
+      data.status in ['lobby', 'countdown', 'active', 'finished'] &&
+      isValidId(data.hostUserId) &&
+      data.hostDisplayName is string && data.hostDisplayName.size() >= 1 && data.hostDisplayName.size() <= 24 &&
+      data.maxPlayers is number && data.maxPlayers >= 2 && data.maxPlayers <= 20 &&
+      data.isPublic is bool &&
+      data.participantIds is list && data.participantIds.size() >= 1 && data.participantIds.size() <= 20 && data.participantIds[0] is string &&
+      data.participantCount is number && data.participantCount == data.participantIds.size() && data.participantCount <= data.maxPlayers &&
+      data.countdownEndsAtMs is number && data.countdownEndsAtMs >= 0 &&
+      data.startedAtMs is number && data.startedAtMs >= 0 &&
+      data.endsAtMs is number && data.endsAtMs >= 0 &&
+      data.winnerUserId is string && data.winnerUserId.size() <= 128 &&
+      data.winnerDisplayName is string && data.winnerDisplayName.size() <= 24 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidParticipant(data) {
+      return data.keys().hasAll([
+        'uid', 'roomCode', 'username', 'displayName', 'streakDays', 'isHost',
+        'ready', 'roomIsPublic', 'allowedUids', 'liveState', 'solvedCount',
+        'leftOnTimeCount', 'overtimeCount', 'focusSeconds', 'sprintScore',
+        'joinedAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'roomCode', 'username', 'displayName', 'streakDays', 'isHost',
+        'ready', 'roomIsPublic', 'allowedUids', 'liveState', 'solvedCount',
+        'leftOnTimeCount', 'overtimeCount', 'focusSeconds', 'sprintScore',
+        'joinedAt', 'updatedAt'
+      ]) &&
+      isValidId(data.uid) &&
+      isValidRoomCode(data.roomCode) &&
+      data.username is string && data.username.size() >= 3 && data.username.size() <= 20 && data.username.matches('^[a-z0-9_.]{3,20}$') &&
+      data.displayName is string && data.displayName.size() >= 2 && data.displayName.size() <= 24 &&
+      data.streakDays is number && data.streakDays >= 0 && data.streakDays <= 3650 &&
+      data.isHost is bool &&
+      data.ready is bool &&
+      data.roomIsPublic is bool &&
+      data.allowedUids is list && data.allowedUids.size() >= 1 && data.allowedUids.size() <= 20 && data.allowedUids[0] is string &&
+      data.liveState in ['idle', 'focusing', 'solving', 'paused', 'finished'] &&
+      data.solvedCount is number && data.solvedCount >= 0 && data.solvedCount <= 1000 &&
+      data.leftOnTimeCount is number && data.leftOnTimeCount >= 0 && data.leftOnTimeCount <= 1000 &&
+      data.overtimeCount is number && data.overtimeCount >= 0 && data.overtimeCount <= 1000 &&
+      data.focusSeconds is number && data.focusSeconds >= 0 && data.focusSeconds <= 14400 &&
+      data.sprintScore is number && data.sprintScore >= 0 && data.sprintScore <= 50000 &&
+      data.joinedAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    match /players/{userId} {
+      allow get: if isVerifiedUser() && isValidId(userId);
+      allow list: if isVerifiedUser() && resource.data.uid is string && resource.data.xp >= 0;
+
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidPlayer(incoming()) &&
+        incoming().uid == request.auth.uid &&
+        incoming().xp == 0 &&
+        incoming().focusMinutes == 0 &&
+        incoming().questionsSolved == 0 &&
+        incoming().duelWins == 0 &&
+        incoming().duelPlayed == 0 &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId) &&
+        isValidId(userId) &&
+        isValidPlayer(incoming()) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action: Edit handle or display name
+          (incoming().diff(existing()).affectedKeys().hasOnly(['username', 'displayName', 'updatedAt'])) ||
+          // Action: Sync verified study / duel stats (bounded delta)
+          (
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'xp', 'focusMinutes', 'streakDays', 'lastActiveDate',
+              'questionsSolved', 'questionsLeftOnTime', 'questionsOvertime',
+              'mockTestsCount', 'mockAccuracySum', 'duelWins', 'duelPlayed',
+              'todayKey', 'todayXp', 'todayFocusMinutes', 'todayQuestionsSolved',
+              'weekKey', 'weekXp', 'weekFocusMinutes', 'weekQuestionsSolved',
+              'updatedAt'
+            ]) &&
+            incoming().xp >= existing().xp &&
+            incoming().xp <= existing().xp + 500 &&
+            incoming().focusMinutes >= existing().focusMinutes &&
+            incoming().questionsSolved >= existing().questionsSolved &&
+            incoming().duelWins >= existing().duelWins &&
+            incoming().duelPlayed >= existing().duelPlayed
+          )
+        );
+
+      allow delete: if false;
+
+      match /activities/{activityId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidId(activityId);
+        allow list: if isOwner(userId) && isValidId(userId) && resource.data.uid == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidId(activityId) &&
+          isValidActivity(incoming()) &&
+          incoming().uid == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/players/$(userId));
+
+        allow update, delete: if false;
+      }
+    }
+
+    match /rooms/{roomCode} {
+      // Single-doc get allowed for verified users holding the exact 6-char room code
+      allow get: if isVerifiedUser() && isValidRoomCode(roomCode);
+
+      // List queries strictly return public rooms or rooms the user already belongs to
+      allow list: if isVerifiedUser() &&
+        (resource.data.isPublic == true || request.auth.uid in resource.data.participantIds);
+
+      allow create: if isVerifiedUser() &&
+        isValidRoomCode(roomCode) &&
+        isValidRoom(incoming()) &&
+        incoming().roomCode == roomCode &&
+        incoming().hostUserId == request.auth.uid &&
+        incoming().status == 'lobby' &&
+        incoming().participantIds.size() == 1 &&
+        incoming().participantIds[0] == request.auth.uid &&
+        incoming().participantCount == 1 &&
+        incoming().winnerUserId == '' &&
+        incoming().winnerDisplayName == '' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        existsAfter(/databases/$(database)/documents/rooms/$(roomCode)/participants/$(request.auth.uid));
+
+      allow update: if isVerifiedUser() &&
+        isValidRoomCode(roomCode) &&
+        isValidRoom(incoming()) &&
+        existing().status != 'finished' &&
+        incoming().roomCode == existing().roomCode &&
+        incoming().hostUserId == existing().hostUserId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          // Action: Join room (only add self)
+          (
+            !(request.auth.uid in existing().participantIds) &&
+            request.auth.uid in incoming().participantIds &&
+            incoming().participantIds.hasAll(existing().participantIds) &&
+            incoming().participantIds.size() == existing().participantIds.size() + 1 &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['participantIds', 'participantCount', 'updatedAt'])
+          ) ||
+          // Action: Leave room (only remove self when others remain)
+          (
+            request.auth.uid in existing().participantIds &&
+            !(request.auth.uid in incoming().participantIds) &&
+            existing().participantIds.hasAll(incoming().participantIds) &&
+            incoming().participantIds.size() == existing().participantIds.size() - 1 &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['participantIds', 'participantCount', 'updatedAt'])
+          ) ||
+          // Action: Close room when last participant leaves
+          (
+            request.auth.uid in existing().participantIds &&
+            existing().participantIds.size() == 1 &&
+            incoming().participantIds == existing().participantIds &&
+            incoming().status == 'finished' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          ) ||
+          // Action: Host starts countdown
+          (
+            existing().hostUserId == request.auth.uid &&
+            existing().status == 'lobby' &&
+            incoming().status == 'countdown' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'countdownEndsAtMs', 'startedAtMs', 'endsAtMs', 'updatedAt'])
+          ) ||
+          // Action: Transition countdown -> active
+          (
+            request.auth.uid in existing().participantIds &&
+            existing().status == 'countdown' &&
+            incoming().status == 'active' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt'])
+          ) ||
+          // Action: Finish match and lock winner
+          (
+            request.auth.uid in existing().participantIds &&
+            (existing().status == 'active' || existing().status == 'countdown') &&
+            incoming().status == 'finished' &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['status', 'winnerUserId', 'winnerDisplayName', 'updatedAt'])
+          )
+        );
+
+      allow delete: if false;
+
+      match /participants/{participantUid} {
+        allow get: if isVerifiedUser() &&
+          isValidRoomCode(roomCode) &&
+          isValidId(participantUid) && (
+            get(/databases/$(database)/documents/rooms/$(roomCode)).data.isPublic == true ||
+            request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds
+          );
+
+        allow list: if isVerifiedUser() && (
+          resource.data.roomIsPublic == true ||
+          resource.data.uid == request.auth.uid ||
+          request.auth.uid in resource.data.allowedUids
+        );
+
+        allow create: if isOwner(participantUid) &&
+          isValidRoomCode(roomCode) &&
+          isValidId(participantUid) &&
+          isValidParticipant(incoming()) &&
+          incoming().uid == request.auth.uid &&
+          incoming().roomCode == roomCode &&
+          incoming().joinedAt == request.time &&
+          incoming().updatedAt == request.time &&
+          existsAfter(/databases/$(database)/documents/rooms/$(roomCode)) &&
+          request.auth.uid in getAfter(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds;
+
+        allow update: if isVerifiedUser() &&
+          isValidRoomCode(roomCode) &&
+          isValidId(participantUid) &&
+          isValidParticipant(incoming()) &&
+          get(/databases/$(database)/documents/rooms/$(roomCode)).data.status != 'finished' &&
+          incoming().uid == existing().uid &&
+          incoming().roomCode == existing().roomCode &&
+          incoming().isHost == existing().isHost &&
+          incoming().joinedAt == existing().joinedAt &&
+          incoming().updatedAt == request.time && (
+            // Action: Participant updates own ready flag, live state, or sprint score
+            (
+              request.auth.uid == participantUid &&
+              request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds &&
+              incoming().diff(existing()).affectedKeys().hasOnly([
+                'ready', 'liveState', 'solvedCount', 'leftOnTimeCount',
+                'overtimeCount', 'focusSeconds', 'sprintScore', 'updatedAt'
+              ])
+            ) ||
+            // Action: Joining/leaving room participant updates allowedUids visibility list
+            (
+              (
+                request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds ||
+                request.auth.uid in getAfter(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds
+              ) &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['allowedUids', 'updatedAt'])
+            )
+          );
+
+        allow delete: if isOwner(participantUid) && isValidRoomCode(roomCode) && isValidId(participantUid);
+      }
+    }
+  }
+}

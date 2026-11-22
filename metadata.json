@@ -1,0 +1,6 @@
+{
+  "name": "Leave It Timer",
+  "description": "Practice leaving maths questions on time with focus sessions, mock paper mode, test tracker, syllabus tracker, and offline Android APK support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

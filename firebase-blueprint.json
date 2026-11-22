@@ -1,0 +1,332 @@
+{
+  "entities": {
+    "PlayerProfile": {
+      "title": "PlayerProfile",
+      "description": "Public competitive study and Arena profile with zero PII.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "username": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20,
+          "pattern": "^[a-z0-9_.]{3,20}$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 24
+        },
+        "xp": { "type": "number" },
+        "focusMinutes": { "type": "number" },
+        "streakDays": { "type": "number" },
+        "lastActiveDate": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "questionsSolved": { "type": "number" },
+        "questionsLeftOnTime": { "type": "number" },
+        "questionsOvertime": { "type": "number" },
+        "mockTestsCount": { "type": "number" },
+        "mockAccuracySum": { "type": "number" },
+        "duelWins": { "type": "number" },
+        "duelPlayed": { "type": "number" },
+        "todayKey": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "todayXp": { "type": "number" },
+        "todayFocusMinutes": { "type": "number" },
+        "todayQuestionsSolved": { "type": "number" },
+        "weekKey": {
+          "type": "string",
+          "maxLength": 10
+        },
+        "weekXp": { "type": "number" },
+        "weekFocusMinutes": { "type": "number" },
+        "weekQuestionsSolved": { "type": "number" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "username",
+        "displayName",
+        "xp",
+        "focusMinutes",
+        "streakDays",
+        "lastActiveDate",
+        "questionsSolved",
+        "questionsLeftOnTime",
+        "questionsOvertime",
+        "mockTestsCount",
+        "mockAccuracySum",
+        "duelWins",
+        "duelPlayed",
+        "todayKey",
+        "todayXp",
+        "todayFocusMinutes",
+        "todayQuestionsSolved",
+        "weekKey",
+        "weekXp",
+        "weekFocusMinutes",
+        "weekQuestionsSolved",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Immutable verified timer activity record used for XP audit and deduplication.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "clientSessionId": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 80,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "focus_session",
+            "question_solved",
+            "question_left_on_time",
+            "question_overtime",
+            "mock_test",
+            "duel_win_bonus"
+          ]
+        },
+        "roomCode": {
+          "type": "string",
+          "maxLength": 8
+        },
+        "subject": {
+          "type": "string",
+          "maxLength": 32
+        },
+        "xpDelta": { "type": "number" },
+        "focusMinutesDelta": { "type": "number" },
+        "solvedDelta": { "type": "number" },
+        "leftOnTimeDelta": { "type": "number" },
+        "overtimeDelta": { "type": "number" },
+        "mockAccuracy": { "type": "number" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "clientSessionId",
+        "kind",
+        "roomCode",
+        "subject",
+        "xpDelta",
+        "focusMinutesDelta",
+        "solvedDelta",
+        "leftOnTimeDelta",
+        "overtimeDelta",
+        "mockAccuracy",
+        "createdAt"
+      ]
+    },
+    "ArenaRoom": {
+      "title": "ArenaRoom",
+      "description": "Live study room or 1v1 sprint match coordinated via 6-character room code.",
+      "type": "object",
+      "properties": {
+        "roomCode": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 6,
+          "pattern": "^[A-Z0-9]{6}$"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["study_room", "sprint_1v1"]
+        },
+        "title": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 48
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "durationSec": { "type": "number" },
+        "questionLimitSec": { "type": "number" },
+        "status": {
+          "type": "string",
+          "enum": ["lobby", "countdown", "active", "finished"]
+        },
+        "hostUserId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "hostDisplayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "maxPlayers": { "type": "number" },
+        "isPublic": { "type": "boolean" },
+        "participantIds": {
+          "type": "array"
+        },
+        "participantCount": { "type": "number" },
+        "countdownEndsAtMs": { "type": "number" },
+        "startedAtMs": { "type": "number" },
+        "endsAtMs": { "type": "number" },
+        "winnerUserId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "winnerDisplayName": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "roomCode",
+        "mode",
+        "title",
+        "subject",
+        "durationSec",
+        "questionLimitSec",
+        "status",
+        "hostUserId",
+        "hostDisplayName",
+        "maxPlayers",
+        "isPublic",
+        "participantIds",
+        "participantCount",
+        "countdownEndsAtMs",
+        "startedAtMs",
+        "endsAtMs",
+        "winnerUserId",
+        "winnerDisplayName",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "RoomParticipant": {
+      "title": "RoomParticipant",
+      "description": "Live participant state and score inside an ArenaRoom.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "roomCode": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 6,
+          "pattern": "^[A-Z0-9]{6}$"
+        },
+        "username": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20,
+          "pattern": "^[a-z0-9_.]{3,20}$"
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 24
+        },
+        "streakDays": { "type": "number" },
+        "isHost": { "type": "boolean" },
+        "ready": { "type": "boolean" },
+        "roomIsPublic": { "type": "boolean" },
+        "allowedUids": { "type": "array" },
+        "liveState": {
+          "type": "string",
+          "enum": ["idle", "focusing", "solving", "paused", "finished"]
+        },
+        "solvedCount": { "type": "number" },
+        "leftOnTimeCount": { "type": "number" },
+        "overtimeCount": { "type": "number" },
+        "focusSeconds": { "type": "number" },
+        "sprintScore": { "type": "number" },
+        "joinedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "roomCode",
+        "username",
+        "displayName",
+        "streakDays",
+        "isHost",
+        "ready",
+        "roomIsPublic",
+        "allowedUids",
+        "liveState",
+        "solvedCount",
+        "leftOnTimeCount",
+        "overtimeCount",
+        "focusSeconds",
+        "sprintScore",
+        "joinedAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/players/{userId}": {
+      "schema": { "$ref": "#/entities/PlayerProfile" },
+      "description": "Public competitive player stats and rankings (no PII)."
+    },
+    "/players/{userId}/activities/{activityId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Per-player deduplicated timer activity ledger."
+    },
+    "/rooms/{roomCode}": {
+      "schema": { "$ref": "#/entities/ArenaRoom" },
+      "description": "Multiplayer study rooms and 1v1 timed sprint rooms."
+    },
+    "/rooms/{roomCode}/participants/{participantUid}": {
+      "schema": { "$ref": "#/entities/RoomParticipant" },
+      "description": "Live standings and readiness per participant inside a room."
+    }
+  }
+}

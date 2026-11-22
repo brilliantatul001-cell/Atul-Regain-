@@ -112,6 +112,22 @@ export const DIRTY_DOZEN_CASES: RuleAssertionCase[] = [
     expected: 'PERMISSION_DENIED',
     reason: 'isVerifiedUser() requires request.auth.token.email_verified == true',
   },
+  {
+    id: 13,
+    name: 'Cross-User Private Backup Read',
+    path: '/players/victim_uid/backup/snapshot',
+    operation: 'get',
+    expected: 'PERMISSION_DENIED',
+    reason: 'backup subcollection is strictly restricted to isOwner(userId)',
+  },
+  {
+    id: 14,
+    name: 'Repeat Guest Bulk Stat Injection',
+    path: '/players/attacker_uid',
+    operation: 'update',
+    expected: 'PERMISSION_DENIED',
+    reason: 'one-time guest import requires existing stats to be strictly zero',
+  },
 ];
 
 // Static structural verification when running without local Firestore emulator
@@ -125,5 +141,6 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('isValidRoom('), 'Must define isValidRoom');
   assert.ok(rulesText.includes('isValidParticipant('), 'Must define isValidParticipant');
   assert.ok(rulesText.includes('isValidActivity('), 'Must define isValidActivity');
+  assert.ok(rulesText.includes('isValidAccountBackup('), 'Must define isValidAccountBackup');
   assert.ok(rulesText.includes("existing().status != 'finished'"), 'Must lock finished rooms');
 }

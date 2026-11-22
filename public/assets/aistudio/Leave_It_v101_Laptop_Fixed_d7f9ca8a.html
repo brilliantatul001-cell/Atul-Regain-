@@ -649,7 +649,7 @@ $('inst').onclick=async()=>{if(dip){dip.prompt();try{await dip.userChoice}catch(
   const g=h<5?'Late Night Grind':h<12?'Good Morning':h<17?'Good Afternoon':h<22?'Good Evening':'Late Night Grind';
   const Q=['Discipline is choosing what you want most over what you want now.','The question you leave today saves the marks you win tomorrow.','Small steps every day beat big plans someday.','Don’t stop when you’re tired. Stop when you’re done.','Stuck is a signal, not a sentence. Move on and win.','Dream big. Work hard. Stay consistent.','Every second you save on one question is a mark on the next.'];
   $('spG').textContent=g;$('spQ').textContent='“'+Q[Math.floor(Math.random()*Q.length)]+'”';
-  const sp=$('splash');let done=0;const close=()=>{if(done)return;done=1;sp.classList.add('out');setTimeout(()=>sp.remove(),800)};
+  const sp=$('splash');if(sessionStorage.getItem('leaveit_cloud_reloaded')==='1'){if(sp)sp.remove();return;}let done=0;const close=()=>{if(done)return;done=1;sp.classList.add('out');setTimeout(()=>sp.remove(),800)};
   sp.onclick=close;setTimeout(close,4400);
 })();
 $('testAl').onclick=toggleTestAlarm;
@@ -666,7 +666,7 @@ $('brand').onclick=openNm;$('nameBtn').onclick=openNm;$('nmSave').onclick=saveNm
 $('nmIn').onkeydown=e=>{if(e.key==='Enter')saveNm()};
 $('nm').onclick=e=>{if(e.target.id==='nm'&&S.name)$('nm').classList.remove('on')};
 applyName();
-if(!S.name){const w=setInterval(()=>{if(!$('splash')){clearInterval(w);openNm()}},300)}
+if(!S.name&&sessionStorage.getItem('leaveit_cloud_reloaded')!=='1'){const w=setInterval(()=>{if(!$('splash')){clearInterval(w);if(!S.name)openNm()}},300)}
 const FC=2*Math.PI*78;$('fmP').style.strokeDasharray=FC;$('fmP').style.strokeDashoffset=FC;
 function fmRender(){
   const r=Math.max(0,left),el=1-r/S.dur,paused=!running&&left<S.dur&&left>0;
@@ -4296,6 +4296,182 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     color: var(--btt, #000) !important;
     border-color: var(--bt, var(--by, #f5c518)) !important;
   }
+
+  /* Top-Left Profile Pill & Unified Profile Modal */
+  .rg-prof-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .rg-prof-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 12px 6px 6px;
+    border-radius: 99px;
+    background: var(--card);
+    border: 1px solid var(--track);
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    max-width: 100%;
+    transition: border-color .15s, transform .12s;
+  }
+  .rg-prof-pill:hover {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--track));
+  }
+  .rg-prof-pill:active { transform: scale(.98); }
+  .rg-prof-av {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+  .rg-prof-meta {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    line-height: 1.18;
+  }
+  .rg-prof-meta b {
+    font-size: 13px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 170px;
+  }
+  .rg-prof-meta small {
+    font-size: 11px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+  }
+  .rg-prof-ed {
+    font-size: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    margin-left: 2px;
+  }
+
+  #arProfModal {
+    position: fixed;
+    inset: 0;
+    z-index: 260;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(6, 8, 16, .72);
+    backdrop-filter: blur(8px);
+  }
+  #arProfModal.on { display: flex; }
+  .ar-prof-box {
+    width: min(440px, 100%);
+    background: var(--card);
+    border: 1px solid var(--track);
+    border-radius: 26px;
+    padding: 20px;
+    color: var(--text);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+  }
+  .ar-prof-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .ar-prof-id {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+  }
+  .ar-prof-id .rg-prof-av {
+    width: 44px;
+    height: 44px;
+    font-size: 18px;
+  }
+  .ar-prof-box label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 10px 0 6px;
+  }
+  .ar-prof-box .ar-in {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 11px 13px;
+    border-radius: 14px;
+    border: 1.5px solid var(--track);
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+  }
+  .ar-prof-box .ar-in:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .ar-prof-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+    padding: 10px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--track) 55%, transparent);
+    text-align: center;
+  }
+  .ar-prof-stats b { display: block; font-size: 16px; }
+  .ar-prof-stats span { font-size: 11px; color: var(--muted); }
+  .ar-prof-btns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  .ar-prof-save {
+    flex: 1;
+    min-width: 140px;
+    padding: 12px 16px;
+    border-radius: 99px;
+    border: 0;
+    background: var(--accent);
+    color: #06241a;
+    font-weight: 800;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .ar-prof-ghost {
+    padding: 11px 14px;
+    border-radius: 99px;
+    border: 1.5px solid var(--track);
+    background: transparent;
+    color: var(--text);
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  html[data-batman="on"] .ar-prof-box {
+    border-color: rgba(var(--redr, 215, 25, 32), .6) !important;
+  }
+  html[data-batman="on"] .ar-prof-save {
+    background: var(--bt, var(--by, #f5c518)) !important;
+    color: var(--btt, #000) !important;
+  }
 </style>
 <script id="v104-arena-js">
 (function(){
@@ -4441,6 +4617,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     if(typeof applyName==='function')applyName();
     const nm=document.getElementById('nm');
     if(nm)nm.classList.remove('on');
+    if(typeof refreshTopLeftProfile==='function')refreshTopLeftProfile();
   }
 
   function isArenaVisible(){
@@ -4541,6 +4718,510 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     if(isArenaVisible())renderArena();
   }
 
+  // ---- Account Cloud Sync & Guest-to-Account Migration ----
+  const USER_DATA_KEYS=[
+    'leaveit','leaveit_h','leaveit_m','leaveit_mkr','leaveit_mkch',
+    'leaveit_x','leaveit_t','leaveit_u','leaveit_bk','leaveit_pl',
+    'leaveit_rg','leaveit_hx','leaveit_activity_v38','leaveit_study_context_v38',
+    'leaveit_times_v86','leaveit_ext'
+  ];
+  const PREF_KEYS=[
+    'leaveit_ui','leaveit_um','leaveit_bat','leaveit_batv','leaveit_experience_mode'
+  ];
+  const SYNC_KEYS=USER_DATA_KEYS.concat(PREF_KEYS);
+  const META_UID='leaveit_sync_uid',META_AT='leaveit_sync_at',META_DIRTY='leaveit_sync_dirty';
+  const JSON_KEYS=new Set([
+    'leaveit','leaveit_h','leaveit_m','leaveit_mkr','leaveit_mkch',
+    'leaveit_x','leaveit_t','leaveit_u','leaveit_bk','leaveit_pl',
+    'leaveit_rg','leaveit_hx','leaveit_activity_v38','leaveit_study_context_v38',
+    'leaveit_times_v86','leaveit_ext'
+  ]);
+
+  let syncApplying=false,syncInFlight=false,syncDebounce=null,syncedUidThisBoot=null;
+  let syncStatus={state:'local',lastSyncAt:Number(localStorage.getItem(META_AT)||0),note:''};
+
+  function safeParseStorage(key,raw){
+    if(raw==null)return undefined;
+    if(!JSON_KEYS.has(key))return String(raw);
+    try{return JSON.parse(raw)}catch(e){return undefined}
+  }
+
+  function readStorageSnapshot(){
+    const snap={};
+    SYNC_KEYS.forEach(k=>{
+      try{
+        const raw=localStorage.getItem(k);
+        if(raw!=null){
+          const parsed=safeParseStorage(k,raw);
+          if(parsed!==undefined)snap[k]=parsed;
+        }
+      }catch(e){}
+    });
+    return snap;
+  }
+
+  function writeStorageSnapshot(snap){
+    syncApplying=true;
+    try{
+      SYNC_KEYS.forEach(k=>{
+        if(snap&&Object.prototype.hasOwnProperty.call(snap,k)&&snap[k]!==undefined&&snap[k]!==null){
+          const val=JSON_KEYS.has(k)?JSON.stringify(snap[k]):String(snap[k]);
+          localStorage.setItem(k,val);
+        }
+      });
+    }finally{syncApplying=false}
+  }
+
+  function clearUserStorageForSignOut(){
+    syncApplying=true;
+    try{
+      let savedMode='auto';
+      try{const prev=JSON.parse(localStorage.getItem('leaveit')||'{}');if(prev&&prev.mode)savedMode=prev.mode}catch(e){}
+      USER_DATA_KEYS.forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});
+      try{localStorage.removeItem('leaveit_planner_focus_v1')}catch(e){}
+      try{localStorage.setItem('leaveit',JSON.stringify({mode:savedMode}))}catch(e){}
+      localStorage.removeItem(META_UID);
+      localStorage.removeItem(META_AT);
+      localStorage.removeItem(META_DIRTY);
+    }finally{syncApplying=false}
+  }
+
+  function hasMeaningfulGuestData(snap){
+    if(!snap)return false;
+    const h=snap.leaveit_h||{};
+    if(Object.values(h).some(o=>o&&(o.q>0||o.sec>0||o.n>0)))return true;
+    const rg=snap.leaveit_rg||{};
+    if(rg.days&&Object.values(rg.days).some(d=>d&&(d.m>0||d.s>0)))return true;
+    if(Array.isArray(rg.log)&&rg.log.length>0)return true;
+    if(Array.isArray(snap.leaveit_m)&&snap.leaveit_m.length>0)return true;
+    if(Array.isArray(snap.leaveit_t)&&snap.leaveit_t.length>0)return true;
+    if(Array.isArray(snap.leaveit_u)&&snap.leaveit_u.length>0)return true;
+    const pl=snap.leaveit_pl||{};
+    if(Object.values(pl).some(arr=>Array.isArray(arr)&&arr.length>0))return true;
+    const hx=snap.leaveit_hx||{};
+    if(Array.isArray(hx.ev)&&hx.ev.length>0)return true;
+    if(Array.isArray(snap.leaveit_activity_v38)&&snap.leaveit_activity_v38.length>0)return true;
+    const x=snap.leaveit_x||{};
+    if(Number(x.xp||0)>0)return true;
+    const bk=snap.leaveit_bk||{};
+    if((bk.pos&&Object.keys(bk.pos).length>0)||(Array.isArray(bk.hist)&&bk.hist.length>0))return true;
+    const s=snap.leaveit||{};
+    if(s.prof&&(s.prof.year||s.prof.date))return true;
+    return false;
+  }
+
+  function localDayKey(offsetDays=0){
+    const d=new Date();
+    if(offsetDays)d.setDate(d.getDate()-offsetDays);
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+
+  function buildGuestArenaSummary(snap){
+    const h=(snap&&snap.leaveit_h)||{};
+    const rg=(snap&&snap.leaveit_rg)||{};
+    const mh=Array.isArray(snap&&snap.leaveit_m)?snap.leaveit_m:[];
+    const x=(snap&&snap.leaveit_x)||{};
+    const tKey=localDayKey(0);
+    const weekStart=localDayKey(6);
+
+    let qSolved=0,qLeft=0,qOver=0,tSolved=0,wSolved=0,tXp=0,wXp=0;
+    const activeDates=new Set();
+    Object.entries(h).forEach(([d,o])=>{
+      if(!o||typeof o!=='object')return;
+      const so=Math.max(0,Math.round(Number(o.s||0)));
+      const le=Math.max(0,Math.round(Number(o.l||0)));
+      const sk=Math.max(0,Math.round(Number(o.k||0)));
+      qSolved+=so;qLeft+=le;qOver+=sk;
+      if((o.q||so||le||sk)>0)activeDates.add(d);
+      const dayXp=so*10+le*15+sk*5;
+      if(d===tKey){tSolved+=so;tXp+=dayXp}
+      if(d>=weekStart){wSolved+=so;wXp+=dayXp}
+    });
+
+    let focusMin=0,tFocus=0,wFocus=0;
+    Object.entries(rg.days||{}).forEach(([d,o])=>{
+      if(!o||typeof o!=='object')return;
+      const m=Math.max(0,Math.round(Number(o.m||0)));
+      focusMin+=m;
+      if(m>0)activeDates.add(d);
+      const fXp=m*2;
+      if(d===tKey){tFocus+=m;tXp+=fXp}
+      if(d>=weekStart){wFocus+=m;wXp+=fXp}
+    });
+
+    let mockAccSum=0;
+    mh.forEach(m=>{
+      const done=Math.max(0,Number(m.done||0));
+      const solved=Math.max(0,Number(m.s||0));
+      if(done>0)mockAccSum+=Math.round((solved/done)*1000)/10;
+    });
+
+    let streakDays=0;
+    for(let i=0;i<365;i++){
+      const dkStr=localDayKey(i);
+      if(activeDates.has(dkStr))streakDays++;
+      else if(i>0)break;
+    }
+    const sortedDates=Array.from(activeDates).sort();
+    const lastActiveDate=sortedDates.length?sortedDates[sortedDates.length-1]:'';
+    const rawXp=Math.round(Number(x.xp||0))+focusMin*2;
+
+    return {
+      xp:Math.min(15000,Math.max(0,rawXp)),
+      focusMinutes:Math.min(10000,focusMin),
+      streakDays:Math.min(3650,streakDays),
+      lastActiveDate,
+      questionsSolved:Math.min(3000,qSolved),
+      questionsLeftOnTime:Math.min(3000,qLeft),
+      questionsOvertime:Math.min(3000,qOver),
+      mockTestsCount:Math.min(500,mh.length),
+      mockAccuracySum:Math.min(50000,Math.round(mockAccSum*10)/10),
+      todayXp:Math.min(15000,tXp),
+      todayFocusMinutes:Math.min(10000,tFocus),
+      todayQuestionsSolved:Math.min(3000,tSolved),
+      weekXp:Math.min(15000,wXp),
+      weekFocusMinutes:Math.min(10000,wFocus),
+      weekQuestionsSolved:Math.min(3000,wSolved)
+    };
+  }
+
+  function mergeH(cH,gH,sum){
+    const out=Object.assign({},cH||{});
+    Object.entries(gH||{}).forEach(([d,go])=>{
+      if(!go||typeof go!=='object')return;
+      const co=out[d];
+      if(!co||typeof co!=='object'){out[d]=JSON.parse(JSON.stringify(go));return}
+      const comb=(a,b)=>sum?(Number(a||0)+Number(b||0)):Math.max(Number(a||0),Number(b||0));
+      const m={
+        q:comb(co.q,go.q),sec:comb(co.sec,go.sec),
+        l:comb(co.l,go.l),s:comb(co.s,go.s),
+        k:comb(co.k,go.k),n:comb(co.n,go.n)
+      };
+      if(co.b||go.b){
+        const b={};
+        const keys=new Set([...Object.keys(co.b||{}),...Object.keys(go.b||{})]);
+        keys.forEach(sj=>{
+          const cb=(co.b&&co.b[sj])||{},gb=(go.b&&go.b[sj])||{};
+          b[sj]={q:comb(cb.q,gb.q),sec:comb(cb.sec,gb.sec),l:comb(cb.l,gb.l),s:comb(cb.s,gb.s),k:comb(cb.k,gb.k),n:comb(cb.n,gb.n)};
+        });
+        m.b=b;
+      }
+      out[d]=m;
+    });
+    return out;
+  }
+
+  function dedupeArr(a,b,keyFn,limit,sortFn){
+    const map=new Map();
+    [...(Array.isArray(a)?a:[]),...(Array.isArray(b)?b:[])].forEach(item=>{
+      if(!item||typeof item!=='object')return;
+      const k=keyFn(item);
+      if(!map.has(k))map.set(k,item);
+    });
+    let res=Array.from(map.values());
+    if(sortFn)res.sort(sortFn);
+    if(limit&&res.length>limit)res=res.slice(0,limit);
+    return res;
+  }
+
+  function mergeStorageSnapshots(cloudMap,guestMap,mode,fbUser){
+    const c=cloudMap||{},g=guestMap||{},sum=(mode==='guest_merge');
+    const out={};
+
+    // 1. Core settings S
+    if(c.leaveit||g.leaveit){
+      const cs=c.leaveit||{},gs=g.leaveit||{};
+      const mergedS=Object.assign({},gs,cs);
+      if(cs.durs||gs.durs)mergedS.durs=Object.assign({},gs.durs||{},cs.durs||{});
+      if(cs.tgt||gs.tgt)mergedS.tgt=Object.assign({},gs.tgt||{},cs.tgt||{});
+      if(cs.prof||gs.prof)mergedS.prof=Object.assign({},gs.prof||{},cs.prof||{});
+      mergedS.name=(cs.name&&String(cs.name).trim())||(gs.name&&String(gs.name).trim())||(fbUser&&fbUser.displayName)||'';
+      out.leaveit=mergedS;
+    }
+
+    // 2. Question practice H
+    if(c.leaveit_h||g.leaveit_h)out.leaveit_h=mergeH(c.leaveit_h,g.leaveit_h,sum);
+
+    // 3. Regain Focus shell F
+    if(c.leaveit_rg||g.leaveit_rg){
+      const cr=c.leaveit_rg||{},gr=g.leaveit_rg||{};
+      const base=Object.assign({},gr,cr);
+      const days=Object.assign({},cr.days||{});
+      Object.entries(gr.days||{}).forEach(([d,gd])=>{
+        if(!gd||typeof gd!=='object')return;
+        const cd=days[d];
+        if(!cd){days[d]=Object.assign({},gd);return}
+        const comb=(a,b)=>sum?(Number(a||0)+Number(b||0)):Math.max(Number(a||0),Number(b||0));
+        days[d]={m:comb(cd.m,gd.m),s:comb(cd.s,gd.s),a:comb(cd.a,gd.a),as:comb(cd.as,gd.as)};
+      });
+      base.days=days;
+      base.cus=Array.from(new Set([...(cr.cus||[]),...(gr.cus||[])]));
+      base.log=dedupeArr(cr.log,gr.log,x=>(x.t||'')+'|'+(x.m||0),30).slice(-30);
+      out.leaveit_rg=base;
+    }
+
+    // 4. Unified History HX
+    if(c.leaveit_hx||g.leaveit_hx){
+      const cx=c.leaveit_hx||{},gx=g.leaveit_hx||{};
+      const ev=dedupeArr(cx.ev,gx.ev,e=>e.id||((e.ts||0)+'|'+(e.k||'')+'|'+(e.d||'')),2000,(a,b)=>(Number(a.ts||0)-Number(b.ts||0)));
+      out.leaveit_hx={v:1,ev,mig:Math.max(Number(cx.mig||0),Number(gx.mig||0),1)};
+    }
+
+    // 5. Activity trail v38 & study context
+    if(c.leaveit_activity_v38||g.leaveit_activity_v38){
+      out.leaveit_activity_v38=dedupeArr(
+        c.leaveit_activity_v38,g.leaveit_activity_v38,
+        a=>String(a.id||(String(a.at||'')+'|'+String(a.type||'')+'|'+String(a.title||''))),
+        500,(a,b)=>String(b.at||'').localeCompare(String(a.at||''))
+      );
+    }
+    if(c.leaveit_study_context_v38||g.leaveit_study_context_v38){
+      out.leaveit_study_context_v38=c.leaveit_study_context_v38||g.leaveit_study_context_v38;
+    }
+
+    // 6. Mocks, Tests, Upcoming Tests, Checkpoints
+    if(c.leaveit_m||g.leaveit_m){
+      out.leaveit_m=dedupeArr(c.leaveit_m,g.leaveit_m,r=>(r.d||'')+'|'+(r.subj||'')+'|'+(r.n||0)+'|'+(r.used||0)+'|'+(r.done||0),40,(a,b)=>String(b.d||'').localeCompare(String(a.d||'')));
+    }
+    if(c.leaveit_t||g.leaveit_t){
+      out.leaveit_t=dedupeArr(c.leaveit_t,g.leaveit_t,t=>String(t.id||((t.date||'')+'|'+(t.name||'')+'|'+(t.score||0))),500);
+    }
+    if(c.leaveit_u||g.leaveit_u){
+      out.leaveit_u=dedupeArr(c.leaveit_u,g.leaveit_u,u=>String(u.id||((u.date||'')+'|'+(u.name||''))),200);
+    }
+    if(c.leaveit_ext||g.leaveit_ext){
+      out.leaveit_ext=dedupeArr(c.leaveit_ext,g.leaveit_ext,x=>JSON.stringify(x),60);
+    }
+
+    // 7. Planner P
+    if(c.leaveit_pl||g.leaveit_pl){
+      const cp=c.leaveit_pl||{},gp=g.leaveit_pl||{};
+      const mergedP=Object.assign({},cp);
+      Object.entries(gp).forEach(([d,gArr])=>{
+        if(!Array.isArray(gArr))return;
+        const cArr=Array.isArray(mergedP[d])?mergedP[d]:[];
+        const byTask=new Map();
+        cArr.forEach(t=>{if(t&&typeof t==='object')byTask.set((t.t||'')+'|'+(t.m||0),Object.assign({},t))});
+        gArr.forEach(t=>{
+          if(!t||typeof t!=='object')return;
+          const k=(t.t||'')+'|'+(t.m||0);
+          if(byTask.has(k)){
+            const cur=byTask.get(k);
+            if(t.d&&!cur.d)cur.d=true;
+          }else{
+            byTask.set(k,Object.assign({},t));
+          }
+        });
+        mergedP[d]=Array.from(byTask.values());
+      });
+      out.leaveit_pl=mergedP;
+    }
+
+    // 8. Books BK
+    if(c.leaveit_bk||g.leaveit_bk){
+      const cb=c.leaveit_bk||{},gb=g.leaveit_bk||{};
+      const pos=Object.assign({},gb.pos||{},cb.pos||{});
+      Object.keys(gb.pos||{}).forEach(k=>{
+        if(cb.pos&&cb.pos[k]!=null)pos[k]=Math.max(Number(cb.pos[k]||0),Number(gb.pos[k]||0));
+      });
+      const hist=dedupeArr(cb.hist,gb.hist,h=>(h.d||'')+'|'+(h.name||'')+'|'+(h.a||0)+'|'+(h.b||0),20);
+      out.leaveit_bk=Object.assign({},gb,cb,{pos,hist});
+    }
+
+    // 9. XP & Badges X
+    if(c.leaveit_x||g.leaveit_x){
+      const cx=c.leaveit_x||{},gx=g.leaveit_x||{};
+      const xp=sum?(Number(cx.xp||0)+Number(gx.xp||0)):Math.max(Number(cx.xp||0),Number(gx.xp||0));
+      const b=Object.assign({},gx.b||{},cx.b||{});
+      Object.keys(gx.b||{}).forEach(k=>{
+        if(cx.b&&cx.b[k]&&String(gx.b[k])<String(cx.b[k]))b[k]=gx.b[k];
+      });
+      const last=String(cx.last||'')>=String(gx.last||'')?(cx.last||''):(gx.last||'');
+      out.leaveit_x={xp,b,last};
+    }
+
+    // 10. Mock chapters, reviews, adaptive times & UI prefs
+    if(c.leaveit_mkr||g.leaveit_mkr)out.leaveit_mkr=Object.assign({},g.leaveit_mkr||{},c.leaveit_mkr||{});
+    if(c.leaveit_mkch||g.leaveit_mkch)out.leaveit_mkch=Object.assign({},g.leaveit_mkch||{},c.leaveit_mkch||{});
+    if(c.leaveit_times_v86||g.leaveit_times_v86){
+      const ct=c.leaveit_times_v86||{},gt=g.leaveit_times_v86||{};
+      out.leaveit_times_v86={
+        samples:Object.assign({},gt.samples||{},ct.samples||{}),
+        cp:Object.assign({},gt.cp||{},ct.cp||{}),
+        cap:Object.assign({},gt.cap||{},ct.cap||{})
+      };
+    }
+    PREF_KEYS.forEach(k=>{
+      if(c[k]!==undefined)out[k]=c[k];
+      else if(g[k]!==undefined)out[k]=g[k];
+    });
+    return out;
+  }
+
+  function snapshotChanged(prevSnap,nextSnap){
+    try{
+      return JSON.stringify(prevSnap)!==JSON.stringify(nextSnap);
+    }catch(e){return true}
+  }
+
+  function triggerCloudReload(toastMsg){
+    try{
+      sessionStorage.setItem('leaveit_cloud_reloaded','1');
+      sessionStorage.setItem('leaveit_restore_tab',JSON.stringify({
+        rg:root.dataset.rg||'home',
+        tab:document.body.dataset.tab||'home',
+        toast:toastMsg||''
+      }));
+    }catch(e){}
+    window.location.reload();
+  }
+
+  async function flushCloudBackup(force){
+    const fb=getFB();
+    if(!fb||!ST.user||syncInFlight)return false;
+    if(!force&&localStorage.getItem(META_DIRTY)!=='1')return false;
+    syncInFlight=true;
+    syncStatus={...syncStatus,state:'syncing'};
+    try{
+      const snap=readStorageSnapshot();
+      await fb.saveAccountBackup({storage:snap});
+      const now=Date.now();
+      localStorage.setItem(META_UID,ST.user.id);
+      localStorage.setItem(META_AT,String(now));
+      localStorage.setItem(META_DIRTY,'0');
+      syncStatus={state:'synced',lastSyncAt:now,note:''};
+      return true;
+    }catch(err){
+      syncStatus={...syncStatus,state:'error',note:(err&&err.message)||'Cloud sync paused'};
+      return false;
+    }finally{
+      syncInFlight=false;
+    }
+  }
+
+  function scheduleCloudBackup(){
+    if(syncApplying||!ST.user)return;
+    try{localStorage.setItem(META_DIRTY,'1')}catch(e){}
+    clearTimeout(syncDebounce);
+    syncDebounce=setTimeout(()=>{flushCloudBackup(true)},1500);
+  }
+
+  if(!window.__leaveItSyncHooked){
+    window.__leaveItSyncHooked=true;
+    const origSet=Storage.prototype.setItem;
+    const origRem=Storage.prototype.removeItem;
+    Storage.prototype.setItem=function(k,v){
+      origSet.call(this,k,v);
+      if(this===localStorage&&SYNC_KEYS.includes(k)&&!syncApplying&&ST.user){
+        scheduleCloudBackup();
+      }
+    };
+    Storage.prototype.removeItem=function(k){
+      origRem.call(this,k);
+      if(this===localStorage&&SYNC_KEYS.includes(k)&&!syncApplying&&ST.user){
+        scheduleCloudBackup();
+      }
+    };
+    document.addEventListener('visibilitychange',()=>{
+      if(document.visibilityState==='hidden'&&ST.user&&localStorage.getItem(META_DIRTY)==='1'){
+        flushCloudBackup(true);
+      }
+    });
+    window.addEventListener('pagehide',()=>{
+      if(ST.user&&localStorage.getItem(META_DIRTY)==='1'){
+        flushCloudBackup(true);
+      }
+    });
+  }
+
+  async function syncWithCloudOnAuth(user){
+    const fb=getFB();
+    if(!fb||!user||syncedUidThisBoot===user.id)return;
+    syncedUidThisBoot=user.id;
+    syncStatus={...syncStatus,state:'syncing',note:'Checking cloud backup…'};
+    try{
+      const prevUid=localStorage.getItem(META_UID)||'';
+      const localAt=Number(localStorage.getItem(META_AT)||0);
+      const isDirty=localStorage.getItem(META_DIRTY)==='1';
+      const localSnap=readStorageSnapshot();
+      const backup=await fb.loadAccountBackup();
+      const cloudSnap=(backup&&backup.storage)||{};
+      const hasCloud=Object.keys(cloudSnap).length>0;
+
+      if(prevUid===user.id){
+        if(backup&&backup.updatedAtMs>localAt+2500){
+          const target=isDirty?mergeStorageSnapshots(cloudSnap,localSnap,'cloud_pull',user):cloudSnap;
+          const changed=snapshotChanged(localSnap,target);
+          if(changed)writeStorageSnapshot(target);
+          if(isDirty)await fb.saveAccountBackup({storage:target});
+          const now=Math.max(Date.now(),backup.updatedAtMs);
+          localStorage.setItem(META_UID,user.id);
+          localStorage.setItem(META_AT,String(now));
+          localStorage.setItem(META_DIRTY,'0');
+          syncStatus={state:'synced',lastSyncAt:now,note:''};
+          if(changed){triggerCloudReload('☁️ Synced latest progress from cloud');return}
+        }else if(isDirty||!backup){
+          await fb.saveAccountBackup({storage:localSnap});
+          const now=Date.now();
+          localStorage.setItem(META_UID,user.id);
+          localStorage.setItem(META_AT,String(now));
+          localStorage.setItem(META_DIRTY,'0');
+          syncStatus={state:'synced',lastSyncAt:now,note:''};
+        }else{
+          syncStatus={state:'synced',lastSyncAt:localAt||backup.updatedAtMs||Date.now(),note:''};
+        }
+        return;
+      }
+
+      // Signing in from Guest state (or switching account)
+      const guestPresent=hasMeaningfulGuestData(localSnap);
+      if(guestPresent){
+        // Import guest stats into Arena leaderboard profile if profile is still fresh (0 stats)
+        try{
+          const summary=buildGuestArenaSummary(localSnap);
+          const imported=await fb.importGuestSummaryStats(summary);
+          if(imported)ST.user=imported;
+        }catch(e){}
+      }
+
+      if(hasCloud&&guestPresent){
+        const merged=mergeStorageSnapshots(cloudSnap,localSnap,'guest_merge',user);
+        const changed=snapshotChanged(localSnap,merged);
+        if(changed)writeStorageSnapshot(merged);
+        const now=Date.now();
+        await fb.saveAccountBackup({storage:merged,guestMergedAtMs:now});
+        localStorage.setItem(META_UID,user.id);
+        localStorage.setItem(META_AT,String(now));
+        localStorage.setItem(META_DIRTY,'0');
+        syncStatus={state:'synced',lastSyncAt:now,note:''};
+        if(changed){triggerCloudReload('☁️ Guest progress merged with your account');return}
+        showToast('☁️ Guest progress merged with your account');
+      }else if(hasCloud){
+        writeStorageSnapshot(cloudSnap);
+        const now=Math.max(Date.now(),(backup&&backup.updatedAtMs)||0);
+        localStorage.setItem(META_UID,user.id);
+        localStorage.setItem(META_AT,String(now));
+        localStorage.setItem(META_DIRTY,'0');
+        syncStatus={state:'synced',lastSyncAt:now,note:''};
+        triggerCloudReload('☁️ Restored all saved account progress');
+        return;
+      }else{
+        // Brand new cloud backup from current local/guest state
+        const now=Date.now();
+        await fb.saveAccountBackup({storage:localSnap,guestMergedAtMs:now});
+        localStorage.setItem(META_UID,user.id);
+        localStorage.setItem(META_AT,String(now));
+        localStorage.setItem(META_DIRTY,'0');
+        syncStatus={state:'synced',lastSyncAt:now,note:''};
+        showToast(guestPresent?'☁️ Guest progress saved to your account':'☁️ Cloud backup enabled');
+      }
+      refreshTopLeftProfile();
+      if(isArenaVisible())renderArena();
+    }catch(err){
+      syncStatus={...syncStatus,state:'error',note:(err&&err.message)||'Cloud sync paused'};
+    }
+  }
+
   // ---- Initialize Firebase Bridge Subscription ----
   function initFirebaseArena(){
     const fb=getFB();
@@ -4566,14 +5247,20 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         ST.authErr='';
         ST.authMsg='';
         ST.needsEmailConfirm=false;
+        syncApplying=true;
         try{syncSpaName(user.displayName)}catch(e){}
+        finally{syncApplying=false}
         startRoomsSub();
         if(ST.subTab==='leaderboard'&&isArenaVisible())loadLb();
+        syncWithCloudOnAuth(user);
       }else{
+        syncedUidThisBoot=null;
+        syncStatus={state:'local',lastSyncAt:0,note:''};
         stopRoomSub();
         ST.activeRoom=null;
         startRoomsSub();
       }
+      if(typeof refreshTopLeftProfile==='function')refreshTopLeftProfile();
       if(isArenaVisible())renderArena();
     });
   }
@@ -4582,7 +5269,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   // ---- Render Views ----
   function renderAuth(){
     return `<div class="ar-top">
-      <div><h1>Arena</h1><p class="ar-sub">Passwordless Firebase sign-in · Live rooms, 1v1 sprints &amp; rankings</p></div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <img src="/icon.svg" alt="Leave It Timer logo" width="40" height="40" style="border-radius:12px;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.35)">
+        <div><h1>Arena</h1><p class="ar-sub">Passwordless Firebase sign-in · Live rooms, 1v1 sprints &amp; rankings</p></div>
+      </div>
     </div>
     <div class="ar-grid">
       <div class="ar-card">
@@ -4593,6 +5283,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
           <div><b>1v1</b><span>Timed sprints</span></div>
           <div><b>All-3 XP</b><span>Focus · Leave · Mock</span></div>
         </div>
+        <p class="ar-sub" style="margin-top:14px;font-size:12px">With regards, <b>Team Atul</b> · Made with ❤️ by Atul</p>
       </div>
       <div class="ar-card">
         <div class="ar-seg2">
@@ -4613,7 +5304,11 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
               <label for="arEmail">Email Address</label>
               <input class="ar-in" id="arEmail" name="email" type="email" required placeholder="you@example.com" autocomplete="email" value="${escHtml(ST.draftEmail)}">
             </div>
-            ${ST.authErr?`<div class="ar-err">${escHtml(ST.authErr)}</div>`:''}
+            ${ST.authErr?`<div class="ar-err">${escHtml(ST.authErr)}
+              ${ST.authErr.includes('not enabled')?`<div style="margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+                <button type="button" data-ar-act="googleLogin" class="ar-btn-ghost" style="background:var(--accent);color:#06241a;border-color:var(--accent);font-weight:700" ${ST.authBusy?'disabled':''}>Continue with Google Instead ▶</button>
+              </div>`:''}
+            </div>`:''}
             ${ST.authMsg?`<div style="margin-top:12px;padding:10px 14px;border-radius:14px;background:color-mix(in srgb,var(--ok) 14%,transparent);border:1px solid color-mix(in srgb,var(--ok) 40%,transparent);color:var(--ok);font-size:13px;font-weight:600">${escHtml(ST.authMsg)}</div>`:''}
             <button type="submit" class="ar-go" ${ST.authBusy?'disabled':''}>
               <span>${ST.authBusy?'Sending…':(ST.needsEmailConfirm?'Verify & Sign In':'Send Verification Link')}</span>
@@ -4919,9 +5614,13 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     else if(act==='copyCode'){
       try{await navigator.clipboard.writeText(actBtn.dataset.code||'');showToast('Copied room code '+(actBtn.dataset.code||''))}catch(err){}
     }else if(act==='logout'){
+      clearTimeout(syncDebounce);
+      await flushCloudBackup(true);
       if(ST.activeRoom&&fb){try{await fb.leaveRoom(ST.activeRoom.roomCode)}catch(err){}stopRoomSub();ST.activeRoom=null}
+      clearUserStorageForSignOut();
       if(fb){try{await fb.signOut()}catch(err){}}
-      ST.user=null;renderArena();
+      ST.user=null;
+      triggerCloudReload('Signed out · device data cleared');
     }else if(act==='leaveRoom'&&ST.activeRoom){
       const c=ST.activeRoom.roomCode;stopRoomSub();ST.activeRoom=null;
       if(fb){try{await fb.leaveRoom(c)}catch(err){}}
@@ -5012,6 +5711,251 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   new MutationObserver(()=>{placeArenaRoot()}).observe(root,{attributes:true,attributeFilter:['data-ui']});
   placeArenaRoot();
   renderArena();
+
+  // ---- Top-Left Profile Pill, Settings Integration & Unified Profile Modal ----
+  const profModal=document.createElement('div');
+  profModal.id='arProfModal';
+  profModal.setAttribute('role','dialog');
+  profModal.setAttribute('aria-modal','true');
+  profModal.setAttribute('aria-label','Edit Profile');
+  document.body.appendChild(profModal);
+
+  let profBusy=false,profErr='';
+
+  function currentDisplayName(){
+    if(ST.user&&ST.user.displayName)return ST.user.displayName;
+    if(typeof S!=='undefined'&&S.name&&S.name.trim())return S.name.trim();
+    return 'Champ';
+  }
+
+  function refreshTopLeftProfile(){
+    const dn=currentDisplayName();
+    const iniChar=([...dn.trim()][0]||'C').toUpperCase();
+    const handle=ST.user?'@'+ST.user.username+' · ⚡ '+ST.user.xp.toLocaleString()+' XP':'Local profile · Sign in';
+
+    const rgMain=document.getElementById('rgMain');
+    if(rgMain){
+      let row=rgMain.querySelector('.rg-prof-row');
+      if(!row){
+        row=document.createElement('div');
+        row.className='rg-prof-row';
+        rgMain.insertBefore(row,rgMain.firstChild);
+      }
+      const nextHtml=`<button type="button" class="rg-prof-pill" data-prof-open="1" title="Edit profile">
+        <span class="rg-prof-av">${escHtml(iniChar)}</span>
+        <span class="rg-prof-meta"><b>${escHtml(dn)}</b><small>${escHtml(handle)}</small></span>
+        <span class="rg-prof-ed">✎</span>
+      </button>`;
+      if(row.innerHTML!==nextHtml)row.innerHTML=nextHtml;
+    }
+
+    const nameBtn=document.getElementById('nameBtn');
+    if(nameBtn){
+      nameBtn.textContent=ST.user?('✎ '+dn+' (@'+ST.user.username+')'):('✎ '+dn);
+    }
+    const brandTag=document.querySelector('#brand .btag');
+    if(brandTag){
+      brandTag.textContent=ST.user?('@'+ST.user.username+' · tap to edit profile ✎'):'Leave It · tap profile to edit ✎';
+    }
+  }
+
+  function renderProfileModal(){
+    const u=ST.user;
+    const dn=currentDisplayName();
+    const iniChar=([...dn.trim()][0]||'C').toUpperCase();
+    profModal.innerHTML=`<div class="ar-prof-box" onclick="event.stopPropagation()">
+      <div class="ar-prof-head">
+        <div class="ar-prof-id">
+          <span class="rg-prof-av">${escHtml(iniChar)}</span>
+          <div style="min-width:0">
+            <h3 style="margin:0;font-size:18px;font-weight:800">Profile &amp; Account</h3>
+            <p class="ar-sub" style="margin:2px 0 0;font-size:12px">${u?'Firebase Verified · @'+escHtml(u.username):'Local study profile'}</p>
+          </div>
+        </div>
+        <button type="button" class="ar-prof-ghost" data-prof-act="close" aria-label="Close">✕</button>
+      </div>
+      ${u?`<div class="ar-prof-stats">
+        <div><b style="color:var(--accent)">${u.xp.toLocaleString()}</b><span>Arena XP</span></div>
+        <div><b>${u.focusMinutes}m</b><span>Focus</span></div>
+        <div><b style="color:var(--warn)">🔥 ${u.streakDays}d</b><span>Streak</span></div>
+      </div>`:''}
+      ${u?`<div style="margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);display:flex;align-items:center;justify-content:space-between;gap:10px">
+        <div style="min-width:0">
+          <b style="display:block;font-size:12px;color:var(--accent)">${syncStatus.state==='syncing'?'☁️ Syncing account data…':syncStatus.state==='error'?'⚠️ Sync paused':'☁️ Full Cloud Sync active'}</b>
+          <span style="display:block;font-size:11px;color:var(--muted)">${syncStatus.state==='error'?escHtml(syncStatus.note||'Will retry automatically'):syncStatus.lastSyncAt?'Last synced '+new Date(syncStatus.lastSyncAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'All history, mocks, planner & settings synced'}</span>
+        </div>
+        <button type="button" class="ar-prof-ghost" data-prof-act="syncNow" style="padding:7px 11px;font-size:12px;white-space:nowrap" ${syncInFlight?'disabled':''}>↻ Sync</button>
+      </div>`:''}
+      <form id="arProfForm">
+        <label for="arProfDisp">Display Name</label>
+        <input class="ar-in" id="arProfDisp" required minlength="2" maxlength="24" placeholder="Your name" value="${escHtml(dn)}" autocomplete="name">
+        ${u?`<label for="arProfUser">Arena Handle (@)</label>
+        <input class="ar-in" id="arProfUser" required minlength="3" maxlength="20" pattern="[a-z0-9_.]{3,20}" placeholder="e.g. atul_focus" value="${escHtml(u.username)}" autocomplete="username">
+        <p class="ar-sub" style="margin:6px 0 0;font-size:11px">3–20 lowercase letters, numbers, _ or .</p>`:`
+        <div style="margin-top:12px;padding:12px;border-radius:16px;background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent)">
+          <p class="ar-sub" style="margin:0 0 8px;font-size:12px;color:var(--text)">Guest progress is stored on this device. Sign in to save &amp; merge all history across devices.</p>
+          <button type="button" class="ar-prof-ghost" data-prof-act="goArena" style="border-color:var(--accent);color:var(--accent)">Sign in &amp; Link Progress ▶</button>
+        </div>`}
+        ${profErr?`<div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--bad,#ff4d6d) 14%,transparent);color:var(--bad,#ff4d6d);font-size:12.5px;font-weight:600">${escHtml(profErr)}</div>`:''}
+        <div class="ar-prof-btns">
+          <button type="submit" class="ar-prof-save" ${profBusy?'disabled':''}>${profBusy?'Saving…':'Save Profile'}</button>
+          ${u?`<button type="button" class="ar-prof-ghost" data-prof-act="logout">Sign out</button>`:''}
+        </div>
+      </form>
+    </div>`;
+  }
+
+  function openProfileModal(){
+    profErr='';
+    profBusy=false;
+    renderProfileModal();
+    profModal.classList.add('on');
+    setTimeout(()=>document.getElementById('arProfDisp')?.focus(),40);
+  }
+
+  function closeProfileModal(){
+    profModal.classList.remove('on');
+  }
+
+  profModal.addEventListener('click',async e=>{
+    if(e.target===profModal){closeProfileModal();return}
+    const actBtn=e.target.closest('[data-prof-act]');
+    if(!actBtn)return;
+    const act=actBtn.dataset.profAct;
+    if(act==='close'){closeProfileModal();return}
+    if(act==='syncNow'){
+      if(!ST.user)return;
+      renderProfileModal();
+      const ok=await flushCloudBackup(true);
+      renderProfileModal();
+      showToast(ok?'☁️ Cloud backup updated':'Could not reach cloud right now');
+      return;
+    }
+    if(act==='goArena'){
+      closeProfileModal();
+      if(root.dataset.ui==='regain'){
+        document.querySelector('#rgNav button[data-n="arena"]')?.click();
+      }else{
+        document.querySelector('#nav button[data-t="arena"]')?.click();
+      }
+      return;
+    }
+    if(act==='logout'){
+      const fb=getFB();
+      clearTimeout(syncDebounce);
+      await flushCloudBackup(true);
+      if(ST.activeRoom&&fb){try{await fb.leaveRoom(ST.activeRoom.roomCode)}catch(err){}stopRoomSub();ST.activeRoom=null}
+      clearUserStorageForSignOut();
+      if(fb){try{await fb.signOut()}catch(err){}}
+      ST.user=null;
+      closeProfileModal();
+      triggerCloudReload('Signed out · device data cleared');
+    }
+  });
+
+  profModal.addEventListener('submit',async e=>{
+    if(e.target.id!=='arProfForm')return;
+    e.preventDefault();
+    if(profBusy)return;
+    const disp=(document.getElementById('arProfDisp')?.value||'').trim().replace(/\s+/g,' ');
+    if(disp.length<2||disp.length>24){
+      profErr='Display name must be 2–24 characters.';
+      renderProfileModal();
+      return;
+    }
+    const fb=getFB();
+    if(ST.user&&fb){
+      const uname=(document.getElementById('arProfUser')?.value||'').trim().toLowerCase();
+      profErr='';profBusy=true;renderProfileModal();
+      try{
+        const upd=await fb.updateProfile({username:uname,displayName:disp});
+        ST.user=upd;
+        syncSpaName(upd.displayName);
+        closeProfileModal();
+        refreshTopLeftProfile();
+        if(isArenaVisible())renderArena();
+        showToast('Profile updated');
+      }catch(err){
+        profErr=(err&&err.message)||'Could not update profile.';
+        profBusy=false;
+        renderProfileModal();
+      }
+    }else{
+      syncSpaName(disp);
+      closeProfileModal();
+      refreshTopLeftProfile();
+      showToast('Name updated');
+    }
+  });
+
+  document.addEventListener('click',e=>{
+    const openBtn=e.target.closest('[data-prof-open]');
+    if(openBtn){
+      const sh=document.getElementById('rgSh');
+      if(sh)sh.classList.remove('on');
+      openProfileModal();
+    }
+  });
+
+  const brandEl=document.getElementById('brand');
+  if(brandEl)brandEl.onclick=openProfileModal;
+  const nameBtnEl=document.getElementById('nameBtn');
+  if(nameBtnEl)nameBtnEl.onclick=openProfileModal;
+  const settingsRow=nameBtnEl&&nameBtnEl.closest('.tog');
+  if(settingsRow&&settingsRow.firstChild&&settingsRow.firstChild.nodeType===3){
+    settingsRow.firstChild.textContent='Profile & Arena Handle';
+  }
+
+  const rgMainEl=document.getElementById('rgMain');
+  if(rgMainEl){
+    new MutationObserver(()=>{refreshTopLeftProfile()}).observe(rgMainEl,{childList:true});
+  }
+  const rgShB=document.getElementById('rgShB');
+  if(rgShB){
+    new MutationObserver(()=>{
+      const h3=rgShB.querySelector('h3');
+      if(h3&&h3.textContent==='More'&&!rgShB.querySelector('[data-prof-open]')){
+        h3.insertAdjacentHTML('afterend','<button type="button" class="ln" data-prof-open="1"><span>👤</span>Profile &amp; Account</button>');
+      }
+    }).observe(rgShB,{childList:true});
+  }
+
+  // Keep top-left profile badge synced when auth or local name updates
+  setInterval(()=>{
+    const pill=document.querySelector('.rg-prof-pill b');
+    const cur=currentDisplayName();
+    if(pill&&pill.textContent!==cur)refreshTopLeftProfile();
+  },1000);
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&profModal.classList.contains('on'))closeProfileModal();
+  });
+
+  refreshTopLeftProfile();
+
+  // Restore exact active tab & toast cleanly after a cloud-sync reload
+  try{
+    if(sessionStorage.getItem('leaveit_cloud_reloaded')==='1'){
+      const rawTab=sessionStorage.getItem('leaveit_restore_tab');
+      sessionStorage.removeItem('leaveit_cloud_reloaded');
+      sessionStorage.removeItem('leaveit_restore_tab');
+      if(rawTab){
+        const rt=JSON.parse(rawTab);
+        if(root.dataset.ui==='regain'){
+          if(rt.rg==='arena')document.querySelector('#rgNav button[data-n="arena"]')?.click();
+          else if(rt.rg==='stats')document.querySelector('#rgNav button[data-n="stats"]')?.click();
+          else if(rt.rg==='old'){
+            document.querySelector('#rgNav button[data-n="old"]')?.click();
+            if(rt.tab&&typeof go==='function')go(rt.tab);
+          }
+        }else if(rt.tab){
+          if(rt.tab==='arena')document.querySelector('#nav button[data-t="arena"]')?.click();
+          else if(typeof go==='function')go(rt.tab);
+        }
+        if(rt.toast)setTimeout(()=>showToast(rt.toast),180);
+      }
+    }
+  }catch(e){}
 })();
 </script>
 

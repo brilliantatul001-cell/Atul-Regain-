@@ -102,6 +102,21 @@ service cloud.firestore {
       data.createdAt is timestamp;
     }
 
+    function isValidAccountBackup(data) {
+      return data.keys().hasAll([
+        'uid', 'version', 'guestMergedAtMs', 'storage', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'version', 'guestMergedAtMs', 'storage', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.uid) &&
+      data.version is number && data.version >= 1 && data.version <= 10 &&
+      data.guestMergedAtMs is number && data.guestMergedAtMs >= 0 &&
+      data.storage is map && data.storage.size() <= 40 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
     function isValidRoom(data) {
       return data.keys().hasAll([
         'roomCode', 'mode', 'title', 'subject', 'durationSec', 'questionLimitSec',
@@ -209,6 +224,28 @@ service cloud.firestore {
             incoming().questionsSolved >= existing().questionsSolved &&
             incoming().duelWins >= existing().duelWins &&
             incoming().duelPlayed >= existing().duelPlayed
+          ) ||
+          // Action: One-time guest summary migration when account starts at zero stats
+          (
+            existing().xp == 0 &&
+            existing().questionsSolved == 0 &&
+            existing().focusMinutes == 0 &&
+            existing().mockTestsCount == 0 &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'xp', 'focusMinutes', 'streakDays', 'lastActiveDate',
+              'questionsSolved', 'questionsLeftOnTime', 'questionsOvertime',
+              'mockTestsCount', 'mockAccuracySum',
+              'todayKey', 'todayXp', 'todayFocusMinutes', 'todayQuestionsSolved',
+              'weekKey', 'weekXp', 'weekFocusMinutes', 'weekQuestionsSolved',
+              'updatedAt'
+            ]) &&
+            incoming().xp <= 15000 &&
+            incoming().focusMinutes <= 10000 &&
+            incoming().questionsSolved <= 3000 &&
+            incoming().questionsLeftOnTime <= 3000 &&
+            incoming().questionsOvertime <= 3000 &&
+            incoming().mockTestsCount <= 500 &&
+            incoming().mockAccuracySum <= 50000
           )
         );
 
@@ -227,6 +264,32 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/players/$(userId));
 
         allow update, delete: if false;
+      }
+
+      match /backup/{backupId} {
+        allow get: if isOwner(userId) && isValidId(userId) && backupId == 'snapshot';
+        allow list: if isOwner(userId) && isValidId(userId) && resource.data.uid == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+          isValidId(userId) &&
+          backupId == 'snapshot' &&
+          isValidAccountBackup(incoming()) &&
+          incoming().uid == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/players/$(userId));
+
+        allow update: if isOwner(userId) &&
+          isValidId(userId) &&
+          backupId == 'snapshot' &&
+          isValidAccountBackup(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['version', 'guestMergedAtMs', 'storage', 'updatedAt']) &&
+          exists(/databases/$(database)/documents/players/$(userId));
+
+        allow delete: if false;
       }
     }
 

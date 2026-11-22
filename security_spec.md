@@ -21,3 +21,9 @@
 10. **Non-Host Match Start**: Attempting `status: 'lobby' -> 'countdown'` on `/rooms/ROOM01` by a non-host participant -> `PERMISSION_DENIED`.
 11. **Post-Finish Score Tampering**: Updating `winnerUserId` or `sprintScore` after `/rooms/ROOM01` has `status: 'finished'` -> `PERMISSION_DENIED`.
 12. **Unverified Email Write**: Performing any write when `request.auth.token.email_verified == false` -> `PERMISSION_DENIED`.
+13. **Cross-User Private Backup Read**: Attempting to read `/players/victim_uid/backup/snapshot` while signed in as `attacker_uid` -> `PERMISSION_DENIED`.
+14. **Repeat Guest Bulk Stat Injection**: Attempting to use the one-time guest summary migration path after `existing.xp > 0` or `existing.questionsSolved > 0` -> `PERMISSION_DENIED`.
+
+## 2. Additional Invariants
+7. **Owner-Only Full App Backup**: `/players/{userId}/backup/snapshot` stores parsed maps/arrays for focus logs, question stats, mocks, tests, planner, books, and settings and is strictly readable and writable only by `isOwner(userId)` with parent `/players/{userId}` existing.
+8. **Bounded One-Time Guest Import**: A newly signed-in player with zero stats (`xp == 0 && questionsSolved == 0 && focusMinutes == 0 && mockTestsCount == 0`) may import pre-login guest totals within bounded limits once; all subsequent updates remain capped at `+500 XP` per transaction.

@@ -309,6 +309,38 @@
         "joinedAt",
         "updatedAt"
       ]
+    },
+    "AccountBackup": {
+      "title": "AccountBackup",
+      "description": "Private owner-only full app progress snapshot storing focus logs, question history, mocks, tests, planner, books, and settings.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "version": { "type": "number" },
+        "guestMergedAtMs": { "type": "number" },
+        "storage": { "type": "object" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "uid",
+        "version",
+        "guestMergedAtMs",
+        "storage",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -319,6 +351,10 @@
     "/players/{userId}/activities/{activityId}": {
       "schema": { "$ref": "#/entities/ActivityLog" },
       "description": "Per-player deduplicated timer activity ledger."
+    },
+    "/players/{userId}/backup/{backupId}": {
+      "schema": { "$ref": "#/entities/AccountBackup" },
+      "description": "Private owner-only full account progress snapshot across all study tools."
     },
     "/rooms/{roomCode}": {
       "schema": { "$ref": "#/entities/ArenaRoom" },

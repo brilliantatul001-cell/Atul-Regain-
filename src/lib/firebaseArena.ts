@@ -327,7 +327,7 @@ export async function sendEmailSignInLink(rawEmail: string): Promise<void> {
       code === 'auth/admin-restricted-operation'
     ) {
       throw new Error(
-        'Passwordless Email Link is not enabled yet in Firebase Console. Enable Email link sign-in in Authentication → Sign-in method, or use Continue with Google above.',
+        'Passwordless Email Link is not enabled in Firebase Console yet. Enable Email/Password → "Email link (passwordless sign-in)" in Firebase Console, or sign in instantly with Google.',
       );
     }
     if (err instanceof Error) throw err;
@@ -342,6 +342,12 @@ export function isPendingEmailLinkSignIn(): boolean {
     return false;
   }
 }
+
+let emailLinkInFlight: Promise<{
+  completed: boolean;
+  needsEmail?: boolean;
+  user?: ArenaUser;
+}> | null = null;
 
 export async function completeEmailLinkIfPresent(
   suppliedEmail?: string,
@@ -360,20 +366,32 @@ export async function completeEmailLinkIfPresent(
     return {completed: false, needsEmail: true};
   }
 
-  try {
-    const cred = await signInWithEmailLink(auth, email, window.location.href);
-    try {
-      window.localStorage.removeItem(EMAIL_LINK_KEY);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } catch {
-      // Ignore history/storage errors
-    }
-    const profile = await ensurePlayerProfile(cred.user);
-    return {completed: true, user: profile};
-  } catch (err) {
-    if (err instanceof Error) throw err;
-    throw new Error('Could not verify email sign-in link. Please request a new link.');
+  if (emailLinkInFlight) {
+    return emailLinkInFlight;
   }
+
+  emailLinkInFlight = (async () => {
+    try {
+      const cred = await signInWithEmailLink(auth, email, window.location.href);
+      try {
+        window.localStorage.removeItem(EMAIL_LINK_KEY);
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } catch {
+        // Ignore history/storage errors
+      }
+      const profile = await ensurePlayerProfile(cred.user);
+      return {completed: true, user: profile};
+    } catch (err) {
+      if (err instanceof Error) throw err;
+      throw new Error(
+        'Could not verify email sign-in link. Please request a new link.',
+      );
+    } finally {
+      emailLinkInFlight = null;
+    }
+  })();
+
+  return emailLinkInFlight;
 }
 
 export async function signInArenaWithGoogle(): Promise<ArenaUser> {
@@ -1393,6 +1411,221 @@ export async function fetchLeaderboard(opts: {
   }
 }
 
+function sanitizeBackupValue(val: unknown, depth = 0): unknown {
+  if (depth > 8) return null;
+  if (val === null || typeof val === 'boolean' || typeof val === 'string') {
+    return typeof val === 'string' && val.length > 20000
+      ? val.slice(0, 20000)
+      : val;
+  }
+  if (typeof val === 'number') {
+    return Number.isFinite(val) ? val : 0;
+  }
+  if (Array.isArray(val)) {
+    const capped = val.length > 2000 ? val.slice(-2000) : val;
+    return capped.map((item) => sanitizeBackupValue(item, depth + 1));
+  }
+  if (typeof val === 'object') {
+    const out: Record<string, unknown> = {};
+    let count = 0;
+    for (const [k, v] of Object.entries(val as Record<string, unknown>)) {
+      if (v === undefined || typeof v === 'function' || typeof v === 'symbol') {
+        continue;
+      }
+      if (!k || k.length > 120) continue;
+      out[k] = sanitizeBackupValue(v, depth + 1);
+      count++;
+      if (count >= 1500) break;
+    }
+    return out;
+  }
+  return null;
+}
+
+function sanitizeBackupMap(
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  let keys = 0;
+  for (const [k, v] of Object.entries(raw || {})) {
+    if (!/^[a-zA-Z0-9_.\-]{1,48}$/.test(k)) continue;
+    if (v === undefined) continue;
+    out[k] = sanitizeBackupValue(v, 0);
+    keys++;
+    if (keys >= 38) break;
+  }
+  return out;
+}
+
+export async function loadAccountBackup(): Promise<{
+  storage: Record<string, unknown>;
+  guestMergedAtMs: number;
+  updatedAtMs: number;
+} | null> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) return null;
+  const path = `players/${fbUser.uid}/backup/snapshot`;
+  const ref = doc(db, 'players', fbUser.uid, 'backup', 'snapshot');
+  try {
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return null;
+    const d = snap.data() as Record<string, unknown>;
+    const updatedAt = d.updatedAt as {toMillis?: () => number} | undefined;
+    return {
+      storage:
+        d.storage && typeof d.storage === 'object' && !Array.isArray(d.storage)
+          ? (d.storage as Record<string, unknown>)
+          : {},
+      guestMergedAtMs: Number(d.guestMergedAtMs || 0),
+      updatedAtMs:
+        updatedAt && typeof updatedAt.toMillis === 'function'
+          ? updatedAt.toMillis()
+          : 0,
+    };
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
+  }
+}
+
+export async function saveAccountBackup(params: {
+  storage: Record<string, unknown>;
+  guestMergedAtMs?: number;
+}): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) return;
+  const uid = fbUser.uid;
+  const path = `players/${uid}/backup/snapshot`;
+  const playerRef = doc(db, 'players', uid);
+  const backupRef = doc(db, 'players', uid, 'backup', 'snapshot');
+  const cleanStorage = sanitizeBackupMap(params.storage);
+  const mergedAt = Math.max(0, Math.floor(params.guestMergedAtMs || 0));
+
+  try {
+    await ensurePlayerProfile(fbUser);
+    await runTransaction(db, async (tx) => {
+      const playerSnap = await tx.get(playerRef);
+      if (!playerSnap.exists()) {
+        throw new Error('Player profile not initialized yet.');
+      }
+      const existingSnap = await tx.get(backupRef);
+      if (!existingSnap.exists()) {
+        tx.set(backupRef, {
+          uid,
+          version: 1,
+          guestMergedAtMs: mergedAt || Date.now(),
+          storage: cleanStorage,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      } else {
+        const prev = existingSnap.data() as Record<string, unknown>;
+        tx.update(backupRef, {
+          version: 1,
+          guestMergedAtMs: mergedAt || Number(prev.guestMergedAtMs || 0),
+          storage: cleanStorage,
+          updatedAt: serverTimestamp(),
+        });
+      }
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+export async function importGuestSummaryStats(summary: {
+  xp: number;
+  focusMinutes: number;
+  streakDays: number;
+  lastActiveDate: string;
+  questionsSolved: number;
+  questionsLeftOnTime: number;
+  questionsOvertime: number;
+  mockTestsCount: number;
+  mockAccuracySum: number;
+  todayXp: number;
+  todayFocusMinutes: number;
+  todayQuestionsSolved: number;
+  weekXp: number;
+  weekFocusMinutes: number;
+  weekQuestionsSolved: number;
+}): Promise<ArenaUser | null> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) return null;
+  const uid = fbUser.uid;
+  const path = `players/${uid}`;
+  const playerRef = doc(db, 'players', uid);
+
+  const clamp = (n: number, max: number) =>
+    Math.max(0, Math.min(max, Math.round(Number(n) || 0)));
+
+  const xp = clamp(summary.xp, 15000);
+  const focusMinutes = clamp(summary.focusMinutes, 10000);
+  const questionsSolved = clamp(summary.questionsSolved, 3000);
+  const questionsLeftOnTime = clamp(summary.questionsLeftOnTime, 3000);
+  const questionsOvertime = clamp(summary.questionsOvertime, 3000);
+  const mockTestsCount = clamp(summary.mockTestsCount, 500);
+  const mockAccuracySum = Math.max(
+    0,
+    Math.min(50000, Math.round((Number(summary.mockAccuracySum) || 0) * 10) / 10),
+  );
+  const streakDays = clamp(summary.streakDays, 3650);
+
+  if (
+    xp === 0 &&
+    focusMinutes === 0 &&
+    questionsSolved === 0 &&
+    mockTestsCount === 0
+  ) {
+    return null;
+  }
+
+  try {
+    await ensurePlayerProfile(fbUser);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(playerRef);
+      if (!snap.exists()) return;
+      const cur = snap.data() as Record<string, unknown>;
+      if (
+        Number(cur.xp || 0) !== 0 ||
+        Number(cur.questionsSolved || 0) !== 0 ||
+        Number(cur.focusMinutes || 0) !== 0 ||
+        Number(cur.mockTestsCount || 0) !== 0
+      ) {
+        return;
+      }
+      const tKey = todayStr(0);
+      const wKey = weekStartStr();
+      const lastDate = String(summary.lastActiveDate || '').slice(0, 10);
+      tx.update(playerRef, {
+        xp,
+        focusMinutes,
+        streakDays,
+        lastActiveDate: lastDate,
+        questionsSolved,
+        questionsLeftOnTime,
+        questionsOvertime,
+        mockTestsCount,
+        mockAccuracySum,
+        todayKey: tKey,
+        todayXp: clamp(summary.todayXp, 15000),
+        todayFocusMinutes: clamp(summary.todayFocusMinutes, 10000),
+        todayQuestionsSolved: clamp(summary.todayQuestionsSolved, 3000),
+        weekKey: wKey,
+        weekXp: clamp(summary.weekXp, 15000),
+        weekFocusMinutes: clamp(summary.weekFocusMinutes, 10000),
+        weekQuestionsSolved: clamp(summary.weekQuestionsSolved, 3000),
+        updatedAt: serverTimestamp(),
+      });
+    });
+    const fresh = await getDoc(playerRef);
+    return fresh.exists()
+      ? toArenaUser(fresh.data() as Record<string, unknown>)
+      : null;
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
 export const firebaseArenaBridge = {
   signInWithGoogle: signInArenaWithGoogle,
   sendEmailSignInLink,
@@ -1414,6 +1647,9 @@ export const firebaseArenaBridge = {
   subscribePublicRooms,
   subscribeRoom,
   fetchLeaderboard,
+  loadAccountBackup,
+  saveAccountBackup,
+  importGuestSummaryStats,
 };
 
 export type FirebaseArenaBridge = typeof firebaseArenaBridge;

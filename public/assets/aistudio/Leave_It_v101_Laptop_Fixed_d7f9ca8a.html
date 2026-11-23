@@ -3759,6 +3759,10 @@ document.addEventListener('keydown',e=>{if(e.target&&/INPUT|TEXTAREA|SELECT/.tes
 const app=document.querySelector('.app');
 function fit(){const v=[...app.children].filter(e=>e.classList.contains('card')&&e.offsetParent!==null).length;app.classList.toggle('lp-one',v===1)}
 fit();setInterval(fit,600);addEventListener('resize',fit);
+if(typeof MutationObserver!=='undefined'){
+  new MutationObserver(()=>requestAnimationFrame(fit)).observe(document.body,{attributes:true,attributeFilter:['data-tab','class']});
+  new MutationObserver(()=>requestAnimationFrame(fit)).observe(document.documentElement,{attributes:true,attributeFilter:['data-ui','data-rg','data-layout']});
+}
 })();
 /* v74: Light mode (Auto / Dark / Light) */
 (function(){
@@ -7803,6 +7807,508 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   }catch(e){}
 })();
 </script>
+<style id="v105-portability-fixes">
+/* =====================================================================
+   v105: Cross-device Portability (Laptop Tab Isolation + Phone Chat/HUD)
+   ===================================================================== */
+
+/* 1. Strict UI-Shell & Tab Isolation (never render Regain + Classic or multiple tabs on one page) */
+html[data-ui="regain"]:not([data-rg="old"]) .app,
+html[data-ui="regain"]:not([data-rg="old"]) #nav,
+html[data-ui="regain"]:not([data-rg="old"]) #fab {
+  display: none !important;
+}
+html[data-ui="regain"][data-rg="old"] #rg,
+html:not([data-ui="regain"]) #rg {
+  display: none !important;
+}
+html[data-ui="regain"][data-rg="arena"] #rg {
+  display: block !important;
+}
+html[data-ui="regain"]:not([data-rg="arena"]) #arenaMount {
+  display: none !important;
+}
+html[data-ui="regain"][data-rg="old"] #rgMain {
+  display: none !important;
+}
+
+/* Strict single-tab isolation inside .app across ALL layouts (classic, aurora, focus) */
+body[data-tab] .app > [data-tab] {
+  display: none !important;
+}
+body[data-tab="home"] .app > [data-tab="home"]:not([hidden]),
+body[data-tab="mock"] .app > [data-tab="mock"]:not([hidden]),
+body[data-tab="tests"] .app > [data-tab="tests"]:not([hidden]),
+body[data-tab="stats"] .app > [data-tab="stats"]:not([hidden]),
+body[data-tab="rank"] .app > [data-tab="rank"]:not([hidden]),
+body[data-tab="settings"] .app > [data-tab="settings"]:not([hidden]),
+body[data-tab="arena"] .app > [data-tab="arena"]:not([hidden]) {
+  display: block !important;
+}
+body[data-tab="home"] .app > .install[data-tab="home"]:not([hidden]),
+body[data-tab="home"] .app > .ban[data-tab="home"]:not([hidden]),
+body[data-tab="home"] .app > #rgHi:not([hidden]) {
+  display: flex !important;
+}
+body[data-tab="plan"] .app > #plan:not([hidden]) {
+  display: flex !important;
+}
+body:not([data-tab="home"]) #clArenaBar,
+body:not([data-tab="home"]) #rgHi {
+  display: none !important;
+}
+body[data-tab="home"] .app > #clArenaBar:not([hidden]) {
+  display: block !important;
+  grid-column: 1 / -1 !important;
+}
+body.simple-mode .app > [data-tab="mock"],
+body.simple-mode .app > [data-tab="stats"],
+body.simple-mode .app > [data-tab="rank"] {
+  display: none !important;
+}
+
+/* 2. Focus Mode HUD & Ephemeral Chat: always wrap & stay inside viewport */
+.ar-sync-hud {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 10px;
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+.ar-sync-hud .ash-l {
+  flex: 1 1 150px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.ar-sync-hud .ash-l b {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.ar-sync-hud .ash-l small {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.ar-sync-hud .ash-r {
+  flex: 0 1 auto !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  flex-wrap: wrap !important;
+  justify-content: flex-end;
+}
+.ar-sync-hud .ash-msg {
+  flex: 1 0 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+.ar-sync-hud .ash-chat-box {
+  flex: 1 0 100% !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+.ar-sync-hud .ash-msgs {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  max-height: min(124px, 22dvh);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.ar-sync-hud .ash-m-row {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.ar-sync-hud .ash-chat-chips {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  flex-wrap: wrap !important;
+}
+.ar-sync-hud .ash-qchip {
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+  line-height: 1.2;
+}
+.ar-sync-hud .ash-chat-form {
+  width: 100%;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+.ar-sync-hud .ash-chat-in {
+  flex: 1 1 auto;
+  min-width: 0 !important;
+  max-width: 100%;
+}
+
+#rgArenaHud,
+#rgArenaBar,
+#clArenaBar,
+#fmArenaBar {
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+#rgArenaHud {
+  width: min(460px, 100%) !important;
+}
+#rgArenaHud:empty {
+  display: none !important;
+}
+
+/* Focus overlays scroll vertically instead of clipping controls when chat expands */
+#rgS {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+#rgS > * {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+#fm {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+#fm .fm-in {
+  height: auto !important;
+  min-height: 100% !important;
+  max-width: min(520px, 100%);
+  box-sizing: border-box;
+}
+#fm .fm-side,
+#fm .fm-card,
+#fm .fm-sch .m {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+/* Tick silent Focus popup: never clip horizontally on narrow phones */
+#mk.mk-focus-msg {
+  max-width: calc(100vw - 12px) !important;
+  box-sizing: border-box;
+}
+#mk.mk-focus-msg #mkT {
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+#mk.mk-focus-msg .mk-rchips {
+  min-width: 0;
+  max-width: 100%;
+}
+#mk.mk-focus-msg .mk-rform {
+  min-width: 0;
+  max-width: 100%;
+}
+#mk.mk-focus-msg .mk-rin {
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* 3. Laptop / Desktop Layout & Gutter Fixes (>= 900px) */
+@media (min-width: 900px) {
+  html[data-ui="regain"] body {
+    display: block !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* Regain viewing Classic tabs (Timer, Mock, Tests, Plan, Stats, Rank, Settings) */
+  html[data-ui="regain"][data-rg="old"] body .app,
+  html[data-ui="regain"][data-rg="old"][data-layout] body[data-tab] .app {
+    width: 100% !important;
+    max-width: min(1320px, 100%) !important;
+    margin: 0 auto !important;
+    padding: 28px 32px 54px clamp(126px, 13vw, 170px) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    gap: 18px !important;
+    align-items: start !important;
+    box-sizing: border-box !important;
+  }
+
+  /* #rgS Desktop 2-column Focus Grid including #rgArenaHud and #rgTaskDone */
+  #rgS {
+    grid-template-columns: minmax(340px, 1fr) minmax(320px, .86fr) !important;
+    grid-template-rows: auto auto auto auto auto auto auto auto !important;
+    align-content: center !important;
+    justify-items: center !important;
+    gap: 14px 48px !important;
+    padding: 32px 6vw !important;
+  }
+  #rgS > .seg2 { grid-column: 1 / -1 !important; grid-row: 1 !important; margin-top: 0 !important; width: min(440px, 70vw) !important; }
+  #rgS > .t { grid-column: 1 / -1 !important; grid-row: 2 !important; }
+  #rgS > .rr { grid-column: 1 !important; grid-row: 3 / span 6 !important; align-self: center !important; }
+  #rgS > #rgArenaHud { grid-column: 2 !important; grid-row: 3 !important; width: min(520px, 100%) !important; align-self: start !important; margin: 0 !important; }
+  #rgS > .sh { grid-column: 2 !important; grid-row: 4 !important; width: min(520px, 100%) !important; align-self: center !important; }
+  #rgS > #rgBrk { grid-column: 2 !important; grid-row: 5 !important; align-self: center !important; }
+  #rgS > #rgTaskDone { grid-column: 2 !important; grid-row: 5 !important; width: min(520px, 100%) !important; align-self: center !important; }
+  #rgS > #rgCp { grid-column: 2 !important; grid-row: 6 !important; width: min(520px, 100%) !important; }
+  #rgS > #rgQb { grid-column: 2 !important; grid-row: 7 !important; width: min(520px, 100%) !important; }
+  #rgS > .bt:last-child { grid-column: 2 !important; grid-row: 8 !important; width: min(520px, 100%) !important; margin-bottom: 0 !important; }
+
+  /* Center bottom-sheet modals nicely on laptop */
+  #ts {
+    align-items: center !important;
+    padding: 24px !important;
+  }
+  #ts .tsb {
+    width: min(560px, calc(100vw - 140px)) !important;
+    max-height: min(88vh, 840px) !important;
+    border-radius: 24px !important;
+    padding: 20px 22px 24px !important;
+  }
+  #ts .tsh {
+    top: -20px !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1120px) {
+  html[data-ui="regain"][data-rg="old"] body .app,
+  html[data-ui="regain"][data-rg="old"][data-layout] body[data-tab] .app {
+    padding-left: 122px !important;
+    padding-right: 18px !important;
+  }
+}
+
+@media (min-width: 1000px) {
+  html:not([data-ui="regain"]) body {
+    display: block !important;
+  }
+  html:not([data-ui="regain"]) body[data-tab] .app,
+  html:not([data-ui="regain"])[data-layout] body[data-tab] .app {
+    width: 100% !important;
+    max-width: min(1320px, 100%) !important;
+    margin: 0 auto !important;
+    padding: 26px 36px 48px 140px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    gap: 18px !important;
+    align-items: start !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Compact Classic left rail so all 8 nav tabs fit on 720p/768p laptops without clipping */
+  html body #nav {
+    max-height: calc(100dvh - 16px) !important;
+    overflow-y: auto !important;
+    padding: 4px 0 !important;
+  }
+  html body #nav .nav-in {
+    gap: 8px !important;
+  }
+  html body #nav .nav-p {
+    width: 84px !important;
+    padding: 6px 5px !important;
+    gap: 2px !important;
+  }
+  html body #nav .nav-p button {
+    padding: 7px 3px !important;
+    font-size: 10.5px !important;
+    gap: 2px !important;
+  }
+  html body #nav .nav-p button i {
+    font-size: 17px !important;
+  }
+}
+
+@media (min-width: 900px) {
+  /* Unified card & grid placement inside .app on Laptop */
+  .app > header,
+  .app > .install,
+  .app > #clArenaBar,
+  .app > #uBan,
+  .app > #rgHi,
+  .app > .hint,
+  .app > .foot,
+  .app > .creator-credit {
+    grid-column: 1 / -1 !important;
+    grid-area: auto !important;
+  }
+  .app > .card {
+    grid-area: auto !important;
+    margin: 0 !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    min-height: 0 !important;
+  }
+  body[data-tab="home"] .app > #timerCard {
+    grid-column: 1 !important;
+    grid-row: 2 / span 8 !important;
+    max-width: none !important;
+    width: 100% !important;
+    justify-self: stretch !important;
+    position: static !important;
+  }
+  body[data-tab="home"] .app > #dgCard,
+  body[data-tab="home"] .app > #dwD {
+    grid-column: 2 !important;
+  }
+  html[data-layout="focus"] body[data-tab] .app > .card {
+    max-width: 720px !important;
+    justify-self: center !important;
+  }
+  html body .app.lp-one > .card,
+  body[data-tab="plan"] .app > #plan,
+  body[data-tab="arena"] .app > #arenaClassic,
+  body[data-tab="mock"] .app > #mockCard,
+  body[data-tab="rank"] .app > #xpCard {
+    grid-column: 1 / -1 !important;
+    max-width: 920px !important;
+    justify-self: center !important;
+  }
+  body[data-tab="arena"] .app > #arenaClassic {
+    max-width: 1180px !important;
+  }
+}
+
+/* 4. Phone & Narrow Screen Portability Fixes (320px - 899px) */
+@media (max-width: 899px) {
+  .app {
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-left: clamp(10px, 3vw, 18px) !important;
+    padding-right: clamp(10px, 3vw, 18px) !important;
+  }
+  #rgNav {
+    width: min(440px, calc(100vw - 16px)) !important;
+    padding: 5px !important;
+  }
+  #rgNav button {
+    min-width: 0 !important;
+    font-size: 10.5px !important;
+    padding: 8px 2px !important;
+  }
+  #rgS {
+    padding: calc(env(safe-area-inset-top, 0px) + 12px) clamp(12px, 3.5vw, 18px) calc(env(safe-area-inset-bottom, 0px) + 18px) !important;
+  }
+}
+
+@media (max-width: 559px) {
+  #fm .fm-in {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 999px) {
+  /* Keep all Classic bottom nav pills legible inside narrow screens */
+  #nav {
+    padding: 8px 8px calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+  #nav .nav-in {
+    gap: 6px !important;
+    max-width: 560px !important;
+  }
+  #nav .nav-p {
+    padding: 4px !important;
+    border-radius: 26px !important;
+    min-width: 0 !important;
+  }
+  #nav .nav-p.l {
+    flex: 6 !important;
+    overflow-x: auto !important;
+  }
+  #nav .nav-p.r {
+    flex: 0 0 auto !important;
+  }
+  #nav .nav-p button {
+    min-width: 40px !important;
+    padding: 7px 2px !important;
+    font-size: 9.5px !important;
+    gap: 2px !important;
+    white-space: nowrap !important;
+  }
+  #nav .nav-p button i {
+    font-size: 17px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app > header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .app > header > div:last-child {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    max-width: 100%;
+  }
+  #arenaRoot .ar-card {
+    padding: 15px 14px;
+    border-radius: 22px;
+  }
+  #arenaRoot .ar-row3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  #arenaRoot .ar-row3 > :first-child {
+    grid-column: 1 / -1;
+  }
+  #arenaRoot .ar-row2 {
+    flex-wrap: wrap;
+  }
+  #arenaRoot .ar-row2 > .ar-in {
+    flex: 1 1 150px;
+    min-width: 0;
+  }
+  #arenaRoot .ar-room-item > div,
+  #arenaRoot .ar-friend-id,
+  #arenaRoot .ar-chat-head {
+    min-width: 0;
+    max-width: 100%;
+  }
+  #arenaRoot .ar-quick-chip {
+    white-space: normal;
+    text-align: left;
+  }
+  #plan .pp-wk {
+    gap: 4px;
+  }
+  #plan .pwd {
+    min-width: 0;
+    overflow: hidden;
+  }
+  #plan .pt {
+    flex-wrap: wrap;
+    gap: 8px 10px;
+  }
+  #plan .pt .tx {
+    flex: 1 1 160px;
+    min-width: 0;
+  }
+  #plan .pt .pt-acts {
+    margin-left: auto;
+  }
+  #ts .g3 > label,
+  #ts .g3 .ti {
+    min-width: 0;
+  }
+  #ts .g3 .ti {
+    padding: 10px 8px;
+  }
+}
+</style>
+</body>
+</html>
+
 
 
 

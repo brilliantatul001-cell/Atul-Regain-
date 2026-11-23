@@ -128,6 +128,38 @@ export const DIRTY_DOZEN_CASES: RuleAssertionCase[] = [
     expected: 'PERMISSION_DENIED',
     reason: 'one-time guest import requires existing stats to be strictly zero',
   },
+  {
+    id: 15,
+    name: 'Self-Accepted Friend Request Forgery',
+    path: '/friendships/attacker_uid_victim_uid',
+    operation: 'create',
+    expected: 'PERMISSION_DENIED',
+    reason: 'create enforces status == pending and only recipientUid can accept',
+  },
+  {
+    id: 16,
+    name: 'Cross-User Friend Graph Scraping',
+    path: '/friendships',
+    operation: 'list',
+    expected: 'PERMISSION_DENIED',
+    reason: 'allow list requires request.auth.uid in resource.data.users',
+  },
+  {
+    id: 17,
+    name: 'Post-Finish Room Chat Injection',
+    path: '/rooms/ROOM01/messages/msg1',
+    operation: 'create',
+    expected: 'PERMISSION_DENIED',
+    reason: 'messages require parent room status != finished and active participant membership',
+  },
+  {
+    id: 18,
+    name: 'Spoofed Room Message Sender',
+    path: '/rooms/ROOM01/messages/msg2',
+    operation: 'create',
+    expected: 'PERMISSION_DENIED',
+    reason: 'incoming().senderUid == request.auth.uid prevents sender impersonation',
+  },
 ];
 
 // Static structural verification when running without local Firestore emulator
@@ -142,8 +174,12 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('isValidParticipant('), 'Must define isValidParticipant');
   assert.ok(rulesText.includes('isValidActivity('), 'Must define isValidActivity');
   assert.ok(rulesText.includes('isValidAccountBackup('), 'Must define isValidAccountBackup');
+  assert.ok(rulesText.includes('isValidFriendship('), 'Must define isValidFriendship');
+  assert.ok(rulesText.includes('isValidFriendInvite('), 'Must define isValidFriendInvite');
+  assert.ok(rulesText.includes('isValidRoomMessage('), 'Must define isValidRoomMessage');
   assert.ok(rulesText.includes("existing().status != 'finished'"), 'Must lock finished rooms');
   assert.ok(rulesText.includes("'task_completed'"), 'Must allow task_completed activity kind');
   assert.ok(rulesText.includes('activeTaskTitle.size() <= 60'), 'Must bound activeTaskTitle length');
+  assert.ok(rulesText.includes("data.kind in ['chat', 'rivalry', 'cheer']"), 'Must restrict room message kinds');
 }
 

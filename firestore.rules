@@ -191,9 +191,85 @@ service cloud.firestore {
       data.updatedAt is timestamp;
     }
 
+    function isValidFriendship(data) {
+      return data.keys().hasAll([
+        'pairId', 'users', 'requesterUid', 'recipientUid',
+        'requesterUsername', 'requesterDisplayName',
+        'recipientUsername', 'recipientDisplayName',
+        'status', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'pairId', 'users', 'requesterUid', 'recipientUid',
+        'requesterUsername', 'requesterDisplayName',
+        'recipientUsername', 'recipientDisplayName',
+        'status', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.pairId) &&
+      data.users is list && data.users.size() == 2 &&
+      isValidId(data.users[0]) && isValidId(data.users[1]) &&
+      data.users[0] < data.users[1] &&
+      data.pairId == data.users[0] + '_' + data.users[1] &&
+      isValidId(data.requesterUid) &&
+      isValidId(data.recipientUid) &&
+      data.requesterUid != data.recipientUid &&
+      data.requesterUid in data.users &&
+      data.recipientUid in data.users &&
+      data.requesterUsername is string && data.requesterUsername.size() >= 3 && data.requesterUsername.size() <= 20 && data.requesterUsername.matches('^[a-z0-9_.]{3,20}$') &&
+      data.requesterDisplayName is string && data.requesterDisplayName.size() >= 2 && data.requesterDisplayName.size() <= 24 &&
+      data.recipientUsername is string && data.recipientUsername.size() >= 3 && data.recipientUsername.size() <= 20 && data.recipientUsername.matches('^[a-z0-9_.]{3,20}$') &&
+      data.recipientDisplayName is string && data.recipientDisplayName.size() >= 2 && data.recipientDisplayName.size() <= 24 &&
+      data.status in ['pending', 'accepted'] &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
+    function isValidFriendInvite(data) {
+      return data.keys().hasAll([
+        'id', 'fromUid', 'fromUsername', 'fromDisplayName', 'toUid',
+        'roomCode', 'roomTitle', 'roomMode', 'roomSubject', 'createdAtMs', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'fromUid', 'fromUsername', 'fromDisplayName', 'toUid',
+        'roomCode', 'roomTitle', 'roomMode', 'roomSubject', 'createdAtMs', 'createdAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.fromUid) &&
+      data.fromUsername is string && data.fromUsername.size() >= 3 && data.fromUsername.size() <= 20 && data.fromUsername.matches('^[a-z0-9_.]{3,20}$') &&
+      data.fromDisplayName is string && data.fromDisplayName.size() >= 2 && data.fromDisplayName.size() <= 24 &&
+      isValidId(data.toUid) &&
+      data.fromUid != data.toUid &&
+      isValidRoomCode(data.roomCode) &&
+      data.roomTitle is string && data.roomTitle.size() >= 2 && data.roomTitle.size() <= 48 &&
+      data.roomMode in ['study_room', 'sprint_1v1'] &&
+      data.roomSubject is string && data.roomSubject.size() >= 1 && data.roomSubject.size() <= 24 &&
+      data.createdAtMs is number && data.createdAtMs >= 0 &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidRoomMessage(data) {
+      return data.keys().hasAll([
+        'id', 'roomCode', 'senderUid', 'senderUsername', 'senderDisplayName',
+        'allowedUids', 'kind', 'text', 'createdAtMs', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'roomCode', 'senderUid', 'senderUsername', 'senderDisplayName',
+        'allowedUids', 'kind', 'text', 'createdAtMs', 'createdAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidRoomCode(data.roomCode) &&
+      isValidId(data.senderUid) &&
+      data.senderUsername is string && data.senderUsername.size() >= 3 && data.senderUsername.size() <= 20 && data.senderUsername.matches('^[a-z0-9_.]{3,20}$') &&
+      data.senderDisplayName is string && data.senderDisplayName.size() >= 2 && data.senderDisplayName.size() <= 24 &&
+      data.allowedUids is list && data.allowedUids.size() >= 1 && data.allowedUids.size() <= 20 && data.allowedUids[0] is string &&
+      data.kind in ['chat', 'rivalry', 'cheer'] &&
+      data.text is string && data.text.size() >= 1 && data.text.size() <= 140 &&
+      data.createdAtMs is number && data.createdAtMs >= 0 &&
+      data.createdAt is timestamp;
+    }
+
     match /players/{userId} {
       allow get: if isVerifiedUser() && isValidId(userId);
-      allow list: if isVerifiedUser() && resource.data.xp >= 0;
+      allow list: if isVerifiedUser() && (resource.data.xp >= 0 || resource.data.username is string);
 
       allow create: if isOwner(userId) &&
         isValidId(userId) &&
@@ -423,6 +499,111 @@ service cloud.firestore {
 
         allow delete: if isOwner(participantUid) && isValidRoomCode(roomCode) && isValidId(participantUid);
       }
+
+      match /messages/{messageId} {
+        allow get: if isVerifiedUser() &&
+          isValidRoomCode(roomCode) &&
+          isValidId(messageId) &&
+          exists(/databases/$(database)/documents/rooms/$(roomCode)) &&
+          get(/databases/$(database)/documents/rooms/$(roomCode)).data.status != 'finished' &&
+          request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds;
+
+        allow list: if isVerifiedUser() &&
+          (request.auth.uid in resource.data.allowedUids || resource.data.senderUid == request.auth.uid);
+
+        allow create: if isVerifiedUser() &&
+          isValidRoomCode(roomCode) &&
+          isValidId(messageId) &&
+          isValidRoomMessage(incoming()) &&
+          incoming().id == messageId &&
+          incoming().roomCode == roomCode &&
+          incoming().senderUid == request.auth.uid &&
+          request.auth.uid in incoming().allowedUids &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/rooms/$(roomCode)) &&
+          get(/databases/$(database)/documents/rooms/$(roomCode)).data.status != 'finished' &&
+          request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds &&
+          get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds.hasAll(incoming().allowedUids);
+
+        allow update: if false;
+
+        allow delete: if isVerifiedUser() &&
+          isValidRoomCode(roomCode) &&
+          isValidId(messageId) && (
+            request.auth.uid == existing().senderUid ||
+            request.auth.uid in existing().allowedUids ||
+            (exists(/databases/$(database)/documents/rooms/$(roomCode)) &&
+              request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds)
+          );
+      }
+    }
+
+    match /friendships/{pairId} {
+      allow get: if isVerifiedUser() &&
+        isValidId(pairId) &&
+        (resource == null || request.auth.uid in resource.data.users);
+
+      allow list: if isVerifiedUser() &&
+        request.auth.uid in resource.data.users;
+
+      allow create: if isVerifiedUser() &&
+        isValidId(pairId) &&
+        isValidFriendship(incoming()) &&
+        incoming().pairId == pairId &&
+        incoming().status == 'pending' &&
+        incoming().requesterUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time &&
+        exists(/databases/$(database)/documents/players/$(incoming().requesterUid)) &&
+        exists(/databases/$(database)/documents/players/$(incoming().recipientUid));
+
+      allow update: if isVerifiedUser() &&
+        isValidId(pairId) &&
+        isValidFriendship(incoming()) &&
+        incoming().pairId == existing().pairId &&
+        incoming().users == existing().users &&
+        incoming().requesterUid == existing().requesterUid &&
+        incoming().recipientUid == existing().recipientUid &&
+        incoming().requesterUsername == existing().requesterUsername &&
+        incoming().requesterDisplayName == existing().requesterDisplayName &&
+        incoming().recipientUsername == existing().recipientUsername &&
+        incoming().recipientDisplayName == existing().recipientDisplayName &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        existing().status == 'pending' &&
+        incoming().status == 'accepted' &&
+        request.auth.uid == existing().recipientUid &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'updatedAt']);
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(pairId) &&
+        request.auth.uid in existing().users;
+    }
+
+    match /friendInvites/{inviteId} {
+      allow get: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        (resource == null || request.auth.uid == resource.data.toUid || request.auth.uid == resource.data.fromUid);
+
+      allow list: if isVerifiedUser() &&
+        (resource.data.toUid == request.auth.uid || resource.data.fromUid == request.auth.uid);
+
+      allow create: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        isValidFriendInvite(incoming()) &&
+        incoming().id == inviteId &&
+        incoming().fromUid == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/players/$(incoming().toUid)) &&
+        exists(/databases/$(database)/documents/rooms/$(incoming().roomCode)) &&
+        get(/databases/$(database)/documents/rooms/$(incoming().roomCode)).data.status != 'finished' &&
+        request.auth.uid in get(/databases/$(database)/documents/rooms/$(incoming().roomCode)).data.participantIds;
+
+      allow update: if false;
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(inviteId) &&
+        (request.auth.uid == existing().toUid || request.auth.uid == existing().fromUid);
     }
   }
 }

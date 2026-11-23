@@ -695,14 +695,15 @@ $('focusBtn').addEventListener('click',()=>{setTimeout(()=>{fmRender();if(window
   function syncClassicArenaHud(){
     const sync=window.LeaveItArenaSync;if(!sync)return;
     const rm=sync.getRoom();
+    const invs=sync.getInvites?sync.getInvites():[];
     const clBar=$('clArenaBar'),fmBar=$('fmArenaBar');
     if(clBar){
-      if(rm){clBar.hidden=false;clBar.innerHTML=sync.renderRoomHudHtml({showOpenTimer:true})}
-      else{clBar.hidden=true;clBar.innerHTML=''}
+      if(rm||invs.length){clBar.hidden=false;sync.mountRoomHud(clBar,{showOpenTimer:true})}
+      else{clBar.hidden=true;clBar.innerHTML='';delete clBar.dataset.hudSig}
     }
     if(fmBar){
-      if(rm){fmBar.hidden=false;fmBar.innerHTML=sync.renderRoomHudHtml({compact:true})}
-      else{fmBar.hidden=true;fmBar.innerHTML=''}
+      if(rm){fmBar.hidden=false;sync.mountRoomHud(fmBar,{compact:true})}
+      else{fmBar.hidden=true;fmBar.innerHTML='';delete fmBar.dataset.hudSig}
     }
   }
   if(window.LeaveItArenaSync){
@@ -2110,10 +2111,25 @@ body.focus #rgNav{display:none!important}
 .ar-sync-hud .ash-l{min-width:0;flex:1}
 .ar-sync-hud .ash-l b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ar-sync-hud .ash-l small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
-.ar-sync-hud .ash-r{display:flex;align-items:center;gap:8px;flex:none}
+.ar-sync-hud .ash-r{display:flex;align-items:center;gap:6px;flex:none;flex-wrap:wrap}
 .ar-sync-hud .ash-clk{font-weight:900;font-size:15px;font-variant-numeric:tabular-nums;color:var(--accent);background:color-mix(in srgb,var(--bg) 55%,transparent);padding:5px 10px;border-radius:99px}
 .ar-sync-hud .ash-btn{border:0;border-radius:99px;padding:7px 12px;background:var(--accent);color:#06241a;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap}
 .ar-sync-hud .ash-btn.ghost{background:var(--track);color:var(--text)}
+.ar-sync-hud .ash-msg{flex-basis:100%;font-size:11.5px;padding:6px 10px;border-radius:10px;background:color-mix(in srgb,var(--bg) 62%,transparent);border-left:3px solid var(--accent);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar-sync-hud .ash-msg.rivalry{border-left-color:var(--warn)}
+.ar-sync-hud .ash-msg.cheer{border-left-color:var(--ok)}
+.ar-sync-hud .ash-chat-box{flex-basis:100%;display:grid;gap:7px;padding-top:8px;margin-top:2px;border-top:1px solid color-mix(in srgb,var(--track) 80%,transparent)}
+.ar-sync-hud .ash-msgs{display:grid;gap:4px;max-height:105px;overflow-y:auto;text-align:left}
+.ar-sync-hud .ash-m-row{font-size:11.5px;line-height:1.35;padding:4px 8px;border-radius:8px;background:color-mix(in srgb,var(--bg) 65%,transparent);border-left:2.5px solid var(--accent);word-break:break-word}
+.ar-sync-hud .ash-m-row.rivalry{border-left-color:var(--warn)}
+.ar-sync-hud .ash-m-row.cheer{border-left-color:var(--ok)}
+.ar-sync-hud .ash-chat-chips{display:flex;flex-wrap:wrap;gap:5px}
+.ar-sync-hud .ash-qchip{border:1px solid var(--track);background:color-mix(in srgb,var(--bg) 75%,transparent);color:var(--text);border-radius:99px;padding:4px 9px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.ar-sync-hud .ash-qchip.rivalry{border-color:color-mix(in srgb,var(--warn) 45%,var(--track));color:var(--warn)}
+.ar-sync-hud .ash-qchip.cheer{border-color:color-mix(in srgb,var(--ok) 45%,var(--track));color:var(--ok)}
+.ar-sync-hud .ash-chat-form{display:flex;gap:6px;align-items:center}
+.ar-sync-hud .ash-chat-in{flex:1;min-width:0;padding:7px 11px;border-radius:99px;border:1px solid var(--track);background:var(--bg);color:var(--text);font:inherit;font-size:12px}
+.ar-sync-hud .ash-chat-in:focus{outline:none;border-color:var(--accent)}
 #rgArenaBar{margin-bottom:14px}
 #rgArenaHud{width:min(460px,100%);margin:0}
 #rgS .rg-task-done{background:var(--ok);color:#06241a;border:0;padding:12px 20px;border-radius:99px;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
@@ -2141,10 +2157,12 @@ body.planner-task-focus #fmDoneTask{display:flex!important}
 window.LeaveItArenaSync=(function(){
   const XP_CACHE_KEY='leaveit_pl_xp_v1';
   let room=null,user=null,linkedTask=null,prefillMatch=null;
+  let messages=[],friends=[],invites=[],hudChatOpen=false;
   let rgProvider=null,classicProvider=null;
   let lastPushedState='',lastPushedTask='',lastTickAt=Date.now();
   const roomFocusedMs={};
 
+  const escS=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
   function loadXpCache(){try{return JSON.parse(localStorage.getItem(XP_CACHE_KEY)||'{}')}catch(e){return{}}}
   function saveXpCache(m){try{localStorage.setItem(XP_CACHE_KEY,JSON.stringify(m))}catch(e){}}
   function hashKey(str){
@@ -2222,12 +2240,28 @@ window.LeaveItArenaSync=(function(){
   function setRoom(next){
     const prevStatus=room&&room.status;
     room=next||null;
-    if(!room){lastPushedState='';lastPushedTask=''}
+    if(!room||room.status==='finished'){
+      if(!room){lastPushedState='';lastPushedTask=''}
+      messages=[];
+      hudChatOpen=false;
+    }
     try{window.dispatchEvent(new CustomEvent('leaveit-room-sync',{detail:{room,prevStatus}}))}catch(e){}
   }
   function setUser(next){
     user=next||null;
+    if(!user){friends=[];invites=[];messages=[];hudChatOpen=false}
     try{window.dispatchEvent(new CustomEvent('leaveit-arena-user',{detail:{user}}))}catch(e){}
+  }
+  function setMessages(next){
+    messages=Array.isArray(next)?next:[];
+    try{window.dispatchEvent(new CustomEvent('leaveit-room-messages',{detail:{messages}}))}catch(e){}
+  }
+  function setFriends(next){
+    friends=Array.isArray(next)?next:[];
+  }
+  function setInvites(next){
+    invites=Array.isArray(next)?next:[];
+    try{window.dispatchEvent(new CustomEvent('leaveit-room-invites',{detail:{invites}}))}catch(e){}
   }
   function emitToast(msg){
     const o=document.getElementById('rgTo');
@@ -2268,24 +2302,86 @@ window.LeaveItArenaSync=(function(){
   }
   function renderRoomHudHtml(opts){
     const rm=room;
-    if(!rm)return '';
+    if(!rm){
+      const inv=invites[0];
+      if(!inv)return '';
+      return `<div class="ar-sync-hud">
+        <div class="ash-l"><b>📩 ${escS(inv.fromDisplayName)} invited you · ${escS(inv.roomCode)}</b><small>${escS(inv.roomTitle)} (${inv.roomMode==='sprint_1v1'?'1v1':'Room'} · ${escS(inv.roomSubject)})</small></div>
+        <div class="ash-r"><button type="button" class="ash-btn" data-ar-hud="joinInvite" data-code="${escS(inv.roomCode)}" data-inv="${escS(inv.id)}">Join</button><button type="button" class="ash-btn ghost" data-ar-hud="dismissInvite" data-inv="${escS(inv.id)}">✕</button></div>
+      </div>`;
+    }
     const me=user&&Array.isArray(rm.participants)?rm.participants.find(p=>p.userId===user.id):null;
     const myRank=me?(rm.participants.findIndex(p=>p.userId===user.id)+1):0;
     const isFin=rm.status==='finished',isCd=rm.status==='countdown',isAct=rm.status==='active';
     const clkTxt=isFin?'DONE':isCd?(getCountdownSec(rm)+'s'):isAct?fmtClock(getRemainingSec(rm)):fmtClock(rm.durationSec);
     const statTxt=isFin?(rm.winnerDisplayName?'🏆 Winner: '+rm.winnerDisplayName:'🏆 Match finished'):isCd?'Starting in…':isAct?('Live'+(myRank?' · #'+myRank+'/'+rm.participants.length:'')+(me?' · '+me.sprintScore+' pts':'')):'In Lobby · Waiting to start';
     const actionBtn=(opts&&opts.showOpenTimer&&!isFin)?`<button type="button" class="ash-btn" data-ar-hud="openTimer">Sync Timer</button>`:'';
+    const chatBtn=!isFin?`<button type="button" class="ash-btn ghost" data-ar-hud="toggleChat" title="Session quick chat &amp; rivalry">${hudChatOpen?'✕ Chat':('💬'+(messages.length?' '+messages.length:''))}</button>`:'';
     const arenaBtn=`<button type="button" class="ash-btn ${opts&&opts.compact?'ghost':''}" data-ar-hud="goArena">${isFin?'Results':'Arena'}</button>`;
+    const latest=!isFin&&messages.length?messages[messages.length-1]:null;
+    const previewHtml=!hudChatOpen&&latest?`<div class="ash-msg ${escS(latest.kind)}"><b>${escS(latest.senderDisplayName)}:</b> ${escS(latest.text)} <span style="opacity:.55;font-size:10px">· vanishes on end</span></div>`:'';
+    const recentMsgs=messages.slice(-4);
+    const chatDrawerHtml=!isFin&&hudChatOpen?`<div class="ash-chat-box">
+      <div class="ash-msgs">${recentMsgs.length?recentMsgs.map(m=>`<div class="ash-m-row ${escS(m.kind)}"><b>${m.senderUid===(user&&user.id)?'You':escS(m.senderDisplayName)}:</b> ${escS(m.text)}</div>`).join(''):'<div style="font-size:11px;color:var(--muted)">Ephemeral session chat — messages vanish when this session ends.</div>'}</div>
+      <div class="ash-chat-chips">
+        <button type="button" class="ash-qchip rivalry" data-ar-hud-q="Catch up! 🔥" data-kind="rivalry">🔥 Catch up!</button>
+        <button type="button" class="ash-qchip rivalry" data-ar-hud-q="I'm taking #1 🏆" data-kind="rivalry">🏆 Coming for #1</button>
+        <button type="button" class="ash-qchip cheer" data-ar-hud-q="Good luck! 🤝" data-kind="cheer">🤝 Good luck!</button>
+        <button type="button" class="ash-qchip cheer" data-ar-hud-q="Nice solve! 👏" data-kind="cheer">👏 Nice solve!</button>
+      </div>
+      <form class="ash-chat-form" data-ar-hud-chat="1">
+        <input type="text" class="ash-chat-in" maxlength="140" placeholder="Quick message (auto-vanishes)…" autocomplete="off">
+        <button type="submit" class="ash-btn">Send</button>
+      </form>
+    </div>`:'';
     return `<div class="ar-sync-hud ${isFin?'finished':''}">
-      <div class="ash-l"><b>${rm.mode==='sprint_1v1'?'⚔️':'🏟'} ${String(rm.title||'Arena Room').replace(/[<>&"]/g,'')} · ${rm.roomCode}</b><small>${String(statTxt).replace(/[<>&"]/g,'')}${linkedTask&&linkedTask.task?' · 📋 '+String(linkedTask.task).replace(/[<>&"]/g,''):''}</small></div>
-      <div class="ash-r"><span class="ash-clk">${clkTxt}</span>${actionBtn}${arenaBtn}</div>
+      <div class="ash-l"><b>${rm.mode==='sprint_1v1'?'⚔️':'🏟'} ${escS(rm.title||'Arena Room')} · ${escS(rm.roomCode)}</b><small>${escS(statTxt)}${linkedTask&&linkedTask.task?' · 📋 '+escS(linkedTask.task):''}</small></div>
+      <div class="ash-r"><span class="ash-clk">${clkTxt}</span>${chatBtn}${actionBtn}${arenaBtn}</div>
+      ${previewHtml}
+      ${chatDrawerHtml}
     </div>`;
+  }
+  function mountRoomHud(el,opts){
+    if(!el)return;
+    const rm=room;
+    const isFin=rm&&rm.status==='finished',isCd=rm&&rm.status==='countdown',isAct=rm&&rm.status==='active';
+    const clkTxt=rm?(isFin?'DONE':isCd?(getCountdownSec(rm)+'s'):isAct?fmtClock(getRemainingSec(rm)):fmtClock(rm.durationSec)):'';
+    const activeInput=el.contains(document.activeElement)&&document.activeElement&&document.activeElement.tagName==='INPUT';
+    const lastMsg=messages.length?messages[messages.length-1].id:'';
+    const invId=invites.length?invites[0].id:'';
+    const me=rm&&user&&Array.isArray(rm.participants)?rm.participants.find(p=>p.userId===user.id):null;
+    const sig=[rm?rm.roomCode:'',rm?rm.status:'',me?me.sprintScore:'',linkedTask?linkedTask.task:'',hudChatOpen?'1':'0',messages.length,lastMsg,invId,opts&&opts.showOpenTimer?'1':'0',opts&&opts.compact?'1':'0'].join('|');
+    if(activeInput||el.dataset.hudSig===sig){
+      const clkEl=el.querySelector('.ash-clk');
+      if(clkEl&&clkTxt)clkEl.textContent=clkTxt;
+      if(activeInput){
+        const msgsEl=el.querySelector('.ash-msgs');
+        if(msgsEl){
+          const recent=messages.slice(-4);
+          const nextH=recent.length?recent.map(m=>`<div class="ash-m-row ${escS(m.kind)}"><b>${m.senderUid===(user&&user.id)?'You':escS(m.senderDisplayName)}:</b> ${escS(m.text)}</div>`).join(''):'<div style="font-size:11px;color:var(--muted)">Ephemeral session chat — messages vanish when this session ends.</div>';
+          if(msgsEl.innerHTML!==nextH){msgsEl.innerHTML=nextH;msgsEl.scrollTop=msgsEl.scrollHeight}
+        }
+      }
+      return;
+    }
+    el.dataset.hudSig=sig;
+    el.innerHTML=renderRoomHudHtml(opts);
+    const msgsEl=el.querySelector('.ash-msgs');
+    if(msgsEl)msgsEl.scrollTop=msgsEl.scrollHeight;
   }
   return {
     getRoom:()=>room,
     setRoom,
     getUser:()=>user,
     setUser,
+    getMessages:()=>messages,
+    setMessages,
+    getFriends:()=>friends,
+    setFriends,
+    getInvites:()=>invites,
+    setInvites,
+    toggleHudChat:()=>{hudChatOpen=!hudChatOpen;try{window.dispatchEvent(new CustomEvent('leaveit-room-messages',{detail:{messages}}))}catch(e){}},
+    isHudChatOpen:()=>hudChatOpen,
     getLinkedTask:()=>linkedTask,
     setLinkedTask:t=>{linkedTask=t||null;notifyStateChange(true)},
     getPrefillMatch:()=>{const p=prefillMatch;prefillMatch=null;return p},
@@ -2302,6 +2398,7 @@ window.LeaveItArenaSync=(function(){
     taskSessionId,
     subjFromCode,
     renderRoomHudHtml,
+    mountRoomHud,
     emitToast,
     openArenaTab:()=>{
       const root=document.documentElement;
@@ -2314,6 +2411,12 @@ window.LeaveItArenaSync=(function(){
   };
 })();
 document.addEventListener('click',e=>{
+  const qBtn=e.target.closest('[data-ar-hud-q]');
+  if(qBtn){
+    const text=qBtn.dataset.arHudQ||'',kind=qBtn.dataset.kind||'chat';
+    if(text)window.dispatchEvent(new CustomEvent('leaveit-arena-send-chat',{detail:{text,kind}}));
+    return;
+  }
   const hudBtn=e.target.closest('[data-ar-hud]');
   if(!hudBtn)return;
   const act=hudBtn.dataset.arHud;
@@ -2327,7 +2430,23 @@ document.addEventListener('click',e=>{
   }else if(act==='openTimer'){
     const rm=sync.getRoom();
     if(rm&&typeof window.LeaveItGoToSyncedTimer==='function')window.LeaveItGoToSyncedTimer(rm);
+  }else if(act==='toggleChat'){
+    sync.toggleHudChat();
+  }else if(act==='joinInvite'){
+    window.dispatchEvent(new CustomEvent('leaveit-arena-invite-action',{detail:{action:'join',roomCode:hudBtn.dataset.code,inviteId:hudBtn.dataset.inv}}));
+  }else if(act==='dismissInvite'){
+    window.dispatchEvent(new CustomEvent('leaveit-arena-invite-action',{detail:{action:'dismiss',inviteId:hudBtn.dataset.inv}}));
   }
+});
+document.addEventListener('submit',e=>{
+  const form=e.target.closest('form[data-ar-hud-chat]');
+  if(!form)return;
+  e.preventDefault();
+  const inp=form.querySelector('.ash-chat-in');
+  const text=(inp&&inp.value||'').trim();
+  if(!text)return;
+  if(inp)inp.value='';
+  window.dispatchEvent(new CustomEvent('leaveit-arena-send-chat',{detail:{text,kind:'chat'}}));
 });
 const K='leaveit_pl';let P={};try{P=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}
 const sv=()=>{try{localStorage.setItem(K,JSON.stringify(P))}catch(e){}};
@@ -3760,8 +3879,8 @@ function completeRgTask(fromTimerFinish){
 }
 function home(){const d=day(),p=Math.min(100,Math.round(d.m/F.goal*100)),n=(typeof S!=='undefined'&&S.name)?', '+esc(S.name):'',h=new Date().getHours();
  const q=UM==='q',pr=q?100:p,an=2*Math.PI*pr/100,kx=(120+100*Math.cos(an)).toFixed(1),ky=(120+100*Math.sin(an)).toFixed(1),T0=(typeof H!=='undefined'&&typeof dk==='function'&&H[dk()])||{};
- const s=syncObj(),rm=s?s.getRoom():null;
- const barHtml=rm?`<div id="rgArenaBar">${s.renderRoomHudHtml({showOpenTimer:true})}</div>`:'<div id="rgArenaBar" hidden></div>';
+ const s=syncObj(),rm=s?s.getRoom():null,invs=s&&s.getInvites?s.getInvites():[];
+ const barHtml=(rm||(invs&&invs.length))?`<div id="rgArenaBar">${s.renderRoomHudHtml({showOpenTimer:true})}</div>`:'<div id="rgArenaBar" hidden></div>';
  g('rgMain').innerHTML=`<div class="top"><div><h1>${h<5?'Late night':h<12?'Good morning':h<18?'Good afternoon':'Good evening'}${n}</h1><p class="sub">Focus. Block. Regain time.</p></div><span class="pill">🔥 ${streak()}</span></div>
 ${barHtml}
 <div class="seg2"><i></i><button data-a="um" data-v="f" class="${q?'':'on'}">🎯 Focus</button><button data-a="um" data-v="q" class="${q?'on':''}">✍️ Questions</button></div>
@@ -3792,7 +3911,9 @@ function updateRgArenaHud(){
  const ah=g('rgArenaHud'),s=syncObj();
  if(!ah)return;
  const rm=s?s.getRoom():null;
- ah.innerHTML=rm?s.renderRoomHudHtml({compact:true}):'';
+ if(rm&&s&&s.mountRoomHud){s.mountRoomHud(ah,{compact:true})}
+ else if(rm){ah.innerHTML=s.renderRoomHudHtml({compact:true})}
+ else{ah.innerHTML='';delete ah.dataset.hudSig}
 }
 function qui(){const l=Math.max(0,QB.left),t=QB.tot||1,s=g('rgS'),rm=activeSyncRoom();updateRgArenaHud();if(g('rgTaskDone'))g('rgTaskDone').style.display='none';
  if(rm&&rm.status==='countdown'){const cs=syncObj()?syncObj().getCountdownSec(rm):0;g('rgTm').textContent=cs+'s';g('rgArc').style.strokeDashoffset=0;knob(1);g('rgPh').textContent='Match starting in…';g('rgT').textContent='Get ready · Question '+QB.q;g('rgPs').style.display='none';g('rgEnd').textContent='Exit';g('rgBrk').style.display='none';g('rgQb').style.display='none';g('rgCp').style.display='none';return}
@@ -3915,6 +4036,8 @@ window.addEventListener('leaveit-room-sync',ev=>{
   }
   if(root.dataset.rg==='home')render();
 });
+window.addEventListener('leaveit-room-messages',()=>{if(live)updateRgArenaHud();else if(root.dataset.rg==='home'){const b=g('rgArenaBar'),s=syncObj();if(b&&s){s.mountRoomHud(b,{showOpenTimer:true})}}});
+window.addEventListener('leaveit-room-invites',()=>{if(root.dataset.rg==='home')render()});
 root.dataset.rg='home';render();
 })();
 </script>
@@ -4507,7 +4630,8 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     border-color: var(--accent);
   }
 
-  #arenaRoot .ar-seg3 {
+  #arenaRoot .ar-seg3,
+  #arenaRoot .ar-seg4 {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     background: var(--card);
@@ -4516,7 +4640,17 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     padding: 4px;
     gap: 4px;
   }
+  #arenaRoot .ar-seg4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  @media (max-width: 560px) {
+    #arenaRoot .ar-seg4 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      border-radius: 22px;
+    }
+  }
   #arenaRoot .ar-seg3 button,
+  #arenaRoot .ar-seg4 button,
   #arenaRoot .ar-seg2 button {
     border: 0;
     border-radius: 99px;
@@ -4528,9 +4662,12 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: background .18s, color .18s;
   }
   #arenaRoot .ar-seg3 button.on,
+  #arenaRoot .ar-seg4 button.on,
   #arenaRoot .ar-seg2 button.on {
     background: var(--accent);
     color: #06241a;
@@ -4806,11 +4943,260 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     line-height: 1.05;
   }
 
+  /* Friends, Invites & Ephemeral Room Chat */
+  #arenaRoot .ar-invite-banner {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  #arenaRoot .ar-invite-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--accent) 12%, var(--card));
+    border: 1px solid color-mix(in srgb, var(--accent) 38%, var(--track));
+  }
+  #arenaRoot .ar-friend-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--track);
+  }
+  #arenaRoot .ar-friend-row:last-child { border-bottom: 0; }
+  #arenaRoot .ar-friend-id {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    min-width: 0;
+    flex: 1;
+  }
+  #arenaRoot .ar-friend-av {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--accent) 18%, transparent);
+    color: var(--accent);
+    font-weight: 800;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  #arenaRoot .ar-friend-meta {
+    min-width: 0;
+  }
+  #arenaRoot .ar-friend-meta b {
+    display: block;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #arenaRoot .ar-friend-meta small {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+  #arenaRoot .ar-friend-acts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+  }
+  #arenaRoot .ar-mini-btn {
+    border: 1px solid var(--track);
+    background: transparent;
+    color: var(--text);
+    border-radius: 99px;
+    padding: 4px 10px;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #arenaRoot .ar-mini-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  #arenaRoot .ar-mini-btn.ok {
+    background: color-mix(in srgb, var(--ok) 18%, transparent);
+    border-color: color-mix(in srgb, var(--ok) 45%, transparent);
+    color: var(--ok);
+  }
+  #arenaRoot .ar-badge-mini {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    background: color-mix(in srgb, var(--track) 65%, transparent);
+    white-space: nowrap;
+  }
+  #arenaRoot .ar-badge-mini.ok {
+    color: var(--ok);
+    background: color-mix(in srgb, var(--ok) 14%, transparent);
+  }
+  #arenaRoot .ar-invite-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 12px;
+    padding: 12px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--bg) 65%, var(--card));
+    border: 1px solid var(--track);
+  }
+  #arenaRoot .ar-invite-chip {
+    border: 1px solid color-mix(in srgb, var(--accent) 40%, var(--track));
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    color: var(--text);
+    border-radius: 99px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  #arenaRoot .ar-invite-chip:hover {
+    background: var(--accent);
+    color: #06241a;
+  }
+  #arenaRoot .ar-chat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  #arenaRoot .ar-chat-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  #arenaRoot .ar-ephemeral-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 11px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--warn);
+    background: color-mix(in srgb, var(--warn) 13%, transparent);
+    border: 1px solid color-mix(in srgb, var(--warn) 32%, transparent);
+  }
+  #arenaRoot .ar-chat-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 240px;
+    overflow-y: auto;
+    padding: 12px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--bg) 72%, var(--card));
+    border: 1px solid var(--track);
+  }
+  #arenaRoot .ar-chat-msg {
+    max-width: 88%;
+    padding: 8px 12px;
+    border-radius: 14px;
+    background: var(--card);
+    border: 1px solid var(--track);
+    border-left: 3px solid var(--accent);
+    font-size: 13px;
+    line-height: 1.4;
+    word-break: break-word;
+    align-self: flex-start;
+  }
+  #arenaRoot .ar-chat-msg.me {
+    align-self: flex-end;
+    background: color-mix(in srgb, var(--accent) 13%, var(--card));
+    border-color: color-mix(in srgb, var(--accent) 32%, var(--track));
+    border-left-width: 1px;
+    border-right: 3px solid var(--accent);
+  }
+  #arenaRoot .ar-chat-msg.rivalry {
+    border-left-color: var(--warn);
+  }
+  #arenaRoot .ar-chat-msg.me.rivalry {
+    border-left-color: color-mix(in srgb, var(--accent) 32%, var(--track));
+    border-right-color: var(--warn);
+  }
+  #arenaRoot .ar-chat-msg.cheer {
+    border-left-color: var(--ok);
+  }
+  #arenaRoot .ar-chat-msg.me.cheer {
+    border-left-color: color-mix(in srgb, var(--accent) 32%, var(--track));
+    border-right-color: var(--ok);
+  }
+  #arenaRoot .ar-chat-who {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 3px;
+  }
+  #arenaRoot .ar-chat-who b {
+    color: var(--text);
+  }
+  #arenaRoot .ar-quick-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  #arenaRoot .ar-quick-chip {
+    border: 1px solid var(--track);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 99px;
+    padding: 6px 11px;
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  #arenaRoot .ar-quick-chip.rivalry {
+    border-color: color-mix(in srgb, var(--warn) 45%, var(--track));
+    color: var(--warn);
+  }
+  #arenaRoot .ar-quick-chip.cheer {
+    border-color: color-mix(in srgb, var(--ok) 45%, var(--track));
+    color: var(--ok);
+  }
+  #arenaRoot .ar-chat-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  #arenaRoot .ar-vanish-note {
+    padding: 14px 16px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--warn) 10%, var(--card));
+    border: 1px dashed color-mix(in srgb, var(--warn) 42%, var(--track));
+    color: var(--muted);
+    font-size: 13px;
+    text-align: center;
+  }
+
   /* Batman Mode Integration */
   html[data-batman="on"] #arenaRoot h1,
   html[data-batman="on"] #arenaRoot h3,
   html[data-batman="on"] #arenaRoot .ar-go,
   html[data-batman="on"] #arenaRoot .ar-seg3 button,
+  html[data-batman="on"] #arenaRoot .ar-seg4 button,
   html[data-batman="on"] #arenaRoot .ar-clock {
     font-family: Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif !important;
     letter-spacing: .05em;
@@ -4821,6 +5207,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   }
   html[data-batman="on"] #arenaRoot .ar-go,
   html[data-batman="on"] #arenaRoot .ar-seg3 button.on,
+  html[data-batman="on"] #arenaRoot .ar-seg4 button.on,
   html[data-batman="on"] #arenaRoot .ar-seg2 button.on,
   html[data-batman="on"] #arenaRoot .ar-ch button.on {
     background: var(--bt, var(--by, #f5c518)) !important;
@@ -5114,14 +5501,19 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     editingProfile:false,
     editUser:'',
     editDisp:'',
-    subTab:'lobby', // lobby | duel | leaderboard
+    subTab:'lobby', // lobby | duel | friends | leaderboard
     createMode:'study_room',
     rooms:[],
     activeRoom:null,
+    friends:[],
+    friendProfiles:{},
+    invites:[],
+    roomMessages:[],
     lb:[],
     lbSort:'xp',
     lbTime:'all',
     lbQ:'',
+    lbOnlyFriends:false,
     lbLoading:false,
     err:'',
     busy:false,
@@ -5132,10 +5524,15 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     createSubj:'Maths',
     createDur:25,
     selectedPlannerIdx:-1,
-    pendingTask:null
+    pendingTask:null,
+    friendDraft:'',
+    chatDraft:'',
+    vanishNoticeRoom:'',
+    invitePickerOpen:false,
+    targetDuelFriend:null
   };
 
-  let unsubAuth=null,unsubRooms=null,unsubRoom=null,unsubLogs=null,claimedFinished=new Set();
+  let unsubAuth=null,unsubRooms=null,unsubRoom=null,unsubLogs=null,unsubFriends=null,unsubInvites=null,unsubRoomMsgs=null,msgsRoomCode='',lastFriendProfSig='',claimedFinished=new Set(),seenMsgIds=new Set(),msgStreamSeeded=false,seenInvIds=new Set(),invStreamSeeded=false;
 
   function todayPlanKey(){
     if(typeof dk==='function')return dk();
@@ -5270,8 +5667,163 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     return root.dataset.ui==='regain'?root.dataset.rg==='arena':document.body.dataset.tab==='arena';
   }
 
+  function acceptedFriendUids(){
+    const set=new Set();
+    (ST.friends||[]).forEach(f=>{if(f.status==='accepted'&&f.uid)set.add(f.uid)});
+    return set;
+  }
+
+  function friendInfoFor(uid){
+    if(!uid)return {state:'none',pairId:''};
+    if(ST.user&&uid===ST.user.id)return {state:'self',pairId:''};
+    const f=(ST.friends||[]).find(x=>x.uid===uid);
+    if(!f)return {state:'none',pairId:''};
+    if(f.status==='accepted')return {state:'friend',pairId:f.pairId};
+    if(f.direction==='incoming')return {state:'incoming',pairId:f.pairId};
+    return {state:'outgoing',pairId:f.pairId};
+  }
+
+  function renderFriendActionBtn(uid){
+    const info=friendInfoFor(uid);
+    if(info.state==='self')return '';
+    if(info.state==='friend')return '<span class="ar-badge-mini ok">✓ Friend</span>';
+    if(info.state==='incoming')return `<button type="button" data-ar-accept-pair="${escHtml(info.pairId)}" class="ar-mini-btn ok">Accept</button>`;
+    if(info.state==='outgoing')return '<span class="ar-badge-mini">Pending</span>';
+    return `<button type="button" data-ar-add-uid="${escHtml(uid)}" class="ar-mini-btn">+ Friend</button>`;
+  }
+
+  function buildChatFeedHtml(msgs){
+    if(!msgs||!msgs.length){
+      return '<p class="ar-sub" style="margin:4px 0;text-align:center;font-size:12px">No messages yet. Drop a good luck cheer or rivalry taunt — everything vanishes automatically when the session ends.</p>';
+    }
+    return msgs.map(m=>{
+      const isMe=Boolean(ST.user&&m.senderUid===ST.user.id);
+      const tStr=m.createdAtMs?new Date(m.createdAtMs).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'';
+      const tag=m.kind==='rivalry'?'🔥 Rivalry':m.kind==='cheer'?'🤝 Good':'';
+      return `<div class="ar-chat-msg ${isMe?'me':''} ${escHtml(m.kind||'chat')}">
+        <div class="ar-chat-who"><b>${isMe?'You':escHtml(m.senderDisplayName)}</b><span>@${escHtml(m.senderUsername)}</span>${tag?`<span>· ${tag}</span>`:''}${tStr?`<span style="margin-left:auto">${escHtml(tStr)}</span>`:''}</div>
+        <div>${escHtml(m.text)}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function patchRoomChatFeed(){
+    const feed=document.getElementById('arChatFeed');
+    if(!feed)return;
+    feed.innerHTML=buildChatFeedHtml(ST.roomMessages);
+    feed.scrollTop=feed.scrollHeight;
+  }
+
+  function renderArenaSafe(){
+    if(!isArenaVisible())return;
+    const ae=document.activeElement;
+    if(ae&&arenaRoot.contains(ae)&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)){
+      if(ae.id==='arChatIn'){
+        patchRoomChatFeed();
+      }
+      return;
+    }
+    renderArena();
+  }
+
+  function stopRoomMsgsSub(){
+    if(unsubRoomMsgs){try{unsubRoomMsgs()}catch(e){}unsubRoomMsgs=null}
+    msgsRoomCode='';
+    seenMsgIds.clear();
+    msgStreamSeeded=false;
+  }
+
+  function startRoomMsgsSub(roomCode){
+    stopRoomMsgsSub();
+    const fb=getFB();
+    if(!fb||!fb.subscribeRoomMessages||!roomCode)return;
+    msgsRoomCode=roomCode;
+    unsubRoomMsgs=fb.subscribeRoomMessages(roomCode,list=>{
+      const next=Array.isArray(list)?list:[];
+      if(!msgStreamSeeded){
+        next.forEach(m=>{if(m&&m.id)seenMsgIds.add(m.id)});
+        msgStreamSeeded=true;
+      }else{
+        next.forEach(m=>{
+          if(!m||!m.id||seenMsgIds.has(m.id))return;
+          seenMsgIds.add(m.id);
+          if(ST.user&&m.senderUid!==ST.user.id){
+            const inFocus=Boolean(document.getElementById('rgS')?.classList.contains('on')||document.body.classList.contains('focus'));
+            if(inFocus||!isArenaVisible()){
+              const icon=m.kind==='rivalry'?'🔥 ':m.kind==='cheer'?'🤝 ':'💬 ';
+              showToast(icon+m.senderDisplayName+': '+m.text);
+            }
+          }
+        });
+      }
+      ST.roomMessages=next;
+      if(window.LeaveItArenaSync)window.LeaveItArenaSync.setMessages(next);
+      renderArenaSafe();
+    },errMsg=>{
+      if(errMsg){
+        ST.err=errMsg;
+        renderArenaSafe();
+      }
+    });
+  }
+
+  function stopSocialSubs(){
+    if(unsubFriends){try{unsubFriends()}catch(e){}unsubFriends=null}
+    if(unsubInvites){try{unsubInvites()}catch(e){}unsubInvites=null}
+    lastFriendProfSig='';
+    seenInvIds.clear();
+    invStreamSeeded=false;
+  }
+
+  function startSocialSubs(){
+    stopSocialSubs();
+    const fb=getFB();
+    if(!fb||!ST.user)return;
+    if(fb.subscribeFriends){
+      unsubFriends=fb.subscribeFriends(async list=>{
+        ST.friends=Array.isArray(list)?list:[];
+        if(window.LeaveItArenaSync)window.LeaveItArenaSync.setFriends(ST.friends);
+        const uids=ST.friends.filter(f=>f.status==='accepted'&&f.uid).map(f=>f.uid).sort();
+        const sig=uids.join(',');
+        if(sig!==lastFriendProfSig){
+          lastFriendProfSig=sig;
+          if(uids.length&&fb.fetchFriendProfiles){
+            const profs=await fb.fetchFriendProfiles(uids).catch(()=>[]);
+            const map={};
+            (profs||[]).forEach(p=>{if(p&&p.id)map[p.id]=p});
+            ST.friendProfiles=map;
+          }else{
+            ST.friendProfiles={};
+          }
+        }
+        renderArenaSafe();
+      },errMsg=>{
+        if(errMsg){ST.err=errMsg;renderArenaSafe()}
+      });
+    }
+    if(fb.subscribeRoomInvites){
+      unsubInvites=fb.subscribeRoomInvites(list=>{
+        const next=Array.isArray(list)?list:[];
+        if(!invStreamSeeded){
+          next.forEach(i=>{if(i&&i.id)seenInvIds.add(i.id)});
+          invStreamSeeded=true;
+        }else{
+          next.forEach(i=>{
+            if(!i||!i.id||seenInvIds.has(i.id))return;
+            seenInvIds.add(i.id);
+            showToast('📩 '+i.fromDisplayName+' invited you to '+i.roomCode);
+          });
+        }
+        ST.invites=next;
+        if(window.LeaveItArenaSync)window.LeaveItArenaSync.setInvites(next);
+        renderArenaSafe();
+      });
+    }
+  }
+
   function stopRoomSub(){
     if(unsubRoom){try{unsubRoom()}catch(e){}unsubRoom=null}
+    stopRoomMsgsSub();
   }
 
   function startRoomSub(roomCode){
@@ -5280,16 +5832,31 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     if(!fb||!roomCode)return;
     unsubRoom=fb.subscribeRoom(roomCode,async room=>{
       ST.activeRoom=room;
+      if(room&&room.status!=='finished'){
+        if(ST.vanishNoticeRoom===room.roomCode)ST.vanishNoticeRoom='';
+        if(msgsRoomCode!==room.roomCode){
+          startRoomMsgsSub(room.roomCode);
+        }
+      }else{
+        stopRoomMsgsSub();
+        ST.roomMessages=[];
+        ST.invitePickerOpen=false;
+        if(window.LeaveItArenaSync)window.LeaveItArenaSync.setMessages([]);
+        if(room&&room.status==='finished'){
+          ST.vanishNoticeRoom=room.roomCode;
+          if(fb.purgeRoomMessages)fb.purgeRoomMessages(room.roomCode).catch(()=>{});
+        }
+      }
       if(room&&room.status==='finished'&&!claimedFinished.has(room.roomCode)){
         claimedFinished.add(room.roomCode);
         const upd=await fb.claimDuelOutcome(room).catch(()=>null);
         if(upd)ST.user=upd;
       }
       syncBridgeState();
-      if(isArenaVisible())renderArena();
+      renderArenaSafe();
     },errMsg=>{
       ST.err=errMsg||'Live room sync error.';
-      if(isArenaVisible())renderArena();
+      renderArenaSafe();
     });
   }
 
@@ -5300,13 +5867,65 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     ST.liveReady=true;
     unsubRooms=fb.subscribePublicRooms(list=>{
       ST.rooms=list||[];
-      if(ST.user&&isArenaVisible()&&!ST.activeRoom&&ST.subTab!=='leaderboard')renderArena();
+      if(ST.user&&isArenaVisible()&&!ST.activeRoom&&ST.subTab!=='leaderboard'&&ST.subTab!=='friends')renderArenaSafe();
     },errMsg=>{
       ST.liveReady=false;
       ST.err=errMsg||'Could not subscribe to open rooms.';
-      if(isArenaVisible())renderArena();
+      renderArenaSafe();
     });
   }
+
+  // ---- Focus Mode HUD / Quick-Chat & Room Invite Event Listeners ----
+  window.addEventListener('leaveit-arena-send-chat',async ev=>{
+    const d=ev.detail||{},fb=getFB();
+    if(!fb||!fb.sendRoomMessage||!ST.user)return;
+    if(!ST.activeRoom){showToast('Join an active Arena room to send messages.');return}
+    if(ST.activeRoom.status==='finished'){showToast('Session ended — chat vanished.');return}
+    const text=String(d.text||'').trim().slice(0,140);
+    if(!text)return;
+    const kind=d.kind==='rivalry'||d.kind==='cheer'?d.kind:'chat';
+    try{
+      await fb.sendRoomMessage({roomCode:ST.activeRoom.roomCode,text,kind});
+    }catch(err){
+      showToast(formatArenaError(err,'Could not send message.'));
+    }
+  });
+
+  window.addEventListener('leaveit-arena-invite-action',async ev=>{
+    const d=ev.detail||{},fb=getFB();
+    if(!fb||!ST.user)return;
+    if(d.action==='dismiss'){
+      if(d.inviteId&&fb.dismissRoomInvite)await fb.dismissRoomInvite(d.inviteId).catch(()=>{});
+      return;
+    }
+    if(d.action==='join'&&d.roomCode){
+      ST.err='';ST.busy=true;
+      try{
+        if(ST.activeRoom&&ST.activeRoom.roomCode!==d.roomCode){
+          const prev=ST.activeRoom.roomCode;
+          stopRoomSub();ST.activeRoom=null;
+          await fb.leaveRoom(prev).catch(()=>{});
+        }
+        const room=await fb.joinRoom(d.roomCode);
+        ST.activeRoom=room;
+        syncBridgeState();
+        startRoomSub(room.roomCode);
+        if(d.inviteId&&fb.dismissRoomInvite)await fb.dismissRoomInvite(d.inviteId).catch(()=>{});
+        const rgS=document.getElementById('rgS');
+        if(rgS&&rgS.classList.contains('on'))rgS.classList.remove('on');
+        if(document.body.classList.contains('focus'))document.getElementById('focusBtn')?.click();
+        if(window.LeaveItArenaSync&&window.LeaveItArenaSync.openArenaTab)window.LeaveItArenaSync.openArenaTab();
+        showToast('Joined room '+room.roomCode);
+      }catch(err){
+        const msg=formatArenaError(err,'Could not join invited room.');
+        ST.err=msg;
+        showToast(msg);
+      }finally{
+        ST.busy=false;
+        renderArena();
+      }
+    }
+  });
 
   // ---- Live Activity Sync from v103-arena-bridge & Planner ----
   window.addEventListener('leaveit-arena-event',async ev=>{
@@ -5926,13 +6545,19 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         try{syncSpaName(user.displayName)}catch(e){}
         finally{syncApplying=false}
         startRoomsSub();
+        startSocialSubs();
         if(ST.subTab==='leaderboard'&&isArenaVisible())loadLb();
         syncWithCloudOnAuth(user);
       }else{
         syncedUidThisBoot=null;
         syncStatus={state:'local',lastSyncAt:0,note:''};
         stopRoomSub();
+        stopSocialSubs();
         ST.activeRoom=null;
+        ST.friends=[];
+        ST.friendProfiles={};
+        ST.invites=[];
+        ST.roomMessages=[];
         startRoomsSub();
       }
       syncBridgeState();
@@ -5997,6 +6622,21 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     </div>`;
   }
 
+  function renderRoomInvitesBanner(){
+    const list=ST.invites||[];
+    if(!list.length)return '';
+    return `<div class="ar-invite-banner">${list.map(inv=>`<div class="ar-invite-row">
+      <div style="min-width:0">
+        <b>📩 ${escHtml(inv.fromDisplayName)} invited you to ${escHtml(inv.roomTitle)}</b>
+        <p class="ar-sub" style="margin:2px 0 0;font-size:12px">@${escHtml(inv.fromUsername)} · ${inv.roomMode==='sprint_1v1'?'⚔️ 1v1 Sprint':'🏟 Study Room'} · ${escHtml(inv.roomSubject)} · Code <b>${escHtml(inv.roomCode)}</b></p>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button type="button" data-ar-accept-inv="${escHtml(inv.id)}" data-code="${escHtml(inv.roomCode)}" class="ar-btn-ghost" style="background:var(--accent);color:#06241a;border-color:var(--accent)">Join ${escHtml(inv.roomCode)}</button>
+        <button type="button" data-ar-dismiss-inv="${escHtml(inv.id)}" class="ar-btn-ghost">Dismiss</button>
+      </div>
+    </div>`).join('')}</div>`;
+  }
+
   function renderRoomView(r){
     const me=r.participants.find(p=>p.userId===ST.user.id);
     const isHost=r.hostUserId===ST.user.id;
@@ -6009,6 +6649,8 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
     const winner=r.winnerUserId?r.participants.find(p=>p.userId===r.winnerUserId):null;
     const tasks=readTodayPlannerTasks();
+    const inRoomSet=new Set(r.participants.map(p=>p.userId));
+    const invitableFriends=(ST.friends||[]).filter(f=>f.status==='accepted'&&!inRoomSet.has(f.uid));
 
     return `<div class="ar-card">
       <div class="ar-top">
@@ -6038,23 +6680,34 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
           <button type="button" data-ar-act="openTimer" class="ar-go" style="margin:0;flex:1;min-width:220px"><span>Open Synced Study Timer</span><i>▶</i></button>
           ${isHost&&r.status==='active'?`<button type="button" data-ar-act="finishRoom" class="ar-btn-ghost">End Match</button>`:''}
         `:''}
+        ${r.status!=='finished'?`<button type="button" data-ar-act="toggleInviteFriends" class="ar-btn-ghost">📩 Invite Friends${invitableFriends.length?' ('+invitableFriends.length+')':''}</button>`:''}
         ${r.status==='finished'?`
           <span style="font-weight:700;font-size:14px">🏆 ${winner?escHtml(winner.displayName)+' wins ('+winner.sprintScore+' pts'+(r.mode==='sprint_1v1'&&r.participants.length>=2?' · +50 XP':'')+')':'Match finished — scores synced'}</span>
           <button type="button" data-ar-act="leaveRoom" class="ar-btn-ghost" style="background:var(--accent);color:#06241a;border-color:var(--accent)">Back to Lobby</button>
         `:''}
       </div>
+      ${r.status!=='finished'&&ST.invitePickerOpen?`<div class="ar-invite-picker">
+        ${invitableFriends.length?invitableFriends.map(f=>`<button type="button" data-ar-send-invite="${escHtml(f.uid)}" class="ar-invite-chip">📩 ${escHtml(f.displayName)} (@${escHtml(f.username)})</button>`).join(''):'<span class="ar-sub" style="margin:0;font-size:12px">No available friends to invite right now — add friends in the 👥 Friends tab.</span>'}
+      </div>`:''}
     </div>
 
     ${r.mode==='sprint_1v1'?`<div class="ar-grid ar-duel-grid">
       ${[0,1].map(idx=>{
         const p=r.participants[idx];
-        if(!p)return `<div class="ar-card" style="text-align:center;padding:34px 20px"><h3>Waiting for opponent…</h3><p class="ar-sub">Share code <b>${escHtml(r.roomCode)}</b> to duel</p></div>`;
+        if(!p)return `<div class="ar-card" style="text-align:center;padding:34px 20px"><h3>Waiting for opponent…</h3><p class="ar-sub">Share code <b>${escHtml(r.roomCode)}</b> or invite a friend above to duel</p></div>`;
         const leaves=p.leftOnTimeCount+p.overtimeCount;
         const disc=leaves?Math.round(p.leftOnTimeCount/leaves*100):100;
         const isWin=r.status==='finished'&&r.winnerUserId===p.userId;
         return `<div class="ar-card" style="${isWin?'border-color:var(--ok)':''}">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div><p class="ar-sub" style="margin:0">@${escHtml(p.username)} · 🔥 ${p.streakDays}d${p.userId===ST.user.id?' · You':''}</p><h3 style="margin-top:4px">${escHtml(p.displayName)}</h3>${p.activeTaskTitle?`<p class="ar-sub" style="margin:4px 0 0;color:var(--accent);font-size:12px">📋 ${escHtml(p.activeTaskTitle)}</p>`:''}</div>
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
+            <div>
+              <p class="ar-sub" style="margin:0">@${escHtml(p.username)} · 🔥 ${p.streakDays}d${p.userId===ST.user.id?' · You':''}</p>
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px">
+                <h3>${escHtml(p.displayName)}</h3>
+                ${renderFriendActionBtn(p.userId)}
+              </div>
+              ${p.activeTaskTitle?`<p class="ar-sub" style="margin:4px 0 0;color:var(--accent);font-size:12px">📋 ${escHtml(p.activeTaskTitle)}</p>`:''}
+            </div>
             <div style="text-align:right"><span class="ar-sub" style="margin:0">Score</span><b style="display:block;font-size:26px;color:var(--accent);font-variant-numeric:tabular-nums">${p.sprintScore}</b></div>
           </div>
           <div class="g3" style="border-top:1px solid var(--track);padding-top:14px;margin-top:14px">
@@ -6071,7 +6724,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
           <thead><tr><th>#</th><th>Player</th><th>Status</th><th class="num">Solved</th><th class="num">Tasks</th><th class="num">Left On Time</th><th class="num">Overtime</th><th class="num">Score</th></tr></thead>
           <tbody>${r.participants.map((p,i)=>`<tr class="${p.userId===ST.user.id?'me':''}">
             <td>${i+1}</td>
-            <td><b>${escHtml(p.displayName)}</b> <span style="color:var(--muted);font-size:12px">@${escHtml(p.username)}${p.isHost?' · Host':''}</span>${p.activeTaskTitle?`<div style="color:var(--accent);font-size:11.5px;margin-top:2px">📋 ${escHtml(p.activeTaskTitle)}</div>`:''}</td>
+            <td><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><b>${escHtml(p.displayName)}</b> <span style="color:var(--muted);font-size:12px">@${escHtml(p.username)}${p.isHost?' · Host':''}</span> ${renderFriendActionBtn(p.userId)}</div>${p.activeTaskTitle?`<div style="color:var(--accent);font-size:11.5px;margin-top:2px">📋 ${escHtml(p.activeTaskTitle)}</div>`:''}</td>
             <td>${r.status==='lobby'?(p.ready?'Ready':'Waiting'):escHtml(p.liveState)}</td>
             <td class="num" style="color:var(--ok)">${p.solvedCount}</td>
             <td class="num">${p.tasksCompleted||0}</td>
@@ -6082,7 +6735,33 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         </table>
       </div>
     </div>`}
-    ${tasks.length?`<div class="ar-card" style="margin-top:14px">
+
+    ${r.status!=='finished'?`<div class="ar-card ar-chat-card">
+      <div class="ar-chat-head">
+        <div>
+          <h3>💬 Session Rivalry &amp; Chat</h3>
+          <p class="ar-sub" style="margin:2px 0 0">Hype up friends or spark rivalry while competing</p>
+        </div>
+        <span class="ar-ephemeral-badge">💨 Auto-vanishes when session ends</span>
+      </div>
+      <div class="ar-chat-feed" id="arChatFeed">${buildChatFeedHtml(ST.roomMessages)}</div>
+      <div class="ar-quick-group">
+        <button type="button" class="ar-quick-chip rivalry" data-ar-quick="Catch up! 🔥" data-kind="rivalry">🔥 Catch up!</button>
+        <button type="button" class="ar-quick-chip rivalry" data-ar-quick="Coming for #1 🏆" data-kind="rivalry">🏆 Coming for #1</button>
+        <button type="button" class="ar-quick-chip rivalry" data-ar-quick="Don't blink 👀" data-kind="rivalry">👀 Don't blink</button>
+        <button type="button" class="ar-quick-chip rivalry" data-ar-quick="Beat my pace! ⚡" data-kind="rivalry">⚡ Beat my pace!</button>
+        <button type="button" class="ar-quick-chip cheer" data-ar-quick="Good luck! 🤝" data-kind="cheer">🤝 Good luck!</button>
+        <button type="button" class="ar-quick-chip cheer" data-ar-quick="Lock in 🎯" data-kind="cheer">🎯 Lock in</button>
+        <button type="button" class="ar-quick-chip cheer" data-ar-quick="Nice solve! 👏" data-kind="cheer">👏 Nice solve!</button>
+        <button type="button" class="ar-quick-chip cheer" data-ar-quick="Leave the trap! ⏭" data-kind="cheer">⏭ Leave the trap!</button>
+      </div>
+      <form id="arChatForm" class="ar-chat-form">
+        <input class="ar-in" id="arChatIn" maxlength="140" placeholder="Send a message (auto-vanishes when match ends)…" value="${escHtml(ST.chatDraft)}" autocomplete="off" style="flex:1">
+        <button type="submit" class="ar-btn-ghost" style="background:var(--accent);color:#06241a;border-color:var(--accent);padding:11px 18px">Send</button>
+      </form>
+    </div>`:`<div class="ar-vanish-note">💨 Session ended — all room chat &amp; rivalry messages vanished automatically.</div>`}
+
+    ${tasks.length?`<div class="ar-card" style="margin-top:2px">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
         <div><h3>📋 Today's Planner Tasks</h3><p class="ar-sub" style="margin:2px 0 0">Run tasks in synced focus or check them off for +25–55 XP &amp; +30 Sprint pts</p></div>
       </div>
@@ -6152,6 +6831,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
             <button type="button" data-ar-cm="study_room" class="${ST.createMode==='study_room'?'on':''}">🏟 Live Room</button>
             <button type="button" data-ar-cm="sprint_1v1" class="${ST.createMode==='sprint_1v1'?'on':''}">⚔️ 1v1 Sprint</button>
           </div>
+          ${ST.targetDuelFriend?`<div class="ar-invite-row" style="margin-top:12px;padding:9px 12px">
+            <span style="font-size:12.5px;font-weight:700">⚔️ Challenging <b>${escHtml(ST.targetDuelFriend.displayName)}</b> (@${escHtml(ST.targetDuelFriend.username)}) — invite auto-sends on host</span>
+            <button type="button" data-ar-act="clearTargetFriend" class="ar-mini-btn">✕</button>
+          </div>`:''}
           ${pendingTasks.length?`<div style="margin-top:12px">
             <span class="ar-sub" style="margin:0;font-size:11.5px;font-weight:700">📋 From Today's Planner</span>
             <div class="ar-plan-picks">${pendingTasks.slice(0,5).map(t=>`<button type="button" data-ar-pick-task="${t.idx}" class="ar-plan-pick ${ST.selectedPlannerIdx===t.idx?'on':''}">${escHtml(t.t)}${t.m?' · '+t.m+'m':''}</button>`).join('')}</div>
@@ -6193,6 +6876,80 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     </div>`;
   }
 
+  function renderFriends(){
+    const list=ST.friends||[];
+    const incoming=list.filter(f=>f.direction==='incoming');
+    const accepted=list.filter(f=>f.status==='accepted');
+    const outgoing=list.filter(f=>f.direction==='outgoing');
+    return `${renderErrBox(ST.err)}
+    <div class="ar-grid">
+      <div class="ar-stack">
+        <div class="ar-card">
+          <h3>Add Friend by @username</h3>
+          <p class="ar-sub">Connect with study rivals or add players directly from Leaderboard &amp; Live Rooms</p>
+          <form id="arAddFriendForm" class="ar-row2" style="margin-top:12px">
+            <input class="ar-in" id="arFriendIn" maxlength="24" placeholder="@username" value="${escHtml(ST.friendDraft)}" autocomplete="off" style="flex:1">
+            <button type="submit" class="ar-btn-ghost" style="background:var(--accent);color:#06241a;border-color:var(--accent);padding:11px 18px" ${ST.busy?'disabled':''}>Add</button>
+          </form>
+        </div>
+        ${incoming.length?`<div class="ar-card">
+          <h3>Incoming Requests (${incoming.length})</h3>
+          <div style="margin-top:8px">${incoming.map(f=>{
+            const ini=([...(f.displayName||'F').trim()][0]||'F').toUpperCase();
+            return `<div class="ar-friend-row">
+              <div class="ar-friend-id">
+                <span class="ar-friend-av">${escHtml(ini)}</span>
+                <div class="ar-friend-meta"><b>${escHtml(f.displayName)}</b><small>@${escHtml(f.username)} wants to connect</small></div>
+              </div>
+              <div class="ar-friend-acts">
+                <button type="button" data-ar-accept-pair="${escHtml(f.pairId)}" class="ar-btn-ghost" style="background:var(--ok);color:#06241a;border-color:var(--ok)">Accept</button>
+                <button type="button" data-ar-remove-pair="${escHtml(f.pairId)}" class="ar-btn-ghost">Decline</button>
+              </div>
+            </div>`;
+          }).join('')}</div>
+        </div>`:''}
+        ${outgoing.length?`<div class="ar-card">
+          <h3>Sent Requests (${outgoing.length})</h3>
+          <div style="margin-top:8px">${outgoing.map(f=>{
+            const ini=([...(f.displayName||'F').trim()][0]||'F').toUpperCase();
+            return `<div class="ar-friend-row">
+              <div class="ar-friend-id">
+                <span class="ar-friend-av">${escHtml(ini)}</span>
+                <div class="ar-friend-meta"><b>${escHtml(f.displayName)}</b><small>@${escHtml(f.username)} · Waiting for response</small></div>
+              </div>
+              <div class="ar-friend-acts">
+                <button type="button" data-ar-remove-pair="${escHtml(f.pairId)}" class="ar-btn-ghost">Cancel</button>
+              </div>
+            </div>`;
+          }).join('')}</div>
+        </div>`:''}
+      </div>
+      <div class="ar-card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+          <div><h3>Your Friends (${accepted.length})</h3><p class="ar-sub" style="margin:2px 0 0">Challenge them to 1v1 sprints or live study rooms</p></div>
+          <button type="button" data-ar-sub="leaderboard" class="ar-btn-ghost" style="font-size:12px">Find in Rankings</button>
+        </div>
+        <div style="margin-top:8px">${accepted.length?accepted.map(f=>{
+          const prof=ST.friendProfiles&&ST.friendProfiles[f.uid];
+          const disp=(prof&&prof.displayName)||f.displayName;
+          const uname=(prof&&prof.username)||f.username;
+          const ini=([...disp.trim()][0]||'F').toUpperCase();
+          const statsLine=prof?`⚡ ${prof.xp.toLocaleString()} XP · ${prof.focusMinutes}m focus · 🔥${prof.streakDays}d · ${prof.duelWins}W`:`@${uname} · Connected friend`;
+          return `<div class="ar-friend-row">
+            <div class="ar-friend-id">
+              <span class="ar-friend-av">${escHtml(ini)}</span>
+              <div class="ar-friend-meta"><b>${escHtml(disp)} <span style="color:var(--muted);font-weight:500;font-size:12px">@${escHtml(uname)}</span></b><small>${escHtml(statsLine)}</small></div>
+            </div>
+            <div class="ar-friend-acts">
+              <button type="button" data-ar-duel-friend="${escHtml(f.uid)}" class="ar-btn-ghost" style="background:var(--accent);color:#06241a;border-color:var(--accent);padding:7px 12px;font-size:12px">⚔️ 1v1 Duel</button>
+              <button type="button" data-ar-remove-pair="${escHtml(f.pairId)}" class="ar-btn-ghost" style="padding:7px 11px;font-size:12px">Remove</button>
+            </div>
+          </div>`;
+        }).join(''):'<p class="ar-sub" style="padding:26px 0;text-align:center">No friends added yet — enter a @username on the left or tap <b>+ Friend</b> on the Leaderboard!</p>'}</div>
+      </div>
+    </div>`;
+  }
+
   function renderDiagnosticsPanel(){
     if(!ST.showDiag)return '';
     const fb=getFB();
@@ -6224,11 +6981,15 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   }
 
   function renderLeaderboard(){
+    const fSet=acceptedFriendUids();
+    const rows=ST.lbOnlyFriends?ST.lb.filter(e=>e.id===ST.user.id||fSet.has(e.id)):ST.lb;
     return `<div class="ar-card">
       <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center">
         <div><h3>Central Leaderboard</h3><p class="ar-sub" style="margin:2px 0 0">Live Firebase rankings across focus, questions, leave discipline &amp; 1v1 duels</p></div>
         <div class="ar-ch">
           ${[['today','Today'],['7d','7 Days'],['all','All Time']].map(([k,l])=>`<button type="button" data-ar-tf="${k}" class="${ST.lbTime===k?'on':''}">${l}</button>`).join('')}
+          <button type="button" data-ar-lbfriends="0" class="${!ST.lbOnlyFriends?'on':''}">All</button>
+          <button type="button" data-ar-lbfriends="1" class="${ST.lbOnlyFriends?'on':''}">Friends (${fSet.size})</button>
           <button type="button" data-ar-act="refreshLb" class="ar-btn-ghost">↻</button>
         </div>
       </div>
@@ -6241,9 +7002,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       ${renderErrBox(ST.err)}
       <div class="ar-table-wrap">
         ${ST.lbLoading?'<p class="ar-sub" style="padding:20px 0">Loading rankings…</p>':
-          ST.lb.length?`<table class="ar-tbl">
-            <thead><tr><th>Rank</th><th>Player</th><th class="num">XP</th><th class="num">Focus</th><th class="num">Tasks</th><th class="num">Streak</th><th class="num">Solved · Leave %</th><th class="num">Mock Avg</th><th class="num">1v1</th></tr></thead>
-            <tbody>${ST.lb.map(e=>`<tr class="${e.id===ST.user.id?'me':''}">
+          rows.length?`<table class="ar-tbl">
+            <thead><tr><th>Rank</th><th>Player</th><th class="num">XP</th><th class="num">Focus</th><th class="num">Tasks</th><th class="num">Streak</th><th class="num">Solved · Leave %</th><th class="num">Mock Avg</th><th class="num">1v1</th><th>Friend</th></tr></thead>
+            <tbody>${rows.map(e=>`<tr class="${e.id===ST.user.id?'me':''}">
               <td style="font-weight:800">#${e.rank}</td>
               <td><b>${escHtml(e.displayName)}</b> <span style="color:var(--muted);font-size:12px">@${escHtml(e.username)}${e.id===ST.user.id?' · You':''}</span></td>
               <td class="num" style="color:var(--accent);font-weight:800">${e.xp.toLocaleString()}</td>
@@ -6253,8 +7014,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
               <td class="num" style="color:var(--ok)">${e.questionsSolved} · ${e.disciplineRatePct}%</td>
               <td class="num">${e.mockTestsCount?e.mockAccuracyAvg+'%':'—'}</td>
               <td class="num">${e.duelWins}/${e.duelPlayed}</td>
+              <td>${renderFriendActionBtn(e.id)}</td>
             </tr>`).join('')}</tbody>
-          </table>`:'<p class="ar-sub" style="padding:26px 0;text-align:center">No ranked activity in this window yet.</p>'}
+          </table>`:`<p class="ar-sub" style="padding:26px 0;text-align:center">${ST.lbOnlyFriends?'None of your friends appear in this ranking window yet.':'No ranked activity in this window yet.'}</p>`}
       </div>
     </div>`;
   }
@@ -6266,6 +7028,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       return;
     }
     const errCount=(ST.diagLogs||[]).filter(l=>l.level==='error').length;
+    const inReqCount=(ST.friends||[]).filter(f=>f.direction==='incoming').length;
     const header=`<div class="ar-top">
       <div><h1>Arena</h1><p class="ar-sub">@${escHtml(ST.user.username)} · ${ST.liveReady?'Firebase live sync':'Connecting…'}</p></div>
       <div class="ar-top-actions">
@@ -6277,17 +7040,20 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
     if(ST.activeRoom){
       arenaRoot.innerHTML=header+renderDiagnosticsPanel()+renderRoomView(ST.activeRoom);
+      const feed=document.getElementById('arChatFeed');
+      if(feed)feed.scrollTop=feed.scrollHeight;
       return;
     }
 
-    const subBar=`<div class="ar-seg3">
+    const subBar=`<div class="ar-seg4">
       <button type="button" data-ar-sub="lobby" class="${ST.subTab==='lobby'?'on':''}">🏟 Lobby</button>
       <button type="button" data-ar-sub="duel" class="${ST.subTab==='duel'?'on':''}">⚔️ 1v1 Duel</button>
-      <button type="button" data-ar-sub="leaderboard" class="${ST.subTab==='leaderboard'?'on':''}">🏆 Leaderboard</button>
+      <button type="button" data-ar-sub="friends" class="${ST.subTab==='friends'?'on':''}">👥 Friends${inReqCount?' ('+inReqCount+')':''}</button>
+      <button type="button" data-ar-sub="leaderboard" class="${ST.subTab==='leaderboard'?'on':''}">🏆 Rankings</button>
     </div>`;
 
-    const body=ST.subTab==='leaderboard'?renderLeaderboard():renderLobby();
-    arenaRoot.innerHTML=header+renderDiagnosticsPanel()+subBar+body;
+    const body=ST.subTab==='leaderboard'?renderLeaderboard():ST.subTab==='friends'?renderFriends():renderLobby();
+    arenaRoot.innerHTML=header+renderDiagnosticsPanel()+renderRoomInvitesBanner()+subBar+body;
   }
 
   // ---- Event Delegation for #arenaRoot ----
@@ -6309,11 +7075,105 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       return;
     }
 
+    const lbFrBtn=e.target.closest('[data-ar-lbfriends]');
+    if(lbFrBtn){ST.lbOnlyFriends=lbFrBtn.dataset.arLbfriends==='1';renderArena();return}
+
     const sortBtn=e.target.closest('[data-ar-sort]');
     if(sortBtn){ST.lbSort=sortBtn.dataset.arSort;loadLb();return}
 
     const tfBtn=e.target.closest('[data-ar-tf]');
     if(tfBtn){ST.lbTime=tfBtn.dataset.arTf;loadLb();return}
+
+    const addUidBtn=e.target.closest('[data-ar-add-uid]');
+    if(addUidBtn){
+      const fb=getFB();if(!fb||!fb.sendFriendRequest)return;
+      try{
+        ST.err='';
+        const res=await fb.sendFriendRequest({uid:addUidBtn.dataset.arAddUid});
+        showToast(res.status==='accepted'?'🤝 Now friends with @'+res.username:'📩 Friend request sent to @'+res.username);
+      }catch(err){ST.err=formatArenaError(err,'Could not send friend request.')}
+      renderArena();
+      return;
+    }
+
+    const accPairBtn=e.target.closest('[data-ar-accept-pair]');
+    if(accPairBtn){
+      const fb=getFB();if(!fb||!fb.acceptFriendRequest)return;
+      try{
+        ST.err='';
+        await fb.acceptFriendRequest(accPairBtn.dataset.arAcceptPair);
+        showToast('🤝 Friend request accepted');
+      }catch(err){ST.err=formatArenaError(err,'Could not accept request.')}
+      renderArena();
+      return;
+    }
+
+    const remPairBtn=e.target.closest('[data-ar-remove-pair]');
+    if(remPairBtn){
+      const fb=getFB();if(!fb||!fb.removeFriendship)return;
+      try{
+        ST.err='';
+        await fb.removeFriendship(remPairBtn.dataset.arRemovePair);
+        showToast('Friendship updated');
+      }catch(err){ST.err=formatArenaError(err,'Could not remove friendship.')}
+      renderArena();
+      return;
+    }
+
+    const duelFrBtn=e.target.closest('[data-ar-duel-friend]');
+    if(duelFrBtn){
+      const uid=duelFrBtn.dataset.arDuelFriend;
+      const f=(ST.friends||[]).find(x=>x.uid===uid);
+      if(f){
+        const prof=ST.friendProfiles&&ST.friendProfiles[uid];
+        const disp=(prof&&prof.displayName)||f.displayName;
+        const uname=(prof&&prof.username)||f.username;
+        ST.targetDuelFriend={uid,displayName:disp,username:uname};
+        ST.subTab='duel';
+        ST.createMode='sprint_1v1';
+        ST.createTitle=('1v1 vs '+disp).slice(0,48);
+        renderArena();
+      }
+      return;
+    }
+
+    const sendInvBtn=e.target.closest('[data-ar-send-invite]');
+    if(sendInvBtn&&ST.activeRoom){
+      const fb=getFB();if(!fb||!fb.sendRoomInvite)return;
+      const uid=sendInvBtn.dataset.arSendInvite;
+      try{
+        ST.err='';
+        await fb.sendRoomInvite({friendUid:uid,roomCode:ST.activeRoom.roomCode});
+        ST.invitePickerOpen=false;
+        showToast('📩 Room invite sent!');
+      }catch(err){ST.err=formatArenaError(err,'Could not send invite.')}
+      renderArena();
+      return;
+    }
+
+    const accInvBtn=e.target.closest('[data-ar-accept-inv]');
+    if(accInvBtn){
+      const code=accInvBtn.dataset.code,invId=accInvBtn.dataset.arAcceptInv;
+      window.dispatchEvent(new CustomEvent('leaveit-arena-invite-action',{detail:{action:'join',roomCode:code,inviteId:invId}}));
+      return;
+    }
+
+    const disInvBtn=e.target.closest('[data-ar-dismiss-inv]');
+    if(disInvBtn){
+      window.dispatchEvent(new CustomEvent('leaveit-arena-invite-action',{detail:{action:'dismiss',inviteId:disInvBtn.dataset.arDismissInv}}));
+      return;
+    }
+
+    const quickChatBtn=e.target.closest('[data-ar-quick]');
+    if(quickChatBtn&&ST.activeRoom){
+      const fb=getFB();if(!fb||!fb.sendRoomMessage)return;
+      const text=quickChatBtn.dataset.arQuick||'';
+      const kind=quickChatBtn.dataset.kind||'chat';
+      try{
+        await fb.sendRoomMessage({roomCode:ST.activeRoom.roomCode,text,kind});
+      }catch(err){showToast(formatArenaError(err,'Could not send message.'))}
+      return;
+    }
 
     const pickTaskBtn=e.target.closest('[data-ar-pick-task]');
     if(pickTaskBtn){
@@ -6418,6 +7278,14 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       if(ST.editingProfile&&ST.user){ST.editUser=ST.user.username;ST.editDisp=ST.user.displayName}
       renderArena();
     }
+    else if(act==='toggleInviteFriends'){
+      ST.invitePickerOpen=!ST.invitePickerOpen;
+      renderArena();
+    }
+    else if(act==='clearTargetFriend'){
+      ST.targetDuelFriend=null;
+      renderArena();
+    }
     else if(act==='toTimer'){goToStudyTimer(null)}
     else if(act==='openTimer'){goToStudyTimer(ST.activeRoom)}
     else if(act==='refreshLb'){loadLb()}
@@ -6427,13 +7295,15 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       clearTimeout(syncDebounce);
       await flushCloudBackup(true);
       if(ST.activeRoom&&fb){try{await fb.leaveRoom(ST.activeRoom.roomCode)}catch(err){}stopRoomSub();ST.activeRoom=null}
+      stopSocialSubs();
+      ST.friends=[];ST.friendProfiles={};ST.invites=[];ST.roomMessages=[];
       syncBridgeState();
       clearUserStorageForSignOut();
       if(fb){try{await fb.signOut()}catch(err){}}
       ST.user=null;syncBridgeState();
       triggerCloudReload('Signed out · device data cleared');
     }else if(act==='leaveRoom'&&ST.activeRoom){
-      const c=ST.activeRoom.roomCode;stopRoomSub();ST.activeRoom=null;ST.err='';
+      const c=ST.activeRoom.roomCode;stopRoomSub();ST.activeRoom=null;ST.roomMessages=[];ST.invitePickerOpen=false;ST.err='';
       syncBridgeState();
       if(fb){try{await fb.leaveRoom(c)}catch(err){}}
       renderArena();
@@ -6480,6 +7350,28 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         showToast('Profile updated');
       }catch(err){ST.err=formatArenaError(err,'Could not update profile.')}
       finally{ST.busy=false;renderArena()}
+    }else if(e.target.id==='arAddFriendForm'){
+      const uname=(document.getElementById('arFriendIn')?.value||'').trim();
+      if(!uname)return;
+      ST.err='';ST.busy=true;renderArena();
+      try{
+        const res=await fb.sendFriendRequest(uname);
+        ST.friendDraft='';
+        showToast(res.status==='accepted'?'🤝 Now friends with @'+res.username:'📩 Friend request sent to @'+res.username);
+      }catch(err){ST.err=formatArenaError(err,'Could not send friend request.')}
+      finally{ST.busy=false;renderArena()}
+    }else if(e.target.id==='arChatForm'&&ST.activeRoom){
+      const inp=document.getElementById('arChatIn');
+      const txt=(inp&&inp.value||'').trim();
+      if(!txt)return;
+      ST.chatDraft='';
+      if(inp)inp.value='';
+      try{
+        await fb.sendRoomMessage({roomCode:ST.activeRoom.roomCode,text:txt,kind:'chat'});
+      }catch(err){
+        ST.err=formatArenaError(err,'Could not send message.');
+        renderArena();
+      }
     }else if(e.target.id==='arJoinForm'){
       const code=(document.getElementById('arJoinIn')?.value||'').trim().toUpperCase();
       if(code.length<4){ST.err='Enter a 6-character room code.';renderArena();return}
@@ -6506,9 +7398,15 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         if(ST.pendingTask&&window.LeaveItArenaSync){
           window.LeaveItArenaSync.setLinkedTask(ST.pendingTask);
         }
-        ST.pendingTask=null;ST.selectedPlannerIdx=-1;ST.createTitle='';ST.createSubj='Maths';ST.createDur=25;
+        const duelFriend=ST.targetDuelFriend;
+        ST.pendingTask=null;ST.selectedPlannerIdx=-1;ST.createTitle='';ST.createSubj='Maths';ST.createDur=25;ST.targetDuelFriend=null;
         syncBridgeState();
         startRoomSub(room.roomCode);
+        if(duelFriend&&fb.sendRoomInvite){
+          fb.sendRoomInvite({friendUid:duelFriend.uid,roomCode:room.roomCode}).then(()=>{
+            showToast('⚔️ 1v1 invite sent to @'+duelFriend.username);
+          }).catch(()=>{});
+        }
       }catch(err){ST.err=formatArenaError(err,'Could not create room.')}
       finally{ST.busy=false;renderArena()}
     }
@@ -6519,6 +7417,8 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     if(e.target.id==='arEmail')ST.draftEmail=e.target.value||'';
     else if(e.target.id==='arEditUser')ST.editUser=e.target.value||'';
     else if(e.target.id==='arEditDisp')ST.editDisp=e.target.value||'';
+    else if(e.target.id==='arFriendIn')ST.friendDraft=e.target.value||'';
+    else if(e.target.id==='arChatIn')ST.chatDraft=e.target.value||'';
     else if(e.target.id==='arRTitle')ST.createTitle=e.target.value||'';
     else if(e.target.id==='arRSubj')ST.createSubj=e.target.value||'';
     else if(e.target.id==='arRDur')ST.createDur=Number(e.target.value)||25;
@@ -6667,6 +7567,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       clearTimeout(syncDebounce);
       await flushCloudBackup(true);
       if(ST.activeRoom&&fb){try{await fb.leaveRoom(ST.activeRoom.roomCode)}catch(err){}stopRoomSub();ST.activeRoom=null}
+      stopSocialSubs();
+      ST.friends=[];ST.friendProfiles={};ST.invites=[];ST.roomMessages=[];
+      syncBridgeState();
       clearUserStorageForSignOut();
       if(fb){try{await fb.signOut()}catch(err){}}
       ST.user=null;

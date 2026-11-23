@@ -23,9 +23,15 @@
 12. **Unverified Email Write**: Performing any write when `request.auth.token.email_verified == false` -> `PERMISSION_DENIED`.
 13. **Cross-User Private Backup Read**: Attempting to read `/players/victim_uid/backup/snapshot` while signed in as `attacker_uid` -> `PERMISSION_DENIED`.
 14. **Repeat Guest Bulk Stat Injection**: Attempting to use the one-time guest summary migration path after `existing.xp > 0` or `existing.questionsSolved > 0` -> `PERMISSION_DENIED`.
+15. **Self-Accepted Friend Request Forgery**: Creating `/friendships/a_b` with `status: 'accepted'` directly as `requesterUid` or accepting someone else's pending request -> `PERMISSION_DENIED`.
+16. **Cross-User Friend Graph Scraping**: Listing `/friendships` or `/friendInvites` without scoping to `request.auth.uid` -> `PERMISSION_DENIED`.
+17. **Post-Finish Room Chat Injection**: Creating a message in `/rooms/ROOM01/messages/{msgId}` after `rooms/ROOM01.status == 'finished'` or by a non-participant -> `PERMISSION_DENIED`.
+18. **Spoofed Room Message Sender**: Creating a `/rooms/ROOM01/messages/{msgId}` with `senderUid != request.auth.uid` -> `PERMISSION_DENIED`.
 
-## 2. Additional Invariants
+## 3. Additional Invariants
 7. **Owner-Only Full App Backup**: `/players/{userId}/backup/snapshot` stores parsed maps/arrays for focus logs, question stats, mocks, tests, planner, books, and settings and is strictly readable and writable only by `isOwner(userId)` with parent `/players/{userId}` existing.
 8. **Bounded One-Time Guest Import**: A newly signed-in player with zero stats (`xp == 0 && questionsSolved == 0 && focusMinutes == 0 && mockTestsCount == 0`) may import pre-login guest totals within bounded limits once; all subsequent updates remain capped at `+500 XP` per transaction.
 9. **Deduplicated Planner Task Rewards & Live Room Task Competition**: Completing a daily planner task records an immutable `task_completed` activity document keyed deterministically per task/day so re-toggling cannot farm XP, and increments optional `tasksCompleted` counters on the player and active room participant within strict size and numeric bounds.
-
+10. **Canonical Two-Sided Friendships**: `/friendships/{pairId}` enforces canonical sorted `pairId = users[0] + '_' + users[1]`, creation only as `'pending'` by `requesterUid == request.auth.uid` with verified player docs for both users, acceptance (`pending -> accepted`) strictly by `recipientUid == request.auth.uid`, and deletion by either member.
+11. **Scoped Room Invites**: `/friendInvites/{inviteId}` may only be created by an active room participant for a non-finished room, read/listed strictly by `fromUid` or `toUid`, and deleted by either party.
+12. **Ephemeral Room Chat & Auto-Vanish**: `/rooms/{roomCode}/messages/{messageId}` can only be created while parent `/rooms/{roomCode}` exists and `status != 'finished'`, only by current room participants (`request.auth.uid in room.participantIds`), with `allowedUids` strictly matching room participants (`list` gated on `request.auth.uid in resource.data.allowedUids`), immutable updates (`false`), and deletion permitted for sender or room participants so all messages are purged from Firestore immediately when a session finishes.

@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -9,8 +10,10 @@ import {
   query,
   runTransaction,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where,
+  writeBatch,
   type Unsubscribe,
 } from 'firebase/firestore';
 import {
@@ -47,6 +50,43 @@ export type RoomStatus = 'lobby' | 'countdown' | 'active' | 'finished';
 export type LiveState = 'idle' | 'focusing' | 'solving' | 'paused' | 'finished';
 export type LeaderboardSort = 'xp' | 'focus' | 'questions' | 'duels';
 export type LeaderboardTimeframe = 'today' | '7d' | 'all';
+export type FriendshipStatus = 'pending' | 'accepted';
+export type FriendDirection = 'incoming' | 'outgoing' | 'friend';
+export type RoomMessageKind = 'chat' | 'rivalry' | 'cheer';
+
+export interface FriendEntry {
+  pairId: string;
+  uid: string;
+  username: string;
+  displayName: string;
+  status: FriendshipStatus;
+  direction: FriendDirection;
+  createdAtMs: number;
+}
+
+export interface FriendInviteView {
+  id: string;
+  fromUid: string;
+  fromUsername: string;
+  fromDisplayName: string;
+  toUid: string;
+  roomCode: string;
+  roomTitle: string;
+  roomMode: RoomMode;
+  roomSubject: string;
+  createdAtMs: number;
+}
+
+export interface RoomMessageView {
+  id: string;
+  roomCode: string;
+  senderUid: string;
+  senderUsername: string;
+  senderDisplayName: string;
+  kind: RoomMessageKind;
+  text: string;
+  createdAtMs: number;
+}
 
 export interface ArenaUser {
   id: string;
@@ -992,6 +1032,7 @@ export async function leaveArenaRoom(rawCode: string): Promise<void> {
         tx.delete(partRef);
       }
     });
+    void purgeRoomMessages(code);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `rooms/${code}`);
   }
@@ -1156,6 +1197,7 @@ export async function finishArenaRoom(rawCode: string): Promise<void> {
       });
 
     const winner = participants[0] || null;
+    await purgeRoomMessages(code);
     await runTransaction(db, async (tx) => {
       const roomSnap = await tx.get(roomRef);
       if (!roomSnap.exists()) return;
@@ -1169,6 +1211,7 @@ export async function finishArenaRoom(rawCode: string): Promise<void> {
         updatedAt: serverTimestamp(),
       });
     });
+    void purgeRoomMessages(code);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, `rooms/${code}`);
   }
@@ -1798,6 +1841,492 @@ export async function importGuestSummaryStats(summary: {
   }
 }
 
+function canonicalPairId(uidA: string, uidB: string): [string, string, string] {
+  const sorted = uidA < uidB ? [uidA, uidB] : [uidB, uidA];
+  return [sorted[0], sorted[1], `${sorted[0]}_${sorted[1]}`];
+}
+
+export async function sendFriendRequest(
+  target: string | {uid?: string; username?: string},
+): Promise<{
+  status: FriendshipStatus;
+  username: string;
+  displayName: string;
+  pairId: string;
+}> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required.');
+  const myUid = fbUser.uid;
+  const myProfile = await ensurePlayerProfile(fbUser);
+
+  const opts =
+    typeof target === 'string'
+      ? {username: target}
+      : target || {};
+
+  let targetData: Record<string, unknown> | null = null;
+  if (opts.uid) {
+    const tSnap = await getDoc(doc(db, 'players', opts.uid)).catch(() => null);
+    if (tSnap && tSnap.exists()) {
+      targetData = tSnap.data() as Record<string, unknown>;
+    }
+  } else {
+    const handle = String(opts.username || '')
+      .trim()
+      .replace(/^@+/, '')
+      .toLowerCase();
+    if (!/^[a-z0-9_.]{3,20}$/.test(handle)) {
+      throw new Error(
+        'Enter a valid @username (3–20 lowercase letters, numbers, _ or .).',
+      );
+    }
+    try {
+      const q = query(
+        collection(db, 'players'),
+        where('username', '==', handle),
+        limit(3),
+      );
+      const snap = await getDocs(q);
+      if (!snap.empty) {
+        targetData = snap.docs[0].data() as Record<string, unknown>;
+      }
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, 'players');
+    }
+  }
+
+  if (!targetData) {
+    throw new Error('No verified player found with that @username.');
+  }
+
+  const targetUid = String(targetData.uid || '');
+  const targetUsername = String(targetData.username || 'player');
+  const targetDisplayName = sanitizeDisplayName(
+    String(targetData.displayName || targetUsername),
+  );
+
+  if (!targetUid || targetUid === myUid) {
+    throw new Error("You can't add yourself as a friend.");
+  }
+
+  const [u0, u1, pairId] = canonicalPairId(myUid, targetUid);
+  const pairRef = doc(db, 'friendships', pairId);
+
+  try {
+    const out = await runTransaction(db, async (tx) => {
+      const snap = await tx.get(pairRef);
+      if (snap.exists()) {
+        const cur = snap.data() as Record<string, unknown>;
+        if (cur.status === 'accepted') {
+          throw new Error(`@${targetUsername} is already your friend.`);
+        }
+        if (cur.status === 'pending' && cur.recipientUid === myUid) {
+          tx.update(pairRef, {
+            status: 'accepted',
+            updatedAt: serverTimestamp(),
+          });
+          return {
+            status: 'accepted' as FriendshipStatus,
+            username: targetUsername,
+            displayName: targetDisplayName,
+            pairId,
+          };
+        }
+        throw new Error(`Friend request already pending with @${targetUsername}.`);
+      }
+
+      tx.set(pairRef, {
+        pairId,
+        users: [u0, u1],
+        requesterUid: myUid,
+        recipientUid: targetUid,
+        requesterUsername: myProfile.username,
+        requesterDisplayName: myProfile.displayName,
+        recipientUsername: targetUsername,
+        recipientDisplayName: targetDisplayName,
+        status: 'pending',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      return {
+        status: 'pending' as FriendshipStatus,
+        username: targetUsername,
+        displayName: targetDisplayName,
+        pairId,
+      };
+    });
+    return out;
+  } catch (error) {
+    if (error instanceof Error && !error.message.toLowerCase().includes('permission')) {
+      throw error;
+    }
+    handleFirestoreError(error, OperationType.WRITE, `friendships/${pairId}`);
+  }
+}
+
+export async function acceptFriendRequest(pairId: string): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required.');
+  const cleanPair = sanitizeId(pairId);
+  try {
+    await updateDoc(doc(db, 'friendships', cleanPair), {
+      status: 'accepted',
+      updatedAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.UPDATE, `friendships/${cleanPair}`);
+  }
+}
+
+export async function removeFriendship(pairId: string): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required.');
+  const cleanPair = sanitizeId(pairId);
+  try {
+    await deleteDoc(doc(db, 'friendships', cleanPair));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `friendships/${cleanPair}`);
+  }
+}
+
+export function subscribeFriends(
+  cb: (friends: FriendEntry[]) => void,
+  onError?: (msg: string) => void,
+): Unsubscribe {
+  const fbUser = auth.currentUser;
+  if (!fbUser) {
+    cb([]);
+    return () => {};
+  }
+  const myUid = fbUser.uid;
+  const q = query(
+    collection(db, 'friendships'),
+    where('users', 'array-contains', myUid),
+    limit(120),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: FriendEntry[] = snap.docs
+        .map((d) => {
+          const r = d.data() as Record<string, unknown>;
+          const isRequester = r.requesterUid === myUid;
+          const status = (r.status === 'accepted' ? 'accepted' : 'pending') as FriendshipStatus;
+          const direction: FriendDirection =
+            status === 'accepted'
+              ? 'friend'
+              : isRequester
+                ? 'outgoing'
+                : 'incoming';
+          const createdTs = r.createdAt as {toMillis?: () => number} | undefined;
+          return {
+            pairId: String(r.pairId || d.id),
+            uid: String(isRequester ? r.recipientUid : r.requesterUid),
+            username: String(
+              isRequester ? r.recipientUsername : r.requesterUsername,
+            ),
+            displayName: String(
+              isRequester ? r.recipientDisplayName : r.requesterDisplayName,
+            ),
+            status,
+            direction,
+            createdAtMs:
+              createdTs && typeof createdTs.toMillis === 'function'
+                ? createdTs.toMillis()
+                : 0,
+          };
+        })
+        .sort((a, b) => {
+          const order: Record<FriendDirection, number> = {
+            incoming: 0,
+            friend: 1,
+            outgoing: 2,
+          };
+          if (order[a.direction] !== order[b.direction]) {
+            return order[a.direction] - order[b.direction];
+          }
+          return a.displayName.localeCompare(b.displayName);
+        });
+      cb(list);
+    },
+    (error) => {
+      const friendly = reportFirestoreListenerError(
+        error,
+        OperationType.LIST,
+        'friendships',
+      );
+      onError?.(friendly);
+    },
+  );
+}
+
+export async function fetchFriendProfiles(uids: string[]): Promise<ArenaUser[]> {
+  const fbUser = auth.currentUser;
+  if (!fbUser || !Array.isArray(uids) || uids.length === 0) return [];
+  const uniq = Array.from(new Set(uids.filter(Boolean))).slice(0, 40);
+  const snaps = await Promise.all(
+    uniq.map((u) => getDoc(doc(db, 'players', u)).catch(() => null)),
+  );
+  return snaps
+    .filter((s): s is NonNullable<typeof s> => Boolean(s && s.exists()))
+    .map((s) => toArenaUser(s.data() as Record<string, unknown>));
+}
+
+export async function sendRoomInvite(params: {
+  friendUid: string;
+  roomCode: string;
+}): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required.');
+  const myUid = fbUser.uid;
+  const toUid = String(params.friendUid || '').trim();
+  const code = String(params.roomCode || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (!toUid || toUid === myUid) throw new Error('Choose a valid friend.');
+  if (!/^[A-Z0-9]{6}$/.test(code)) throw new Error('Invalid room code.');
+
+  const myProfile = await ensurePlayerProfile(fbUser);
+  const roomSnap = await getDoc(doc(db, 'rooms', code));
+  if (!roomSnap.exists()) throw new Error('Room not found.');
+  const r = roomSnap.data() as Record<string, unknown>;
+  if (r.status === 'finished') throw new Error('This match has already finished.');
+
+  const invId = sanitizeId(
+    `inv_${code}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+  );
+  try {
+    await setDoc(doc(db, 'friendInvites', invId), {
+      id: invId,
+      fromUid: myUid,
+      fromUsername: myProfile.username,
+      fromDisplayName: myProfile.displayName,
+      toUid,
+      roomCode: code,
+      roomTitle: String(r.title || 'Arena Room').slice(0, 48),
+      roomMode: (r.mode === 'sprint_1v1' ? 'sprint_1v1' : 'study_room') as RoomMode,
+      roomSubject: String(r.subject || 'General').slice(0, 24),
+      createdAtMs: Date.now(),
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, `friendInvites/${invId}`);
+  }
+}
+
+export async function dismissRoomInvite(inviteId: string): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser || !inviteId) return;
+  try {
+    await deleteDoc(doc(db, 'friendInvites', sanitizeId(inviteId)));
+  } catch {
+    // Ignore already dismissed
+  }
+}
+
+export function subscribeRoomInvites(
+  cb: (invites: FriendInviteView[]) => void,
+  onError?: (msg: string) => void,
+): Unsubscribe {
+  const fbUser = auth.currentUser;
+  if (!fbUser) {
+    cb([]);
+    return () => {};
+  }
+  const q = query(
+    collection(db, 'friendInvites'),
+    where('toUid', '==', fbUser.uid),
+    limit(20),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const cutoff = Date.now() - 3 * 3600 * 1000;
+      const list: FriendInviteView[] = snap.docs
+        .map((d) => {
+          const r = d.data() as Record<string, unknown>;
+          return {
+            id: String(r.id || d.id),
+            fromUid: String(r.fromUid || ''),
+            fromUsername: String(r.fromUsername || 'friend'),
+            fromDisplayName: String(r.fromDisplayName || 'Friend'),
+            toUid: String(r.toUid || ''),
+            roomCode: String(r.roomCode || ''),
+            roomTitle: String(r.roomTitle || 'Arena Room'),
+            roomMode: (r.roomMode === 'sprint_1v1' ? 'sprint_1v1' : 'study_room') as RoomMode,
+            roomSubject: String(r.roomSubject || 'General'),
+            createdAtMs: Number(r.createdAtMs || 0),
+          };
+        })
+        .filter((inv) => inv.roomCode.length === 6 && inv.createdAtMs >= cutoff)
+        .sort((a, b) => b.createdAtMs - a.createdAtMs);
+      cb(list);
+    },
+    (error) => {
+      const friendly = reportFirestoreListenerError(
+        error,
+        OperationType.LIST,
+        'friendInvites',
+      );
+      onError?.(friendly);
+    },
+  );
+}
+
+export async function sendRoomMessage(params: {
+  roomCode: string;
+  text: string;
+  kind?: RoomMessageKind;
+}): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required.');
+  const code = String(params.roomCode || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (!/^[A-Z0-9]{6}$/.test(code)) throw new Error('Invalid room code.');
+  const cleanText = String(params.text || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, 140);
+  if (!cleanText) return;
+  const kind: RoomMessageKind =
+    params.kind === 'rivalry' || params.kind === 'cheer' ? params.kind : 'chat';
+
+  const myProfile = await ensurePlayerProfile(fbUser);
+  const roomRef = doc(db, 'rooms', code);
+  const roomSnap = await getDoc(roomRef);
+  if (!roomSnap.exists()) throw new Error('Room not found.');
+  const r = roomSnap.data() as Record<string, unknown>;
+  if (r.status === 'finished') {
+    throw new Error('Session already ended — chat is closed.');
+  }
+  const pIds = Array.isArray(r.participantIds)
+    ? (r.participantIds as string[]).filter(Boolean).slice(0, 20)
+    : [];
+  if (!pIds.includes(fbUser.uid)) {
+    throw new Error('Join the room before sending messages.');
+  }
+
+  const msgId = sanitizeId(
+    `m_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+  );
+  const msgPath = `rooms/${code}/messages/${msgId}`;
+  try {
+    await setDoc(doc(db, 'rooms', code, 'messages', msgId), {
+      id: msgId,
+      roomCode: code,
+      senderUid: fbUser.uid,
+      senderUsername: myProfile.username,
+      senderDisplayName: myProfile.displayName,
+      allowedUids: pIds,
+      kind,
+      text: cleanText,
+      createdAtMs: Date.now(),
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, msgPath);
+  }
+}
+
+export async function purgeRoomMessages(rawCode: string): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) return;
+  const code = String(rawCode || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (!/^[A-Z0-9]{6}$/.test(code)) return;
+
+  const uid = fbUser.uid;
+  const refsToDelete = new Map<string, ReturnType<typeof doc>>();
+  try {
+    const [qAllowed, qMine] = await Promise.all([
+      getDocs(
+        query(
+          collection(db, 'rooms', code, 'messages'),
+          where('allowedUids', 'array-contains', uid),
+          limit(200),
+        ),
+      ).catch(() => null),
+      getDocs(
+        query(
+          collection(db, 'rooms', code, 'messages'),
+          where('senderUid', '==', uid),
+          limit(200),
+        ),
+      ).catch(() => null),
+    ]);
+    qAllowed?.docs.forEach((d) => refsToDelete.set(d.id, d.ref));
+    qMine?.docs.forEach((d) => refsToDelete.set(d.id, d.ref));
+  } catch {
+    return;
+  }
+
+  const allRefs = Array.from(refsToDelete.values());
+  if (!allRefs.length) return;
+  for (let i = 0; i < allRefs.length; i += 400) {
+    const batch = writeBatch(db);
+    allRefs.slice(i, i + 400).forEach((ref) => batch.delete(ref));
+    await batch.commit().catch(() => {});
+  }
+}
+
+export function subscribeRoomMessages(
+  rawCode: string,
+  cb: (messages: RoomMessageView[]) => void,
+  onError?: (msg: string) => void,
+): Unsubscribe {
+  const fbUser = auth.currentUser;
+  const code = String(rawCode || '')
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, '');
+  if (!fbUser || !/^[A-Z0-9]{6}$/.test(code)) {
+    cb([]);
+    return () => {};
+  }
+  const q = query(
+    collection(db, 'rooms', code, 'messages'),
+    where('allowedUids', 'array-contains', fbUser.uid),
+    limit(80),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: RoomMessageView[] = snap.docs
+        .map((d) => {
+          const r = d.data() as Record<string, unknown>;
+          const kind: RoomMessageKind =
+            r.kind === 'rivalry' || r.kind === 'cheer' ? r.kind : 'chat';
+          return {
+            id: String(r.id || d.id),
+            roomCode: String(r.roomCode || code),
+            senderUid: String(r.senderUid || ''),
+            senderUsername: String(r.senderUsername || 'player'),
+            senderDisplayName: String(r.senderDisplayName || 'Player'),
+            kind,
+            text: String(r.text || ''),
+            createdAtMs: Number(r.createdAtMs || 0),
+          };
+        })
+        .sort((a, b) => a.createdAtMs - b.createdAtMs)
+        .slice(-60);
+      cb(list);
+    },
+    (error) => {
+      const friendly = reportFirestoreListenerError(
+        error,
+        OperationType.LIST,
+        `rooms/${code}/messages`,
+      );
+      onError?.(friendly);
+    },
+  );
+}
+
 export const firebaseArenaBridge = {
   signInWithGoogle: signInArenaWithGoogle,
   sendEmailSignInLink,
@@ -1822,6 +2351,17 @@ export const firebaseArenaBridge = {
   loadAccountBackup,
   saveAccountBackup,
   importGuestSummaryStats,
+  sendFriendRequest,
+  acceptFriendRequest,
+  removeFriendship,
+  subscribeFriends,
+  fetchFriendProfiles,
+  sendRoomInvite,
+  dismissRoomInvite,
+  subscribeRoomInvites,
+  sendRoomMessage,
+  purgeRoomMessages,
+  subscribeRoomMessages,
   getDiagnostics: () => ({
     logs: getArenaLogs(),
     online: typeof navigator !== 'undefined' ? navigator.onLine : true,

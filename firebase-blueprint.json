@@ -350,6 +350,216 @@
         "createdAt",
         "updatedAt"
       ]
+    },
+    "Friendship": {
+      "title": "Friendship",
+      "description": "Bidirectional friendship or pending friend request between two verified players.",
+      "type": "object",
+      "properties": {
+        "pairId": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "users": { "type": "array" },
+        "requesterUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "recipientUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "requesterUsername": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20,
+          "pattern": "^[a-z0-9_.]{3,20}$"
+        },
+        "requesterDisplayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 24
+        },
+        "recipientUsername": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20,
+          "pattern": "^[a-z0-9_.]{3,20}$"
+        },
+        "recipientDisplayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 24
+        },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "accepted"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "pairId",
+        "users",
+        "requesterUid",
+        "recipientUid",
+        "requesterUsername",
+        "requesterDisplayName",
+        "recipientUsername",
+        "recipientDisplayName",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "FriendInvite": {
+      "title": "FriendInvite",
+      "description": "Live Arena room invite sent from one friend to another.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fromUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "fromUsername": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20,
+          "pattern": "^[a-z0-9_.]{3,20}$"
+        },
+        "fromDisplayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 24
+        },
+        "toUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "roomCode": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 6,
+          "pattern": "^[A-Z0-9]{6}$"
+        },
+        "roomTitle": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 48
+        },
+        "roomMode": {
+          "type": "string",
+          "enum": ["study_room", "sprint_1v1"]
+        },
+        "roomSubject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24
+        },
+        "createdAtMs": { "type": "number" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "fromUid",
+        "fromUsername",
+        "fromDisplayName",
+        "toUid",
+        "roomCode",
+        "roomTitle",
+        "roomMode",
+        "roomSubject",
+        "createdAtMs",
+        "createdAt"
+      ]
+    },
+    "RoomMessage": {
+      "title": "RoomMessage",
+      "description": "Ephemeral session chat, rivalry taunt, or encouragement message that auto-vanishes when the room finishes.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "roomCode": {
+          "type": "string",
+          "minLength": 6,
+          "maxLength": 6,
+          "pattern": "^[A-Z0-9]{6}$"
+        },
+        "senderUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "senderUsername": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20,
+          "pattern": "^[a-z0-9_.]{3,20}$"
+        },
+        "senderDisplayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 24
+        },
+        "allowedUids": { "type": "array" },
+        "kind": {
+          "type": "string",
+          "enum": ["chat", "rivalry", "cheer"]
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 140
+        },
+        "createdAtMs": { "type": "number" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "roomCode",
+        "senderUid",
+        "senderUsername",
+        "senderDisplayName",
+        "allowedUids",
+        "kind",
+        "text",
+        "createdAtMs",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
@@ -372,6 +582,18 @@
     "/rooms/{roomCode}/participants/{participantUid}": {
       "schema": { "$ref": "#/entities/RoomParticipant" },
       "description": "Live standings and readiness per participant inside a room."
+    },
+    "/rooms/{roomCode}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/RoomMessage" },
+      "description": "Ephemeral session chat & rivalry messages deleted automatically when session ends."
+    },
+    "/friendships/{pairId}": {
+      "schema": { "$ref": "#/entities/Friendship" },
+      "description": "Pending and accepted friend relationships between two players."
+    },
+    "/friendInvites/{inviteId}": {
+      "schema": { "$ref": "#/entities/FriendInvite" },
+      "description": "Real-time Arena room invitations sent between friends."
     }
   }
 }

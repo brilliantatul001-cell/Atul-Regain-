@@ -13,6 +13,7 @@ export default defineConfig(() => {
       VitePWA({
         registerType: 'autoUpdate',
         includeAssets: [
+          'hour-logo.png',
           'icon.svg',
           'apple-touch-icon.png',
           'pwa-192x192.png',
@@ -22,10 +23,10 @@ export default defineConfig(() => {
         ],
         manifest: {
           id: '/',
-          name: 'Leave It Timer',
-          short_name: 'Leave It',
+          name: 'Hour',
+          short_name: 'Hour',
           description:
-            'Practice leaving maths questions on time with focus sessions, mock paper mode, test tracker, and offline support.',
+            'Hour — focus sessions, question timing discipline, mock paper mode, test tracker, and offline support.',
           theme_color: '#0f1220',
           background_color: '#0f1220',
           display: 'standalone',

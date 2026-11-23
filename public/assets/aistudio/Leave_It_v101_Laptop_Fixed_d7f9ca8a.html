@@ -16,8 +16,8 @@ html[data-mode="light"]:not([data-diwali="on"])::before{opacity:.5}
 <script>try{var s=JSON.parse(localStorage.getItem('leaveit')||'{}'),m=s.mode;if(m==='light'||(m==='auto'&&matchMedia('(prefers-color-scheme: light)').matches))document.documentElement.dataset.mode='light'}catch(e){}</script>
 
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Leave It Timer v90</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Hour</title>
 <style>
 :root{--bg:#0f1220;--card:#181c30;--text:#eef0ff;--muted:#8d93b8;--accent:#7c6cff;--ok:#3ddc97;--warn:#ffb020;--bad:#ff4d6d;--track:#262b47;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f1f2fb;--card:#fff;--text:#1a1d36;--muted:#6b7099;--track:#e3e5f6}}
@@ -276,12 +276,13 @@ button:focus-visible,a:focus-visible,input:focus-visible { outline:2px solid var
 
 </head>
 <body>
-<div id="splash" aria-label="Leave It Timer welcome screen">
+<div id="splash" aria-label="Hour welcome screen">
   <div class="sp-grid"></div><div class="sp-orb sp-orb-a"></div><div class="sp-orb sp-orb-b"></div>
   <div class="sp-box">
-    <div class="sp-topline sp-in"><span class="sp-live"><i></i> YOUR FOCUS SPACE</span><span class="sp-edition">EST. EVERY SECOND</span></div>
+    <div class="sp-topline sp-in"><span class="sp-live"><i></i> HOUR FOCUS SPACE</span><span class="sp-edition">EVERY SECOND COUNTS</span></div>
+    <div class="sp-emblem sp-in"><div class="sp-emblem-glow"></div><img class="sp-ic" src="/hour-logo.png" alt="Hour logo" style="object-fit:contain"></div>
     <div class="sp-g sp-in" id="spG">GOOD MORNING</div>
-    <div class="sp-brandline sp-in">LEAVE <b>IT.</b></div>
+    <div class="sp-brandline sp-in">HOUR<b>.</b></div>
     <div class="sp-n sp-in" id="spN" style="animation-delay:.35s">CHAMP</div>
     <div class="sp-s sp-in" style="animation-delay:.7s">Make every question count.</div>
     <div class="sp-rule sp-in" style="animation-delay:.85s"><i></i><span>THE ART OF MOVING ON</span><i></i></div>
@@ -306,10 +307,10 @@ button:focus-visible,a:focus-visible,input:focus-visible { outline:2px solid var
 <div class="blobs"><i></i><i></i><i></i></div>
 <div class="app" id="app">
   <header>
-    <div class="brand" id="brand" title="Tap to change your name"><div class="logo" id="logoI">A</div><div class="bw"><div class="bname" id="bName">ATUL</div><div class="btag">Leave It · tap name to edit ✎</div></div></div>
+    <div class="brand" id="brand" title="Tap to change your name"><div class="logo" id="logoI">A</div><div class="bw"><div class="bname" id="bName">ATUL</div><div class="btag">Hour · tap name to edit ✎</div></div></div>
     <div style="display:flex;gap:8px;align-items:center"><button class="chip" id="focusBtn">🎯 Focus</button><div class="q">Question <b id="qn">1</b></div></div>
   </header>
-  <section class="install" id="instBar"><span>📲 Install <b>Leave It</b> as an app</span><button id="inst">Install</button><div class="ihelp" id="ihelp" hidden><b>Android (Chrome):</b> tap ⋮ menu → Install app (or Add to Home screen).<br><b>iPhone (Safari):</b> tap Share → Add to Home Screen.<br>Open this page from an https link, not from a saved file, or the browser will not offer install.</div></section>
+  <section class="install" id="instBar"><span>📲 Install <b>Hour</b> as an app</span><button id="inst">Install</button><div class="ihelp" id="ihelp" hidden><b>Android (Chrome):</b> tap ⋮ menu → Install app (or Add to Home screen).<br><b>iPhone (Safari):</b> tap Share → Add to Home Screen.<br>Open this page from an https link, not from a saved file, or the browser will not offer install.</div></section>
 
   <div class="card">
     <div class="ring" id="ring">
@@ -632,11 +633,11 @@ function makeIcon(sz){const c=document.createElement('canvas');c.width=c.height=
   return c.toDataURL('image/png')}
 let dip=null;
 (function(){try{
-  const i512=makeIcon(512),i192=makeIcon(192);
-  [['icon',i192],['apple-touch-icon',i192]].forEach(([r,h])=>{const l=document.createElement('link');l.rel=r;l.href=h;document.head.appendChild(l)});
+  const i192=location.origin+'/pwa-192x192.png',i512=location.origin+'/pwa-512x512.png',iApple=location.origin+'/apple-touch-icon.png';
+  [['icon',i192],['apple-touch-icon',iApple]].forEach(([r,h])=>{const l=document.createElement('link');l.rel=r;l.href=h;document.head.appendChild(l)});
   if(location.protocol.startsWith('http')){
     const base=location.origin+location.pathname;
-    const man={name:'Leave It Timer',short_name:'Leave It',description:'Practice leaving maths questions on time',id:base,start_url:base,scope:base.replace(/[^/]*$/,''),display:'standalone',orientation:'any',background_color:'#0f1220',theme_color:'#0f1220',icons:[{src:i192,sizes:'192x192',type:'image/png',purpose:'any'},{src:i512,sizes:'512x512',type:'image/png',purpose:'any'}]};
+    const man={name:'Hour',short_name:'Hour',description:'Hour — focus sessions, question timing discipline, mock papers & progress sync',id:base,start_url:base,scope:base.replace(/[^/]*$/,''),display:'standalone',orientation:'any',background_color:'#0f1220',theme_color:'#0f1220',icons:[{src:i192,sizes:'192x192',type:'image/png',purpose:'any'},{src:i512,sizes:'512x512',type:'image/png',purpose:'any'}]};
     const ml=document.createElement('link');ml.rel='manifest';ml.href=URL.createObjectURL(new Blob([JSON.stringify(man)],{type:'application/manifest+json'}));document.head.appendChild(ml);
   }
   const tm=document.createElement('meta');tm.name='theme-color';tm.content='#0f1220';document.head.appendChild(tm);
@@ -749,7 +750,7 @@ function shareCanvas(){const W=1080,Hh=1500,c=document.createElement('canvas');c
   const rr=(a,b,w,h,r,col)=>{x.fillStyle=col;x.beginPath();if(x.roundRect)x.roundRect(a,b,w,h,r);else x.rect(a,b,w,h);x.fill()};
   const tx=(t,a,b,f,col,al)=>{x.font=f;x.fillStyle=col;x.textAlign=al||'left';x.fillText(t,a,b)};
   const all=allT(),st=streakN(),t=H[dk()]||E0();x.fillStyle='#0b0b0b';x.fillRect(0,0,W,Hh);
-  tx('LEAVE IT TIMER',70,100,'700 36px '+F,'#7ed957');
+  tx('HOUR',70,100,'700 36px '+F,'#7ed957');
   /* Profile avatar: saved DP, or the user's first initial when no DP exists. */
   const avx=920,avy=170,avr=54,photoImg=window.__profileSharePhoto;
   x.save();x.beginPath();x.arc(avx,avy,avr,0,Math.PI*2);x.fillStyle='#26334e';x.fill();
@@ -757,7 +758,7 @@ function shareCanvas(){const W=1080,Hh=1500,c=document.createElement('canvas');c
   else{tx(((S.name||'C').trim()[0]||'C').toUpperCase(),avx,avy+22,'900 58px '+F,'#fff','center');}
   x.restore();
   let fs=110;const nm=NAME.toUpperCase();do{x.font='900 '+fs+'px '+F;fs-=4}while(x.measureText(nm).width>940&&fs>40);
-  tx(nm,70,230,'900 '+(fs+4)+'px '+F,'#fff');tx('is practicing to leave questions on time',70,290,'500 34px '+F,'#9a9a9a');
+  tx(nm,70,230,'900 '+(fs+4)+'px '+F,'#fff');tx('is practicing focus & timing on Hour',70,290,'500 34px '+F,'#9a9a9a');
   rr(70,350,940,250,40,'#171717');tx('🔥 '+st+' day streak',540,520,'900 88px '+F,'#fff','center');
   [['Total questions',all.q],['Today',t.q],['Avg per question',(all.q?Math.round(all.sec/all.q):0)+'s'],['Hit time limit',(all.q?Math.round(all.l/all.q*100):0)+'%']].forEach((s,i)=>{const a=70+(i%2)*480,b=640+Math.floor(i/2)*220;rr(a,b,460,190,36,'#171717');tx(String(s[1]),a+40,b+105,'900 80px '+F,'#7ed957');tx(s[0],a+40,b+155,'500 30px '+F,'#9a9a9a')});
   tx('Practice calendar · last 15 weeks',540,1110,'600 30px '+F,'#9a9a9a','center');
@@ -767,8 +768,8 @@ function shareCanvas(){const W=1080,Hh=1500,c=document.createElement('canvas');c
 async function showShare(){if(S.prof&&S.prof.photo){await new Promise(resolve=>{const im=new Image();im.onload=()=>{window.__profileSharePhoto=im;resolve()};im.onerror=resolve;im.src=S.prof.photo})}const c=shareCanvas(),url=c.toDataURL('image/png');
   openGm(`<h2>Your progress card</h2><img src='${url}' alt='Progress card'><div class='gm-row'><button id='gmS2'>📤 Share</button><button id='gmDl'>⬇ Save</button></div><button id='gmClose' style='margin-top:10px'>Close</button>`);
   $('gmClose').onclick=closeGm;
-  $('gmDl').onclick=()=>{const a=document.createElement('a');a.href=url;a.download='leave-it-progress.png';document.body.appendChild(a);a.click();a.remove()};
-  $('gmS2').onclick=()=>c.toBlob(b=>{const f=new File([b],'leave-it-progress.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:'My Leave It progress'}).catch(()=>{});else $('gmDl').click()})}
+  $('gmDl').onclick=()=>{const a=document.createElement('a');a.href=url;a.download='hour-progress.png';document.body.appendChild(a);a.click();a.remove()};
+  $('gmS2').onclick=()=>c.toBlob(b=>{const f=new File([b],'hour-progress.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[f]}))navigator.share({files:[f],text:'My Hour progress'}).catch(()=>{});else $('gmDl').click()})}
 $('shareBtn').onclick=showShare;
 {const _h=hist;hist=function(sec,kind){_h(sec,kind);const o=H[dk()];o.b=o.b||{};const b=o.b[S.subj]=o.b[S.subj]||E0();b.q++;b.sec+=sec;if(kind==='left')b.l++;else if(kind==='solved')b.s++;else b.k++;saveH();if(M.on){if(kind==='left')M.l++;else if(kind==='solved')M.s++;else M.k++}stats()}}
 {const _a=advance;advance=function(auto){_a(auto);mockCheck()}}
@@ -811,7 +812,7 @@ if(!hasX){let t=0;Object.values(H).forEach(o=>{t+=(o.s||0)*10+(o.l||0)*15+(o.k||
 {const _sc=shareCanvas;shareCanvas=function(){const c=_sc(),x=c.getContext('2d'),r=RK[rankOf(X.xp)];x.fillStyle='#7ed957';x.font='700 34px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';x.textAlign='center';x.fillText(r[1]+' '+r[0]+' · '+X.xp+' XP',540,575);return c}}
 $('resetAll').onclick=()=>{if(confirm('Clear all saved progress, XP and ranks?')){H={};saveH();X={xp:0,b:{},last:''};saveX();stats();xpRender()}};
 /* bottom navigation, ring fix, zoom lock */
-document.head.insertAdjacentHTML('beforeend',`<style>html,body{touch-action:pan-y pinch-zoom}svg{overflow:visible}.fm-ring circle{stroke-linecap:round}
+document.head.insertAdjacentHTML('beforeend',`<style>html,body{touch-action:pan-x pan-y!important}svg{overflow:visible}.fm-ring circle{stroke-linecap:round}
 .app{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .app>[data-tab]{display:none}
 body[data-tab=home] .app>[data-tab=home],body[data-tab=mock] .app>[data-tab=mock],body[data-tab=stats] .app>[data-tab=stats],body[data-tab=rank] .app>[data-tab=rank],body[data-tab=settings] .app>[data-tab=settings]{display:block}
@@ -1706,7 +1707,7 @@ function uIcs(u){const p=n=>String(n).padStart(2,'0'),ds=u.date.replace(/-/g,'')
   const tx=s=>String(s).replace(/[\;,]/g,m=>'\\'+m).replace(/\n/g,'\\n');let when;
   if(u.time){const e=new Date(u.date+'T'+u.time+':00');e.setHours(e.getHours()+3);when='DTSTART:'+ds+'T'+u.time.replace(':','')+'00\r\nDTEND:'+e.getFullYear()+p(e.getMonth()+1)+p(e.getDate())+'T'+p(e.getHours())+p(e.getMinutes())+'00'}
   else{const e=new Date(u.date+'T00:00:00');e.setDate(e.getDate()+1);when='DTSTART;VALUE=DATE:'+ds+'\r\nDTEND;VALUE=DATE:'+e.getFullYear()+p(e.getMonth()+1)+p(e.getDate())}
-  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Leave It Timer//EN','BEGIN:VEVENT','UID:'+u.id+'@leaveit',  'DTSTAMP:'+st,when,'SUMMARY:'+tx(u.name+' ('+tLabel(u.exam)+')'),'DESCRIPTION:'+tx((u.note||'')+'\n'+medL(u.med)+' '+u.mode),'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY','DESCRIPTION:Test tomorrow','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
+  const ics=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Hour//EN','BEGIN:VEVENT','UID:'+u.id+'@hour',  'DTSTAMP:'+st,when,'SUMMARY:'+tx(u.name+' ('+tLabel(u.exam)+')'),'DESCRIPTION:'+tx((u.note||'')+'\n'+medL(u.med)+' '+u.mode),'BEGIN:VALARM','TRIGGER:-P1D','ACTION:DISPLAY','DESCRIPTION:Test tomorrow','END:VALARM','END:VEVENT','END:VCALENDAR'].join('\r\n');
   const b=new Blob([ics],{type:'text/calendar'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='leave-it-test.ics';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),2000);xpToast('📅 Calendar file ready')}
 $('fab').onclick=()=>{pendSched=null;openForm()};
 new MutationObserver(()=>{if(!$('ts').classList.contains('on'))pendSched=null}).observe($('ts'),{attributes:true,attributeFilter:['class']});
@@ -2120,7 +2121,7 @@ function plannerShareCanvas(){return new Promise(resolve=>{
   const draw=()=>{
     x.fillStyle='#0b1020';x.fillRect(0,0,W,Hh);
     rr(48,48,984,1404,42,'#151d31');
-    tx('LEAVE IT TIMER',92,132,'800 34px '+F,'#8be28a');
+    tx('HOUR',92,132,'800 34px '+F,'#8be28a');
     const photo=p.photo;
     if(photo&&window.__plannerSharePhoto){x.save();x.beginPath();x.arc(150,255,66,0,Math.PI*2);x.clip();x.drawImage(window.__plannerSharePhoto,84,189,132,132);x.restore();x.strokeStyle='#8be28a';x.lineWidth=7;x.beginPath();x.arc(150,255,69,0,Math.PI*2);x.stroke()}
     else{ x.fillStyle='#26334e';x.beginPath();x.arc(150,255,66,0,Math.PI*2);x.fill();tx(((S.name||'C').trim()[0]||'C').toUpperCase(),150,278,'900 66px '+F,'#fff','center') }
@@ -2393,7 +2394,7 @@ rd();
       const data = {};
       appKeys().forEach(k => data[k] = localStorage.getItem(k));
       const payload = {
-        app: 'Leave It Timer Backup',
+        app: 'Hour Backup',
         formatVersion: 1,
         appVersion: '37',
         exportedAt: new Date().toISOString(),
@@ -2403,7 +2404,7 @@ rd();
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'leave-it-backup-' + new Date().toISOString().slice(0,10) + '.json';
+      a.download = 'hour-backup-' + new Date().toISOString().slice(0,10) + '.json';
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -2421,10 +2422,10 @@ rd();
     reader.onload = () => {
       try {
         const backup = JSON.parse(String(reader.result || ''));
-        if(!backup || backup.app !== 'Leave It Timer Backup' ||
+        if(!backup || (backup.app !== 'Hour Backup' && backup.app !== 'Leave It Timer Backup') ||
            backup.formatVersion !== 1 || !backup.data ||
            typeof backup.data !== 'object' || Array.isArray(backup.data)) {
-          throw new Error('This file is not a supported Leave It Timer backup.');
+          throw new Error('This file is not a supported Hour backup.');
         }
         const entries = Object.entries(backup.data);
         if(!entries.length || entries.some(([k,v]) =>
@@ -2591,7 +2592,7 @@ function renderHistory(){
   return `<section class="ah-session" style="border:1px solid var(--track);border-radius:13px;margin:0 0 8px;overflow:hidden"><button type="button" data-session="${safe(g.id)}" aria-expanded="${open}" style="width:100%;display:flex;align-items:center;gap:10px;text-align:left;padding:12px;background:var(--card);border:0;color:var(--text);cursor:pointer"><span style="font-size:19px">${g.items.length>1?'🧩':'📌'}</span><span style="min-width:0;flex:1"><b style="display:block">${safe(groupTitle(g))}</b><small style="display:block;color:var(--muted);font-size:11px">${meta}${g.items[0].testName?' · '+safe(g.items[0].testName):''}${g.items[0].book?' · 📖 '+safe(g.items[0].book):''}</small><small style="display:block;color:var(--muted);font-size:11px">${g.items.length} ${g.items.length===1?'event':'sub-activities'}${total?' · '+Math.round(total/60)+'m recorded':''}</small></span><span style="color:var(--muted);font-size:18px">${open?'⌃':'⌄'}</span></button>${open?`<div style="padding:2px 12px 10px;background:var(--track)">${sub.map(a=>{const d=new Date(a.at);return `<div style="display:flex;gap:9px;padding:8px 0;border-top:1px solid var(--border)"><span style="color:var(--muted);font-size:11px;white-space:nowrap">${d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span><span style="min-width:0;flex:1"><b style="font-size:12px">${safe(a.title)}</b><small style="display:block;color:var(--muted);font-size:11px">${safe(a.detail||'')}${a.book?' · 📖 '+safe(a.book):''}</small></span><small style="color:var(--muted);white-space:nowrap">${a.seconds!=null?Math.round(a.seconds/60)+'m':''}</small></div>`}).join('')}</div>`:''}</section>`;
  }).join('')}</div><div style="text-align:center;color:var(--muted);font-size:11px;padding:7px 0">${groups.length} sessions · nearby activities grouped within 5 minutes</div>`:'<div class="empty">No activities yet. Start a focus session or mock paper to build your history.</div>';
 }
-if(mockCard){mockCard.addEventListener('click',e=>{const f=e.target.closest('[data-ah]');if(f){activityFilter=f.dataset.ah;mockCard.querySelectorAll('[data-ah]').forEach(b=>b.classList.toggle('on',b===f));expandedSessions.clear();renderHistory()}const session=e.target.closest('[data-session]');if(session){const id=session.dataset.session;expandedSessions.has(id)?expandedSessions.delete(id):expandedSessions.add(id);renderHistory()}if(e.target.id==='activityExport'){const blob=new Blob([JSON.stringify({app:'Leave It Timer',version:38,exportedAt:stamp(),activities},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='leave-it-activity-history.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)}})}
+if(mockCard){mockCard.addEventListener('click',e=>{const f=e.target.closest('[data-ah]');if(f){activityFilter=f.dataset.ah;mockCard.querySelectorAll('[data-ah]').forEach(b=>b.classList.toggle('on',b===f));expandedSessions.clear();renderHistory()}const session=e.target.closest('[data-session]');if(session){const id=session.dataset.session;expandedSessions.has(id)?expandedSessions.delete(id):expandedSessions.add(id);renderHistory()}if(e.target.id==='activityExport'){const blob=new Blob([JSON.stringify({app:'Hour',version:38,exportedAt:stamp(),activities},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='hour-activity-history.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1500)}})}
 // Keep context visible in Focus Mode and refresh it with the existing focus renderer.
 const fmTop=$('fm')&&$('fm').querySelector('.fm-top');if(fmTop&&!$('fmContext'))fmTop.insertAdjacentHTML('afterend',`<div id="fmContext" style="text-align:center;font-size:12px;color:var(--muted);padding:4px 14px 0"></div>`);
 function fmCtxText(){
@@ -2868,7 +2869,7 @@ body.simple-mode .app>.hint{display:none!important}
   settings.className='card';settings.id='experienceModeCard';settings.dataset.tab='settings';
   settings.innerHTML=`<p class="sec">App experience</p><h2 style="font-size:19px;margin:0 0 5px">Choose your experience</h2><p style="font-size:13px;color:var(--muted);margin:0 0 12px">Keep it lightweight or use every feature. You can switch anytime.</p>
     <button type="button" class="mode-choice" data-mode="simple" aria-pressed="false"><span class="mode-icon">🍃</span><span style="text-align:left;flex:1"><b>Simple Mode</b><small>Timer, solved / skip, quick presets and today's progress.</small></span><i class="mode-radio"></i></button>
-    <button type="button" class="mode-choice" data-mode="advanced" aria-pressed="false"><span class="mode-icon">⚡</span><span style="text-align:left;flex:1"><b>Advanced Mode</b><small>Everything in Leave It, including mock tests, stats, rank and advanced tools.</small></span><i class="mode-radio"></i></button>
+    <button type="button" class="mode-choice" data-mode="advanced" aria-pressed="false"><span class="mode-icon">⚡</span><span style="text-align:left;flex:1"><b>Advanced Mode</b><small>Everything in Hour, including mock tests, stats, rank and advanced tools.</small></span><i class="mode-radio"></i></button>
     <p id="experienceModeNote" style="font-size:12px;color:var(--muted);margin:12px 2px 0">Your history and saved data are always safe.</p>`;
   app.appendChild(settings);
   settings.addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(b)setMode(b.dataset.mode)});
@@ -3162,7 +3163,7 @@ html::before{content:"";position:fixed;inset:-20%;z-index:0;pointer-events:none;
 html body .card{transition:transform .25s,box-shadow .25s,border-color .25s}
 html body .card:not(#timerCard):hover{transform:translateY(-3px);box-shadow:0 20px 54px rgba(0,0,0,.38);border-color:color-mix(in srgb,var(--accent) 45%,var(--track))}
 button,.chip,select{cursor:pointer}button:hover:not(:disabled){filter:brightness(1.1)}:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-*{scrollbar-width:thin;scrollbar-color:color-mix(in srgb,var(--accent) 40%,var(--track)) transparent}
+*{scrollbar-width:none!important;-ms-overflow-style:none!important}*::-webkit-scrollbar,*::-webkit-scrollbar-track,*::-webkit-scrollbar-thumb{display:none!important;width:0!important;height:0!important;background:transparent!important}
 #lpClock{display:inline-block;font-size:12px;font-weight:700;color:var(--muted);padding:6px 12px;border-radius:99px;background:var(--track);white-space:nowrap}
 #lpKbd{display:inline-block;padding:6px 10px;font-size:14px}
 #hx{left:50%;right:auto;width:min(880px,92vw);top:3vh;bottom:3vh;transform:translateX(-50%);border-radius:26px;border:1px solid var(--track);box-shadow:0 0 0 100vmax rgba(0,0,0,.6),0 30px 90px rgba(0,0,0,.6);overflow:hidden}
@@ -4297,13 +4298,36 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     border-color: var(--bt, var(--by, #f5c518)) !important;
   }
 
-  /* Top-Left Profile Pill & Unified Profile Modal */
+  /* Top-Left Profile Pill, Hour Brand Pill & Unified Profile Modal */
   .rg-prof-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+  .rg-hour-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 12px 5px 6px;
+    border-radius: 99px;
+    background: var(--card);
+    border: 1px solid var(--track);
+    color: var(--text);
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: -.2px;
+    flex-shrink: 0;
+  }
+  .rg-hour-brand img {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: #0f1220;
+    padding: 2px;
   }
   .rg-prof-pill {
     display: inline-flex;
@@ -4318,6 +4342,24 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     text-align: left;
     max-width: 100%;
     transition: border-color .15s, transform .12s;
+  }
+  /* Enforce hidden scrollbars & disabled zoom globally without disabling scrolling */
+  html, body, *, *::before, *::after {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  *::-webkit-scrollbar, *::-webkit-scrollbar-track, *::-webkit-scrollbar-thumb {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent !important;
+  }
+  html, body {
+    touch-action: pan-x pan-y !important;
+    overscroll-behavior: none;
+  }
+  button, a, [role="button"] {
+    touch-action: manipulation;
   }
   .rg-prof-pill:hover {
     border-color: color-mix(in srgb, var(--accent) 55%, var(--track));
@@ -5270,14 +5312,14 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   function renderAuth(){
     return `<div class="ar-top">
       <div style="display:flex;align-items:center;gap:12px">
-        <img src="/icon.svg" alt="Leave It Timer logo" width="40" height="40" style="border-radius:12px;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.35)">
-        <div><h1>Arena</h1><p class="ar-sub">Passwordless Firebase sign-in · Live rooms, 1v1 sprints &amp; rankings</p></div>
+        <img src="/hour-logo.png" alt="Hour logo" width="44" height="44" style="border-radius:12px;background:#0f1220;padding:4px;object-fit:contain;flex-shrink:0;box-shadow:0 6px 18px rgba(0,0,0,.35)">
+        <div><h1>Hour Arena</h1><p class="ar-sub">Passwordless Firebase sign-in · Live rooms, 1v1 sprints &amp; rankings</p></div>
       </div>
     </div>
     <div class="ar-grid">
       <div class="ar-card">
         <h3>Compete on what actually matters</h3>
-        <p class="ar-sub">Powered by Firebase Cloud Firestore. Your Leave It Timer automatically syncs every solved question, on-time leave, focus session, and mock test.</p>
+        <p class="ar-sub">Powered by Firebase Cloud Firestore. Your Hour account automatically syncs every solved question, on-time leave, focus session, and mock test.</p>
         <div class="ar-stat5" style="grid-template-columns:repeat(3,1fr)">
           <div><b>Rooms</b><span>Live Firestore sync</span></div>
           <div><b>1v1</b><span>Timed sprints</span></div>
@@ -5745,7 +5787,8 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         <span class="rg-prof-av">${escHtml(iniChar)}</span>
         <span class="rg-prof-meta"><b>${escHtml(dn)}</b><small>${escHtml(handle)}</small></span>
         <span class="rg-prof-ed">✎</span>
-      </button>`;
+      </button>
+      <span class="rg-hour-brand"><img src="/hour-logo.png" alt="Hour"><span>Hour</span></span>`;
       if(row.innerHTML!==nextHtml)row.innerHTML=nextHtml;
     }
 
@@ -5755,7 +5798,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     }
     const brandTag=document.querySelector('#brand .btag');
     if(brandTag){
-      brandTag.textContent=ST.user?('@'+ST.user.username+' · tap to edit profile ✎'):'Leave It · tap profile to edit ✎';
+      brandTag.textContent=ST.user?('@'+ST.user.username+' · Hour · tap to edit ✎'):'Hour · tap profile to edit ✎';
     }
   }
 
@@ -5930,6 +5973,24 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   document.addEventListener('keydown',e=>{
     if(e.key==='Escape'&&profModal.classList.contains('on'))closeProfileModal();
   });
+
+  // Disable pinch zoom, gesture zoom, double-tap zoom & Ctrl/Cmd zoom across the SPA
+  if(!window.__hourNoZoomHooked){
+    window.__hourNoZoomHooked=true;
+    let lastTouchEnd=0;
+    window.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey)e.preventDefault()},{passive:false});
+    document.addEventListener('touchstart',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+    document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
+    document.addEventListener('touchend',e=>{
+      const now=Date.now();
+      if(now-lastTouchEnd<=300&&!(e.target&&/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName))){e.preventDefault()}
+      lastTouchEnd=now;
+    },{passive:false});
+    ['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
+    window.addEventListener('keydown',e=>{
+      if((e.ctrlKey||e.metaKey)&&(e.key==='+'||e.key==='-'||e.key==='='||e.key==='_'||e.key==='0')){e.preventDefault()}
+    },{passive:false});
+  }
 
   refreshTopLeftProfile();
 

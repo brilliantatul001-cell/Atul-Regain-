@@ -32,6 +32,42 @@ export default function App() {
   useEffect(() => {
     window.LeaveItFirebase = firebaseArenaBridge;
     void firebaseArenaBridge.completeEmailLinkIfPresent().catch(() => {});
+
+    const onWheel = (e: WheelEvent) => {
+      if (e.ctrlKey || e.metaKey) e.preventDefault();
+    };
+    const onTouch = (e: TouchEvent) => {
+      if (e.touches && e.touches.length > 1) e.preventDefault();
+    };
+    const onGesture = (e: Event) => {
+      e.preventDefault();
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '_' || e.key === '0')
+      ) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('wheel', onWheel, {passive: false});
+    document.addEventListener('touchstart', onTouch, {passive: false});
+    document.addEventListener('touchmove', onTouch, {passive: false});
+    document.addEventListener('gesturestart', onGesture, {passive: false} as AddEventListenerOptions);
+    document.addEventListener('gesturechange', onGesture, {passive: false} as AddEventListenerOptions);
+    document.addEventListener('gestureend', onGesture, {passive: false} as AddEventListenerOptions);
+    window.addEventListener('keydown', onKeyDown, {passive: false});
+
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      document.removeEventListener('touchstart', onTouch);
+      document.removeEventListener('touchmove', onTouch);
+      document.removeEventListener('gesturestart', onGesture);
+      document.removeEventListener('gesturechange', onGesture);
+      document.removeEventListener('gestureend', onGesture);
+      window.removeEventListener('keydown', onKeyDown);
+    };
   }, []);
 
   useEffect(() => {
@@ -87,7 +123,7 @@ export default function App() {
       <iframe
         ref={iframeRef}
         src={SPA_ASSET_PATH}
-        title="Leave It Timer"
+        title="Hour"
         className="block h-full w-full border-0 bg-[#0b0b0b]"
         allow="fullscreen; autoplay; microphone; clipboard-write; wake-lock"
         onLoad={() => {
@@ -143,7 +179,7 @@ export default function App() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-base font-bold text-white">Install Leave It Timer</h2>
+              <h2 className="text-base font-bold text-white">Install Hour</h2>
               <button
                 type="button"
                 aria-label="Close install instructions"
@@ -155,7 +191,7 @@ export default function App() {
             </div>
             <p className="leading-relaxed text-slate-300">
               Tap the <strong className="text-white">Share</strong> button in Safari, then choose{' '}
-              <strong className="text-white">Add to Home Screen</strong> to use Leave It Timer offline like a native app.
+              <strong className="text-white">Add to Home Screen</strong> to use Hour offline like a native app.
             </p>
           </div>
         </div>

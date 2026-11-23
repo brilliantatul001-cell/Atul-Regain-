@@ -2,7 +2,7 @@ import type {CapacitorConfig} from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.atul.leaveittimer',
-  appName: 'Leave It Timer',
+  appName: 'Hour',
   webDir: 'www',
   server: {
     androidScheme: 'https',

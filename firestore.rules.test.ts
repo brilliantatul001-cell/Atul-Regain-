@@ -143,4 +143,7 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('isValidActivity('), 'Must define isValidActivity');
   assert.ok(rulesText.includes('isValidAccountBackup('), 'Must define isValidAccountBackup');
   assert.ok(rulesText.includes("existing().status != 'finished'"), 'Must lock finished rooms');
+  assert.ok(rulesText.includes("'task_completed'"), 'Must allow task_completed activity kind');
+  assert.ok(rulesText.includes('activeTaskTitle.size() <= 60'), 'Must bound activeTaskTitle length');
 }
+

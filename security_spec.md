@@ -27,3 +27,5 @@
 ## 2. Additional Invariants
 7. **Owner-Only Full App Backup**: `/players/{userId}/backup/snapshot` stores parsed maps/arrays for focus logs, question stats, mocks, tests, planner, books, and settings and is strictly readable and writable only by `isOwner(userId)` with parent `/players/{userId}` existing.
 8. **Bounded One-Time Guest Import**: A newly signed-in player with zero stats (`xp == 0 && questionsSolved == 0 && focusMinutes == 0 && mockTestsCount == 0`) may import pre-login guest totals within bounded limits once; all subsequent updates remain capped at `+500 XP` per transaction.
+9. **Deduplicated Planner Task Rewards & Live Room Task Competition**: Completing a daily planner task records an immutable `task_completed` activity document keyed deterministically per task/day so re-toggling cannot farm XP, and increments optional `tasksCompleted` counters on the player and active room participant within strict size and numeric bounds.
+

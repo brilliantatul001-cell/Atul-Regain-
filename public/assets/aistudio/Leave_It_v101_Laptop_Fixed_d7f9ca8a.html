@@ -298,10 +298,11 @@ button:focus-visible,a:focus-visible,input:focus-visible { outline:2px solid var
   <div class="fm-top"><button class="fm-av" id="fmX" aria-label="Exit focus"><i id="fmAv">A</i></button><div class="fm-chip">Question <b id="fmQ">1</b></div></div>
   <div class="fm-ringwrap"><div class="fm-ring"><svg viewBox="0 0 200 200"><circle class="t" cx="100" cy="100" r="78"/><circle class="p" id="fmP" cx="100" cy="100" r="78"/></svg><div class="fm-knob" id="fmK">➜</div><div class="fm-c"><div id="fmT">1:30</div><div id="fmS">Question 1 · 90s limit</div></div></div></div>
   <div class="fm-side">
+    <div id="fmArenaBar" hidden></div>
     <div class="fm-card"><div class="fm-big" id="fmMin">0m</div><div class="fm-sub" id="fmSub">Practiced today</div><div class="fm-seg" id="fmSeg"></div></div>
     <div class="fm-card fm-sch"><div class="e">⏳</div><div class="m"><b id="fmQt">Question 1</b><span id="fmMsg">You can do it!</span></div><div class="fm-pill" id="fmChip">Ready</div></div>
     <button class="fm-go" id="fmGo"><span id="fmGoT">Start focus timer</span><i id="fmGoI">▶</i></button>
-    <div class="fm-nav"><div class="fm-np l"><button id="fmSolved"><i style="color:#7ed957">✓</i>Solved</button><button id="fmStuck"><i style="color:#ff6b6b">⏭</i>Stuck? Next</button><button id="fmSnd"><i id="fmSndI">🔊</i>Sound</button></div><div class="fm-np r"><button id="fmX2"><i>✕</i>Exit</button></div></div>
+    <div class="fm-nav"><div class="fm-np l"><button id="fmSolved"><i style="color:#7ed957">✓</i>Solved</button><button id="fmStuck"><i style="color:#ff6b6b">⏭</i>Stuck? Next</button><button id="fmDoneTask"><i style="color:#7ed957">✓</i>Mark Done</button><button id="fmSnd"><i id="fmSndI">🔊</i>Sound</button></div><div class="fm-np r"><button id="fmX2"><i>✕</i>Exit</button></div></div>
   </div>
 </div></div>
 <div class="blobs"><i></i><i></i><i></i></div>
@@ -310,6 +311,7 @@ button:focus-visible,a:focus-visible,input:focus-visible { outline:2px solid var
     <div class="brand" id="brand" title="Tap to change your name"><div class="logo" id="logoI">A</div><div class="bw"><div class="bname" id="bName">ATUL</div><div class="btag">Hour · tap name to edit ✎</div></div></div>
     <div style="display:flex;gap:8px;align-items:center"><button class="chip" id="focusBtn">🎯 Focus</button><div class="q">Question <b id="qn">1</b></div></div>
   </header>
+  <div id="clArenaBar" hidden></div>
   <section class="install" id="instBar"><span>📲 Install <b>Hour</b> as an app</span><button id="inst">Install</button><div class="ihelp" id="ihelp" hidden><b>Android (Chrome):</b> tap ⋮ menu → Install app (or Add to Home screen).<br><b>iPhone (Safari):</b> tap Share → Add to Home Screen.<br>Open this page from an https link, not from a saved file, or the browser will not offer install.</div></section>
 
   <div class="card">
@@ -519,8 +521,8 @@ function loop(){
   if(left<=0){left=0;render();timeUp();return}
   render();
 }
-function start(){audio();if(running)return;if(justTimedOut){clearTimeout(nextT);advance(false)}clearTimeout(nextT);if(left<=0)left=S.dur;endAt=performance.now()+left*1000;running=true;lastTick=-1;iv=setInterval(loop,100);$('label').textContent=pick();if(left>=S.dur-0.5)say('Question '+(typeof bookNo==='function'?bookNo(q):q)+'. Go.');if(!H_sess){H_sess=1;sess()}awake();render()}
-function pause(){if(!running)return;left=(endAt-performance.now())/1000;running=false;clearInterval(iv);$('label').textContent='Paused';render()}
+function start(){audio();if(running)return;if(justTimedOut){clearTimeout(nextT);advance(false)}clearTimeout(nextT);if(left<=0)left=S.dur;endAt=performance.now()+left*1000;running=true;lastTick=-1;iv=setInterval(loop,100);$('label').textContent=pick();if(left>=S.dur-0.5)say('Question '+(typeof bookNo==='function'?bookNo(q):q)+'. Go.');if(!H_sess){H_sess=1;sess()}awake();render();if(window.LeaveItArenaSync)window.LeaveItArenaSync.notifyStateChange()}
+function pause(){if(!running)return;left=(endAt-performance.now())/1000;running=false;clearInterval(iv);$('label').textContent='Paused';render();if(window.LeaveItArenaSync)window.LeaveItArenaSync.notifyStateChange()}
 function record(to){const s=Math.round(elapsedSec());sampleRecord(to,s);log.push({q,s,to});hist(s,to?'left':'solved');total+=elapsedSec();if(to)timedOut++;else solved++;renderLog()}
 function advance(auto){justTimedOut=false;cpShown=false;cpBonus=0;cpExt=0;leftAtCp=false;cpDismiss();q++;left=S.dur;running=false;clearInterval(iv);render();
   if(auto&&S.auto){$('label').textContent='Starting next question…';nextT=setTimeout(start,1200)}else $('label').textContent='Ready for question '+q}
@@ -687,7 +689,73 @@ $('fmGo').onclick=()=>{audio();running?pause():start()};
 $('fmSolved').onclick=solvedNow;$('fmStuck').onclick=skip;
 $('fmSnd').onclick=()=>{S.snd=!S.snd;save();$('snd').checked=S.snd;if(S.snd){audio();beep(880,.15)}fmRender()};
 $('fmX').onclick=$('fmX2').onclick=()=>$('focusBtn').click();
-$('focusBtn').addEventListener('click',()=>setTimeout(fmRender,0));
+$('focusBtn').addEventListener('click',()=>{setTimeout(()=>{fmRender();if(window.LeaveItArenaSync)window.LeaveItArenaSync.notifyStateChange(true)},0)});
+(function(){
+  let arClassicWaitCode='';
+  function syncClassicArenaHud(){
+    const sync=window.LeaveItArenaSync;if(!sync)return;
+    const rm=sync.getRoom();
+    const clBar=$('clArenaBar'),fmBar=$('fmArenaBar');
+    if(clBar){
+      if(rm){clBar.hidden=false;clBar.innerHTML=sync.renderRoomHudHtml({showOpenTimer:true})}
+      else{clBar.hidden=true;clBar.innerHTML=''}
+    }
+    if(fmBar){
+      if(rm){fmBar.hidden=false;fmBar.innerHTML=sync.renderRoomHudHtml({compact:true})}
+      else{fmBar.hidden=true;fmBar.innerHTML=''}
+    }
+  }
+  if(window.LeaveItArenaSync){
+    window.LeaveItArenaSync.registerClassic(()=>({
+      running:!!running,
+      inFocusOverlay:document.body.classList.contains('focus'),
+      isPlannerTask:Boolean(document.body.classList.contains('planner-task-focus')),
+      taskTitle:document.body.dataset.ptask||''
+    }));
+  }
+  window.LeaveItLaunchClassicRoomTimer=function(rm){
+    if(!rm)return;
+    const sync=window.LeaveItArenaSync;
+    const qSec=Math.max(5,Math.min(3600,Math.round(rm.questionLimitSec||90)));
+    if(!document.body.classList.contains('planner-task-focus')&&!running){
+      setDur(qSec);
+    }
+    if(typeof go==='function')go('home');
+    if(!document.body.classList.contains('focus')){
+      document.body.classList.add('focus');
+      $('focusBtn').classList.add('on');
+    }
+    fmRender();
+    if(rm.status==='countdown'){
+      arClassicWaitCode=rm.roomCode;
+      if(running)pause();
+      if(sync)$('label').textContent='Arena starting in '+sync.getCountdownSec(rm)+'s…';
+      fmRender();
+    }else if(rm.status==='active'){
+      arClassicWaitCode='';
+      if(!running)start();
+    }
+    syncClassicArenaHud();
+    if(sync)sync.notifyStateChange(true);
+  };
+  window.addEventListener('leaveit-room-sync',ev=>{
+    const d=ev.detail||{},rm=d.room,sync=window.LeaveItArenaSync;
+    syncClassicArenaHud();
+    if(!rm){arClassicWaitCode='';return}
+    if(rm.status==='countdown'&&document.body.classList.contains('focus')){
+      arClassicWaitCode=rm.roomCode;
+    }
+    if(rm.status==='active'&&arClassicWaitCode===rm.roomCode){
+      arClassicWaitCode='';
+      if(document.documentElement.dataset.ui!=='regain'&&!running){start()}
+    }
+    if(rm.status==='finished'&&d.prevStatus&&d.prevStatus!=='finished'){
+      if(arClassicWaitCode===rm.roomCode)arClassicWaitCode='';
+      if(sync)sync.emitToast('🏆 Arena match '+rm.roomCode+' finished!');
+    }
+  });
+  setInterval(syncClassicArenaHud,1000);
+})();
 const SUBJ=['Physics','Chemistry','Maths'],SI={Physics:'⚛',Chemistry:'🧪',Maths:'📐'};
 S.subj=SUBJ.includes(S.subj)?S.subj:'Maths';S.durs=S.durs||{};const CP_DEFAULT={Maths:90,Physics:60,Chemistry:60},CAP_DEFAULT={Maths:210,Physics:180,Chemistry:90};
 let TM={samples:{},cp:{},cap:{}};try{TM=Object.assign(TM,JSON.parse(localStorage.getItem('leaveit_times_v86')||'{}'))}catch(e){}
@@ -2034,7 +2102,233 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 .plan-test-wrap{display:flex;flex-direction:column;gap:8px}.plan-test-wrap:empty{display:none}.ptest{border-radius:18px}.pp-add{padding:14px;border:1px solid var(--track);border-radius:18px;background:color-mix(in srgb,var(--track) 42%,transparent);gap:10px}.pp-add input{border-radius:13px;background:var(--card);border-width:1px;font-size:14px}.pp-add input[type=number]{width:78px}.pp-add .chip{border-radius:99px;background:var(--track);font-weight:700}.pp-add .chip.on{box-shadow:0 0 0 2px color-mix(in srgb,var(--c) 25%,transparent)}.pp-add .go{border-radius:13px;font-weight:800;background:var(--accent);box-shadow:0 5px 15px color-mix(in srgb,var(--accent) 20%,transparent)}
 .pp-list{gap:9px}.pt{padding:13px;border-radius:15px;border-left-width:4px;transition:transform .18s,opacity .18s}.pt:active{transform:scale(.99)}.pt .tx{font-weight:650}.pt small{font-size:11px}.pt .ck{width:28px;height:28px}.pt .x{font-size:20px}.pp-e{padding:26px 12px;border:1px dashed var(--track);border-radius:16px;display:flex;flex-direction:column;gap:5px}.pp-e span{font-size:23px;color:var(--accent)}.pp-e b{color:var(--text);font-size:14px}.pp-e small{font-size:12px}.pp-f{padding-top:2px}.pp-f button{background:var(--track);font-weight:650}
 @media(max-width:420px){#plan{padding:13px;border-radius:20px;gap:17px}.plan-hero{padding:15px}.pp-h h2{font-size:22px}.plan-date-tile{padding:12px;gap:10px}.plan-date-badge{min-width:56px;padding:8px 10px}.plan-date-badge .pd-num{font-size:22px}.plan-date-meta .pd-full{font-size:14px}.pp-top{gap:12px}.pp-ring{width:88px;height:88px}.pp-info{font-size:12px}.pp-info strong{font-size:14px}.plan-metrics b{font-size:18px}.plan-metrics span{font-size:9px}.pwd{min-height:76px}}
+#fm{z-index:460!important}
+body.focus #rgNav{display:none!important}
+#rgTo{z-index:600!important}
+.ar-sync-hud{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 14px;border-radius:18px;background:color-mix(in srgb,var(--accent) 13%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 34%,var(--track));color:var(--text);font-size:12.5px;width:100%;box-sizing:border-box}
+.ar-sync-hud.finished{background:color-mix(in srgb,var(--ok) 14%,var(--card));border-color:color-mix(in srgb,var(--ok) 40%,var(--track))}
+.ar-sync-hud .ash-l{min-width:0;flex:1}
+.ar-sync-hud .ash-l b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar-sync-hud .ash-l small{display:block;color:var(--muted);font-size:11.5px;margin-top:2px}
+.ar-sync-hud .ash-r{display:flex;align-items:center;gap:8px;flex:none}
+.ar-sync-hud .ash-clk{font-weight:900;font-size:15px;font-variant-numeric:tabular-nums;color:var(--accent);background:color-mix(in srgb,var(--bg) 55%,transparent);padding:5px 10px;border-radius:99px}
+.ar-sync-hud .ash-btn{border:0;border-radius:99px;padding:7px 12px;background:var(--accent);color:#06241a;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap}
+.ar-sync-hud .ash-btn.ghost{background:var(--track);color:var(--text)}
+#rgArenaBar{margin-bottom:14px}
+#rgArenaHud{width:min(460px,100%);margin:0}
+#rgS .rg-task-done{background:var(--ok);color:#06241a;border:0;padding:12px 20px;border-radius:99px;font:inherit;font-size:14px;font-weight:800;cursor:pointer}
+#clArenaBar{grid-column:1/-1;margin-bottom:4px}
+#fmArenaBar{width:100%;margin-bottom:4px}
+#fmDoneTask{display:none;background:color-mix(in srgb,var(--ok) 20%,#111)!important;color:#7ed957!important}
+body.planner-task-focus #fmDoneTask{display:flex!important}
+.pt .pt-acts{display:flex;align-items:center;gap:6px;flex:none}
+.pt .pt-arena{border:1px solid color-mix(in srgb,var(--accent) 45%,var(--track));background:color-mix(in srgb,var(--accent) 14%,transparent);color:var(--accent);border-radius:10px;padding:7px 9px;font:inherit;font-size:11px;font-weight:800;cursor:pointer;white-space:nowrap}
+.pt .pt-arena:hover{background:var(--accent);color:#06241a}
+.pt .pt-xp{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,transparent);padding:2px 7px;border-radius:99px;margin-left:6px}
+.pl-arena-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 14px;border-radius:18px;background:color-mix(in srgb,var(--accent) 11%,var(--card));border:1px solid color-mix(in srgb,var(--accent) 28%,var(--track));margin-top:2px}
+.pl-arena-bar .pab-l{min-width:0;flex:1}
+.pl-arena-bar .pab-l b{display:block;font-size:13px}
+.pl-arena-bar .pab-l small{display:block;font-size:11.5px;color:var(--muted);margin-top:2px}
+.pl-arena-bar .pab-r{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pl-arena-bar button{border:0;border-radius:99px;padding:8px 13px;background:var(--accent);color:#06241a;font:inherit;font-size:12px;font-weight:800;cursor:pointer;white-space:nowrap}
+.pl-arena-bar button.ghost{background:var(--track);color:var(--text)}
+.ar-plan-picks{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.ar-plan-pick{border:1px solid var(--track);background:var(--bg);color:var(--text);border-radius:99px;padding:6px 11px;font:inherit;font-size:11.5px;font-weight:600;cursor:pointer;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ar-plan-pick.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent)}
+.ar-plan-room-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--track)}
+.ar-plan-room-row:last-child{border-bottom:0}
 </style>`);
+window.LeaveItArenaSync=(function(){
+  const XP_CACHE_KEY='leaveit_pl_xp_v1';
+  let room=null,user=null,linkedTask=null,prefillMatch=null;
+  let rgProvider=null,classicProvider=null;
+  let lastPushedState='',lastPushedTask='',lastTickAt=Date.now();
+  const roomFocusedMs={};
+
+  function loadXpCache(){try{return JSON.parse(localStorage.getItem(XP_CACHE_KEY)||'{}')}catch(e){return{}}}
+  function saveXpCache(m){try{localStorage.setItem(XP_CACHE_KEY,JSON.stringify(m))}catch(e){}}
+  function hashKey(str){
+    let h=2166136261;
+    for(let i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619)}
+    return (h>>>0).toString(36);
+  }
+  function taskSessionId(dayKey,taskTitle){
+    const d=String(dayKey||'').replace(/[^0-9]/g,'')||'00000000';
+    return 'task_'+d+'_'+hashKey(d+'|'+String(taskTitle||'').trim().toLowerCase());
+  }
+  function getTaskRewardedXp(dayKey,taskTitle){
+    const id=taskSessionId(dayKey,taskTitle);
+    return Number(loadXpCache()[id]||0);
+  }
+  function subjFromCode(code){
+    return code==='M'?'Maths':code==='P'?'Physics':code==='C'?'Chemistry':'General';
+  }
+  function fmtClock(sec){
+    const s=Math.max(0,Math.ceil(Number(sec)||0));
+    return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+  }
+  function getCountdownSec(r){
+    const rm=r||room;
+    if(!rm||rm.status!=='countdown'||!rm.countdownEndsAt)return 0;
+    return Math.max(0,Math.ceil((rm.countdownEndsAt-Date.now())/1000));
+  }
+  function getRemainingSec(r){
+    const rm=r||room;
+    if(!rm)return 0;
+    if(rm.status==='active'&&rm.endsAt)return Math.max(0,Math.ceil((rm.endsAt-Date.now())/1000));
+    if(rm.status==='countdown'||rm.status==='lobby')return Number(rm.durationSec||1500);
+    return 0;
+  }
+  function getActivityState(){
+    const rg=rgProvider?rgProvider():null;
+    const cl=classicProvider?classicProvider():null;
+    let liveState='idle';
+    let taskTitle=linkedTask?String(linkedTask.task||''):'';
+    if(rg&&rg.live&&rg.running){
+      liveState=rg.mode==='q'?'solving':(rg.phase==='b'?'paused':'focusing');
+      if(rg.taskTitle)taskTitle=rg.taskTitle;
+    }else if(cl&&cl.running){
+      liveState=cl.isPlannerTask?'focusing':'solving';
+      if(cl.taskTitle)taskTitle=cl.taskTitle;
+    }else if((rg&&rg.live&&!rg.finished)||(cl&&(cl.inFocusOverlay||cl.isPlannerTask))){
+      liveState='paused';
+      if(cl&&cl.taskTitle)taskTitle=cl.taskTitle;
+      if(rg&&rg.taskTitle)taskTitle=rg.taskTitle;
+    }
+    const now=Date.now();
+    const dt=Math.min(10000,Math.max(0,now-lastTickAt));
+    lastTickAt=now;
+    let focusSeconds=0;
+    if(room&&room.status==='active'){
+      if(liveState==='focusing'||liveState==='solving'){
+        roomFocusedMs[room.roomCode]=(roomFocusedMs[room.roomCode]||0)+dt;
+      }
+      const maxSec=Math.max(0,Math.min(room.durationSec||14400,Math.floor((now-(room.startedAt||now))/1000)));
+      const me=Array.isArray(room.participants)&&user?room.participants.find(p=>p.userId===user.id):null;
+      focusSeconds=Math.max(Number(me&&me.focusSeconds||0),Math.min(maxSec,Math.floor((roomFocusedMs[room.roomCode]||0)/1000)));
+    }
+    return {liveState,focusSeconds,activeTaskTitle:String(taskTitle||'').trim().slice(0,60)};
+  }
+  function notifyStateChange(force){
+    if(!room||room.status!=='active')return;
+    const fb=(window.parent&&window.parent!==window&&window.parent.LeaveItFirebase)||window.LeaveItFirebase;
+    if(!fb||!fb.updateLiveProgress)return;
+    const st=getActivityState();
+    if(!force&&st.liveState===lastPushedState&&st.activeTaskTitle===lastPushedTask)return;
+    lastPushedState=st.liveState;
+    lastPushedTask=st.activeTaskTitle;
+    fb.updateLiveProgress(room.roomCode,st.liveState,st.focusSeconds,st.activeTaskTitle).catch(()=>{});
+  }
+  function setRoom(next){
+    const prevStatus=room&&room.status;
+    room=next||null;
+    if(!room){lastPushedState='';lastPushedTask=''}
+    try{window.dispatchEvent(new CustomEvent('leaveit-room-sync',{detail:{room,prevStatus}}))}catch(e){}
+  }
+  function setUser(next){
+    user=next||null;
+    try{window.dispatchEvent(new CustomEvent('leaveit-arena-user',{detail:{user}}))}catch(e){}
+  }
+  function emitToast(msg){
+    const o=document.getElementById('rgTo');
+    if(o){o.textContent=msg;o.classList.add('on');clearTimeout(o._t);o._t=setTimeout(()=>o.classList.remove('on'),2800)}
+  }
+  function rewardPlannerTask(opts){
+    if(!opts||!opts.task)return;
+    const t=opts.task,dayKey=opts.dayKey||(typeof dk==='function'?dk():'');
+    const title=String(t.t||t.task||'Task').trim();
+    if(!title)return;
+    const sid=taskSessionId(dayKey,title);
+    const cache=loadXpCache();
+    const plannedMin=Math.max(0,Math.min(240,Math.round(Number(opts.plannedMinutes!=null?opts.plannedMinutes:t.m)||0)));
+    const fromFocus=Boolean(opts.fromFocus);
+    const inRoom=Boolean(room&&(room.status==='active'||room.status==='lobby'));
+    const estXp=15+Math.min(20,Math.floor(plannedMin/10)*3)+(fromFocus?10:0)+(inRoom?10:0);
+    if(!cache[sid]){
+      cache[sid]=estXp;
+      saveXpCache(cache);
+      if(typeof addXP==='function'){
+        try{addXP(estXp,'✓ '+title+' · +'+estXp+' XP')}catch(e){}
+      }
+    }
+    const subj=subjFromCode(t.s);
+    try{
+      const detail={
+        type:'leaveit-activity',
+        clientSessionId:sid,
+        kind:'task_completed',
+        subject:subj,
+        plannedMinutes:plannedMin,
+        fromFocus,
+        taskTitle:title
+      };
+      if(window.parent&&window.parent!==window)window.parent.postMessage(detail,location.origin);
+      window.dispatchEvent(new CustomEvent('leaveit-arena-event',{detail}));
+    }catch(e){}
+  }
+  function renderRoomHudHtml(opts){
+    const rm=room;
+    if(!rm)return '';
+    const me=user&&Array.isArray(rm.participants)?rm.participants.find(p=>p.userId===user.id):null;
+    const myRank=me?(rm.participants.findIndex(p=>p.userId===user.id)+1):0;
+    const isFin=rm.status==='finished',isCd=rm.status==='countdown',isAct=rm.status==='active';
+    const clkTxt=isFin?'DONE':isCd?(getCountdownSec(rm)+'s'):isAct?fmtClock(getRemainingSec(rm)):fmtClock(rm.durationSec);
+    const statTxt=isFin?(rm.winnerDisplayName?'🏆 Winner: '+rm.winnerDisplayName:'🏆 Match finished'):isCd?'Starting in…':isAct?('Live'+(myRank?' · #'+myRank+'/'+rm.participants.length:'')+(me?' · '+me.sprintScore+' pts':'')):'In Lobby · Waiting to start';
+    const actionBtn=(opts&&opts.showOpenTimer&&!isFin)?`<button type="button" class="ash-btn" data-ar-hud="openTimer">Sync Timer</button>`:'';
+    const arenaBtn=`<button type="button" class="ash-btn ${opts&&opts.compact?'ghost':''}" data-ar-hud="goArena">${isFin?'Results':'Arena'}</button>`;
+    return `<div class="ar-sync-hud ${isFin?'finished':''}">
+      <div class="ash-l"><b>${rm.mode==='sprint_1v1'?'⚔️':'🏟'} ${String(rm.title||'Arena Room').replace(/[<>&"]/g,'')} · ${rm.roomCode}</b><small>${String(statTxt).replace(/[<>&"]/g,'')}${linkedTask&&linkedTask.task?' · 📋 '+String(linkedTask.task).replace(/[<>&"]/g,''):''}</small></div>
+      <div class="ash-r"><span class="ash-clk">${clkTxt}</span>${actionBtn}${arenaBtn}</div>
+    </div>`;
+  }
+  return {
+    getRoom:()=>room,
+    setRoom,
+    getUser:()=>user,
+    setUser,
+    getLinkedTask:()=>linkedTask,
+    setLinkedTask:t=>{linkedTask=t||null;notifyStateChange(true)},
+    getPrefillMatch:()=>{const p=prefillMatch;prefillMatch=null;return p},
+    setPrefillMatch:p=>{prefillMatch=p||null},
+    registerRegain:fn=>{rgProvider=fn},
+    registerClassic:fn=>{classicProvider=fn},
+    getActivityState,
+    notifyStateChange,
+    getCountdownSec,
+    getRemainingSec,
+    fmtClock,
+    rewardPlannerTask,
+    getTaskRewardedXp,
+    taskSessionId,
+    subjFromCode,
+    renderRoomHudHtml,
+    emitToast,
+    openArenaTab:()=>{
+      const root=document.documentElement;
+      if(root.dataset.ui==='regain')document.querySelector('#rgNav button[data-n="arena"]')?.click();
+      else document.querySelector('#nav button[data-t="arena"]')?.click();
+    },
+    launchRegainRoomTimer:null,
+    launchRegainPlannerTask:null,
+    onEnterArenaFromOutside:null
+  };
+})();
+document.addEventListener('click',e=>{
+  const hudBtn=e.target.closest('[data-ar-hud]');
+  if(!hudBtn)return;
+  const act=hudBtn.dataset.arHud;
+  const sync=window.LeaveItArenaSync;
+  if(!sync)return;
+  if(act==='goArena'){
+    const rgS=document.getElementById('rgS');
+    if(rgS&&rgS.classList.contains('on')){rgS.classList.remove('on')}
+    if(document.body.classList.contains('focus')){document.getElementById('focusBtn')?.click()}
+    sync.openArenaTab();
+  }else if(act==='openTimer'){
+    const rm=sync.getRoom();
+    if(rm&&typeof window.LeaveItGoToSyncedTimer==='function')window.LeaveItGoToSyncedTimer(rm);
+  }
+});
 const K='leaveit_pl';let P={};try{P=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}
 const sv=()=>{try{localStorage.setItem(K,JSON.stringify(P))}catch(e){}};
 const SB={M:['Maths','#7c6cff'],P:['Physics','#27d3ff'],C:['Chem','#ff7ab8'],O:['Other','#ffb020']};
@@ -2079,17 +2373,31 @@ function rd(){
   const bkTxt=dr.bk?('📖 '+dr.bk+' · from Q'+(dr.bs||1)+(dr.be?' → Q'+dr.be:'')):'📖 Have a book? Enter question number';
   const bkRow=`<button class='bkb ${dr.bk?'on':''}' data-pbk='1'><span class='t'>${esc(bkTxt)}</span><span class='e'>${dr.bk?'Edit':'Set ›'}</span></button>`;
   const tasksHeading=tdy?"Today's tasks":(rel.endsWith('day')?rel+"'s tasks":'Tasks · '+shortDate);
+  const arSync=window.LeaveItArenaSync;
+  const arRoom=arSync?arSync.getRoom():null;
+  const arUser=arSync?arSync.getUser():null;
+  const plArenaHtml=arRoom?`<div class="pl-arena-bar">
+    <div class="pab-l"><b>${arRoom.mode==='sprint_1v1'?'⚔️':'🏟'} Competing in ${esc(arRoom.title)} · ${esc(arRoom.roomCode)}</b><small>${arRoom.status==='active'?'Room live — finish tasks for +10 bonus XP &amp; +30 Sprint pts':arRoom.status==='countdown'?'Match starting soon — tap Sync Timer':'In lobby · attach a task or start focus'}</small></div>
+    <div class="pab-r">${arRoom.status!=='finished'?'<button type="button" data-ar-hud="openTimer">▶ Sync Timer</button>':''}<button type="button" class="ghost" data-ar-hud="goArena">Arena</button></div>
+  </div>`:arUser?`<div class="pl-arena-bar">
+    <div class="pab-l"><b>⚡ ${arUser.xp.toLocaleString()} Arena XP · ✅ ${arUser.tasksCompleted||0} tasks synced</b><small>Complete tasks for 15–45 XP (+10 XP &amp; +30 pts in an active room)</small></div>
+    <div class="pab-r"><button type="button" data-pl-arena="open">🏆 Compete in Arena</button></div>
+  </div>`:`<div class="pl-arena-bar">
+    <div class="pab-l"><b>🏆 Daily Planner × Arena</b><small>Sign in inside Arena to earn XP and compete with friends on daily tasks</small></div>
+    <div class="pab-r"><button type="button" data-pl-arena="open">Sign in · Arena</button></div>
+  </div>`;
   card.innerHTML=`<div class="plan-hero"><div class="plan-kicker">YOUR COMMAND CENTRE</div><div class="pp-h"><div><h2>Daily Planner</h2></div><div class="pp-nav"><button type="button" data-plan-share="1" aria-label="Share this action plan" title="Share action plan">📤</button><button type="button" data-n="-1" aria-label="Previous day">‹</button><button type="button" data-n="0" class="${tdy?'is-today':''}" aria-label="Go to today">Today</button><button type="button" data-n="1" aria-label="Next day">›</button></div></div>
 <div class="plan-date-tile ${tdy?'is-today':'is-other'}"><div class="plan-date-badge"><span class="pd-rel">${rel}</span><span class="pd-num">${dt.getDate()}</span></div><div class="plan-date-meta"><span class="pd-full">${fullDate}</span><span class="pd-sub">${tdy?'This is your plan for today.':'Viewing another day · tap Today to jump back.'}</span></div></div>
 <div class="pp-top"><div class="pp-ring"><svg viewBox="0 0 92 92" width="92" height="92"><circle class="tr" cx="46" cy="46" r="37"/><circle cx="46" cy="46" r="37" style="stroke:${pc===100?'var(--ok)':'var(--accent)'};stroke-dasharray:${C};stroke-dashoffset:${C*(1-pc/100)};transition:stroke-dashoffset .5s;filter:drop-shadow(0 0 6px ${pc===100?'var(--ok)':'var(--accent)'})"/></svg><b>${pc}%</b></div>
 <div class="pp-info"><strong>${dn} / ${L.length} tasks completed</strong>${msg}<span class="plan-streak">🔥 ${st}-day perfect streak</span></div></div>
 <div class="plan-metrics"><div><b>${L.length-dn}</b><span>Remaining</span></div><div><b>${md}<small> / ${mp}</small></b><span>Minutes done</span></div><div><b>${L.length?pc+'%':'—'}</b><span>Completion</span></div></div></div>
+${plArenaHtml}
 <div class="plan-section"><div class="plan-section-h"><div><span class="plan-eyebrow">PICK A DATE</span><h3>Your week</h3></div><span class="plan-muted">Selected day is highlighted</span></div><div class="pp-wk">${wk}</div></div>
 ${tb?`<div class="plan-test-wrap">${tb}</div>`:''}
 <div class="plan-section"><div class="plan-section-h"><div><span class="plan-eyebrow">BUILD YOUR DAY</span><h3>Add a task</h3></div><span class="plan-muted">${tdy?'For today':('For '+shortDate)}</span></div>
 <div class="pp-add"><div class="r"><input type="text" id="ppT" maxlength="60" placeholder="e.g. Rotation: 20 questions" value="${esc(dr.t)}"><input type="number" id="ppM" inputmode="numeric" min="1" max="600" placeholder="min" value="${esc(dr.m)}"></div>
 ${bkRow}<div class="r" style="flex-wrap:wrap;align-items:center">${Object.entries(SB).map(([k,v])=>`<button type="button" class="chip ${sub===k?'on':''}" style="--c:${v[1]}" data-s="${k}">${v[0]}</button>`).join('')}<button type="button" class="go" id="ppA" style="margin-left:auto">＋ Add task</button></div></div></div>
-<div class="plan-section"><div class="plan-section-h"><div><span class="plan-eyebrow">EXECUTION</span><h3>${tasksHeading}</h3></div><span class="plan-muted">${dn} of ${L.length} complete</span></div><div class="pp-list">${L.length?L.map((t,i)=>`<div class="pt ${t.d?'d':''}" style="--c:${SB[t.s||'O'][1]}"><button type="button" class="ck" data-k="${i}" aria-label="Toggle task">${t.d?'✓':''}</button><div class="tx">${esc(t.t)}<small>${SB[t.s||'O'][0]}${t.m?' · '+t.m+' min':''}${t.bk?' · 📖 '+esc(t.bk.n)+' Q'+t.bk.s+(t.bk.e?'–'+t.bk.e:'')+(t.bk.cur&&t.bk.cur!==t.bk.s?' · next Q'+t.bk.cur:''):''}</small></div>${!t.d?`<button type="button" class="pt-strict" data-strict="${i}" aria-label="Start strict session">START</button>`:''}<button type="button" class="x" data-x="${i}" aria-label="Delete task">×</button></div>`).join(''):`<div class="pp-e"><span>✦</span><b>${tdy?'Your day is a blank page.':'No tasks on this day.'}</b><small>${tdy?'Add your first task and start building momentum.':'Switch day or add a task below.'}</small></div>`}</div>
+<div class="plan-section"><div class="plan-section-h"><div><span class="plan-eyebrow">EXECUTION</span><h3>${tasksHeading}</h3></div><span class="plan-muted">${dn} of ${L.length} complete</span></div><div class="pp-list">${L.length?L.map((t,i)=>{const rxp=arSync?arSync.getTaskRewardedXp(day,t.t):0;return `<div class="pt ${t.d?'d':''}" style="--c:${SB[t.s||'O'][1]}"><button type="button" class="ck" data-k="${i}" aria-label="Toggle task">${t.d?'✓':''}</button><div class="tx">${esc(t.t)}${t.d&&rxp?`<span class="pt-xp">⚡ +${rxp} XP</span>`:''}<small>${SB[t.s||'O'][0]}${t.m?' · '+t.m+' min':''}${t.bk?' · 📖 '+esc(t.bk.n)+' Q'+t.bk.s+(t.bk.e?'–'+t.bk.e:'')+(t.bk.cur&&t.bk.cur!==t.bk.s?' · next Q'+t.bk.cur:''):''}</small></div><div class="pt-acts">${!t.d?`<button type="button" class="pt-strict" data-strict="${i}" aria-label="Start focus session">START</button><button type="button" class="pt-arena" data-compete="${i}" title="Compete with this task in Arena">${arRoom?'⚔ Sync':'🏆 Arena'}</button>`:''}<button type="button" class="x" data-x="${i}" aria-label="Delete task">×</button></div></div>`}).join(''):`<div class="pp-e"><span>✦</span><b>${tdy?'Your day is a blank page.':'No tasks on this day.'}</b><small>${tdy?'Add your first task and start building momentum.':'Switch day or add a task below.'}</small></div>`}</div>
 <div class="pp-f"><span>${L.length?(L.length-dn)+' tasks left':''}</span><span style="display:flex;gap:6px">${tdy?`<button data-co="1">↪ Carry over</button>`:''}${dn?`<button data-cl="1">Clear completed</button>`:''}</span></div></div>`}
 card.addEventListener('input',e=>{if(e.target.id==='ppT')dr.t=e.target.value;if(e.target.id==='ppM')dr.m=e.target.value;if(e.target.id==='ppT'&&dr.t.trim().length>=3&&!dr.bk)plannerBkHint()});
 card.addEventListener('click',e=>{if(e.target.closest('[data-pbk]'))plannerBkSheet()});
@@ -2101,12 +2409,13 @@ function add(){const t=dr.t.trim();if(!t){const i=$('ppT');i.focus();return}cons
 card.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target.id==='ppT')add()});
 card.addEventListener('click',e=>{const tt=e.target.closest('[data-u]');if(tt&&!e.target.closest('button')){if(typeof uDetail==='function')uDetail(+tt.dataset.u);return}const b=e.target.closest('button');if(!b)return;const D=b.dataset;
   if(D.planShare){showPlannerShare();return}
+  else if(D.plArena==='open'){window.LeaveItArenaSync&&window.LeaveItArenaSync.openArenaTab();return}
   else if(D.d){day=D.d;rd()}
   else if(D.n!==undefined){if(D.n==='0')day=dk();else{day=dayKeyAdd(day,+D.n)}rd()}
   else if(D.s){sub=D.s;rd()}
   else if(D.ac){const u=UL.find(x=>x.id===+D.ac);if(!u)return;const L=P[day]=P[day]||[];let n=0;Object.entries(u.ch||{}).forEach(([s,a])=>(a||[]).forEach(c=>{const t=('Revise: '+c).slice(0,60);if(L.some(x=>x.t===t))return;L.push({t,m:0,s:/phys/i.test(s)?'P':/chem/i.test(s)?'C':/math/i.test(s)?'M':'O',d:0});n++}));if(!L.length)delete P[day];sv();rd();if(typeof xpToast==='function')xpToast(n?'Added '+n+' chapter'+(n>1?'s':''):'Already in your plan')}
   else if(b.id==='ppA')add();
-  else if(D.k!==undefined){const L=P[day],t=L[+D.k];t.d=t.d?0:1;window.LH&&LH.pl(t.d?'completed':'reopened',t.t,day,+t.m||0);sv();rd();if(t.d&&done(L)){confetti();if(typeof xpToast==='function')xpToast('📅 Plan complete!');if(S.vib&&navigator.vibrate)navigator.vibrate([80,40,80])}}
+  else if(D.k!==undefined){const L=P[day],t=L[+D.k];t.d=t.d?0:1;window.LH&&LH.pl(t.d?'completed':'reopened',t.t,day,+t.m||0);sv();if(t.d&&window.LeaveItArenaSync){window.LeaveItArenaSync.rewardPlannerTask({task:t,index:+D.k,dayKey:day,plannedMinutes:+t.m||0,fromFocus:false})}rd();if(t.d&&done(L)){confetti();if(typeof xpToast==='function')xpToast('📅 Plan complete!');if(S.vib&&navigator.vibrate)navigator.vibrate([80,40,80])}}
   else if(D.x!==undefined){window.LH&&P[day][+D.x]&&LH.pl('removed',P[day][+D.x].t,day,0);P[day].splice(+D.x,1);if(!P[day].length)delete P[day];sv();rd()}
   else if(D.cl){P[day]=P[day].filter(t=>!t.d);if(!P[day].length)delete P[day];sv();rd()}
   else if(D.co){const y=new Date();y.setDate(y.getDate()-1);const yk=dk(y),un=(P[yk]||[]).filter(t=>!t.d);if(!un.length){if(typeof xpToast==='function')xpToast('Nothing to carry over');return}
@@ -2194,6 +2503,11 @@ function plannerFocusComplete(){
   }catch(e){}
   window.LH&&LH.sx('completed',{task:task.task,index:task.index,dayKey:task.dayKey,totalMs:task.totalMs,startedAt:task.startedAt});
   window.LH&&LH.pl('completed',task.task,task.dayKey,Math.round(task.totalMs/60000));
+  if(window.LeaveItArenaSync){
+    const item=(P[task.dayKey]||[])[task.index];
+    window.LeaveItArenaSync.rewardPlannerTask({task:item||{t:task.task,m:Math.round(task.totalMs/60000),s:'O'},index:task.index,dayKey:task.dayKey,plannedMinutes:Math.round(task.totalMs/60000),fromFocus:true});
+    window.LeaveItArenaSync.setLinkedTask(null);
+  }
   $('label').textContent='✓ Task completed. Great work!';
   plannerFocusSave();
   render();
@@ -2224,6 +2538,7 @@ start=function(){
   $('label').textContent='Stay focused on: '+plannerFocusTask.task;
   plannerFocusSave();
   render();
+  if(window.LeaveItArenaSync)window.LeaveItArenaSync.notifyStateChange(true);
 };
 const _plannerPause=pause;
 pause=function(){
@@ -2237,6 +2552,7 @@ pause=function(){
   $('label').textContent='Paused · '+plannerFocusTask.task;
   plannerFocusSave();
   render();
+  if(window.LeaveItArenaSync)window.LeaveItArenaSync.notifyStateChange(true);
 };
 const _plannerFmRender=fmRender;
 fmRender=function(){
@@ -2265,21 +2581,34 @@ function plannerFocusExit(){
   if(plannerSavedDur!==null){S.dur=plannerSavedDur;plannerSavedDur=null;left=S.dur;save()}
   plannerFocusSave();
   document.body.classList.remove('planner-task-focus');delete document.body.dataset.ptask;
+  if(window.LeaveItArenaSync)window.LeaveItArenaSync.setLinkedTask(null);
   $('fmGo').disabled=false;
   $('label').textContent='Ready? Tap start.';
   render();
   $('focusBtn').click();
 }
 $('fmX').onclick=$('fmX2').onclick=plannerFocusExit;
+if($('fmDoneTask'))$('fmDoneTask').onclick=()=>{if(plannerFocusTask&&!plannerTaskCompleted)plannerFocusComplete()};
 
 function launchPlannerFocus(task,index,dayKey){
-  if(running){pause()}
   const mins=Math.max(1,Math.min(600,Number(task.m)||45));
+  const sync=window.LeaveItArenaSync;
+  const rootEl=document.documentElement;
+  if(!task.bk&&rootEl.dataset.ui==='regain'&&rootEl.dataset.rg!=='old'&&sync&&typeof sync.launchRegainPlannerTask==='function'){
+    sync.launchRegainPlannerTask({task,index,dayKey,durationMin:mins});
+    return;
+  }
+  if(running){pause()}
+  if(sync){
+    sync.setLinkedTask({task:task.t,index,dayKey,plannedMin:mins,subj:sync.subjFromCode(task.s)});
+  }
+  const activeRm=sync?sync.getRoom():null;
+  const syncedSecs=(activeRm&&activeRm.status==='active'&&activeRm.endsAt)?Math.max(60,Math.ceil((activeRm.endsAt-Date.now())/1000)):mins*60;
   plannerSavedDur=S.dur;
   const bk=task.bk?{n:task.bk.n,s:task.bk.s,e:task.bk.e||null,cur:task.bk.cur||task.bk.s}:null;
-  plannerFocusTask={task:task.t,index,dayKey,totalMs:mins*60000,deadline:Date.now()+mins*60000,paused:false,remaining:mins*60000,startedAt:Date.now(),bk,prevBk:{on:BK.on,name:BK.name,start:BK.start,end:BK.end}};
+  plannerFocusTask={task:task.t,index,dayKey,totalMs:syncedSecs*1000,deadline:Date.now()+syncedSecs*1000,paused:false,remaining:syncedSecs*1000,startedAt:Date.now(),bk,prevBk:{on:BK.on,name:BK.name,start:BK.start,end:BK.end}};
   plannerTaskCompleted=false;
-  S.dur=mins*60;left=mins*60;running=false;clearInterval(iv);
+  S.dur=syncedSecs;left=syncedSecs;running=false;clearInterval(iv);
   if(bk){
     if(q>1||log.length)$('reset').click();
     BK.on=true;BK.name=bk.n;BK.start=bk.cur;BK.end=bk.e;BK.pos[bk.n]=bk.cur;saveBK();
@@ -2338,12 +2667,39 @@ $('tsBody').addEventListener('click',e=>{
 function plannerBkHint(){try{if(!S.mkChat||mkOff()||document.body.classList.contains('focus'))return;const k='leaveit_pl_bkhint';if(localStorage.getItem(k)===dk())return;localStorage.setItem(k,dk());
   mkShowText('Studying from a book? Tap 📖 Link a book and I’ll set the exact question numbers for this task.','think',{voice:true})}catch(e){}}
 card.addEventListener('click',e=>{
+  const cBtn=e.target.closest('[data-compete]');
+  if(cBtn){
+    e.preventDefault();e.stopPropagation();
+    const i=Number(cBtn.dataset.compete),task=(P[day]||[])[i];
+    if(!task||task.d||!window.LeaveItArenaSync)return;
+    const sync=window.LeaveItArenaSync;
+    const rm=sync.getRoom();
+    if(rm&&rm.status!=='finished'){
+      launchPlannerFocus(task,i,day);
+    }else{
+      sync.setPrefillMatch({
+        title:String(task.t||'').slice(0,48),
+        subject:sync.subjFromCode(task.s),
+        durationMin:Math.max(5,Math.min(180,Number(task.m)||25)),
+        task:task.t,
+        index:i,
+        dayKey:day
+      });
+      sync.openArenaTab();
+    }
+    return;
+  }
   const b=e.target.closest('[data-strict]');
   if(!b)return;
   e.preventDefault();e.stopPropagation();
   const i=Number(b.dataset.strict),task=(P[day]||[])[i];
   if(task&&!task.d)launchPlannerFocus(task,i,day);
 },true);
+
+window.addEventListener('leaveit-planner-refresh',()=>{try{P=JSON.parse(localStorage.getItem(K)||'{}')}catch(e){}rd()});
+window.addEventListener('leaveit-room-sync',()=>{rd()});
+window.addEventListener('leaveit-arena-user',()=>{rd()});
+window.LeaveItLaunchPlannerFocus=launchPlannerFocus;
 
 /* Recover an unfinished planner focus session after a reload without creating another timer UI. */
 try{
@@ -3343,7 +3699,7 @@ html[data-um="q"] .seg2 i{transform:translateX(100%)}
 </style>`);
 document.body.insertAdjacentHTML('beforeend',`<div id="rg"><div class="in" id="rgMain"></div></div>
 <nav id="rgNav"><button data-n="home"><i>🎯</i>Focus</button><button data-n="old"><i>⏱</i>Timer</button><button data-n="stats"><i>📊</i>Stats</button><button data-n="more"><i>⋯</i>More</button></nav>
-<section id="rgS"><div class="seg2 s" id="rgSeg"><i></i><button data-um="f">🎯 Focus</button><button data-um="q">✍️ Questions</button></div><div class="t" id="rgT">Stay focused</div><div class="rr"><svg viewBox="0 0 260 260"><circle class="tr" cx="130" cy="130" r="118"/><circle class="pg" id="rgArc" cx="130" cy="130" r="118" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/><g class="kn" id="rgKn"><circle r="17"/><path d="M-7 0h14M2-6l6 6-6 6"/></g></svg><div class="c"><b id="rgTm">25:00</b><span id="rgPh">Focus</span></div></div><div class="sh" id="rgSd"></div><button id="rgBrk" class="brk">☕ Take a break</button><div class="bt" id="rgCp"><button id="rgPlus">+1 min</button><button id="rgLeave" class="p">Leave it</button></div><div class="bt" id="rgQb"><button id="rgSv" class="p">✓ Solved</button><button id="rgNx">⏭ Stuck? Next</button></div><div class="bt"><button id="rgPs">Pause</button><button id="rgEnd" class="p">End</button></div></section>
+<section id="rgS"><div class="seg2 s" id="rgSeg"><i></i><button data-um="f">🎯 Focus</button><button data-um="q">✍️ Questions</button></div><div id="rgArenaHud"></div><div class="t" id="rgT">Stay focused</div><div class="rr"><svg viewBox="0 0 260 260"><circle class="tr" cx="130" cy="130" r="118"/><circle class="pg" id="rgArc" cx="130" cy="130" r="118" pathLength="100" stroke-dasharray="100" stroke-dashoffset="0"/><g class="kn" id="rgKn"><circle r="17"/><path d="M-7 0h14M2-6l6 6-6 6"/></g></svg><div class="c"><b id="rgTm">25:00</b><span id="rgPh">Focus</span></div></div><div class="sh" id="rgSd"></div><button id="rgBrk" class="brk">☕ Take a break</button><button id="rgTaskDone" class="rg-task-done" style="display:none">✓ Finish Task</button><div class="bt" id="rgCp"><button id="rgPlus">+1 min</button><button id="rgLeave" class="p">Leave it</button></div><div class="bt" id="rgQb"><button id="rgSv" class="p">✓ Solved</button><button id="rgNx">⏭ Stuck? Next</button></div><div class="bt"><button id="rgPs">Pause</button><button id="rgEnd" class="p">End</button></div></section>
 <section id="rgSh"><div class="sheet" id="rgShB"></div></section><div id="rgTo"></div>`);
 const toast=m=>{const t=g('rgTo');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove('on'),2600)};
 const A=()=>{try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume&&ac.resume()}catch(e){}return ac};
@@ -3352,11 +3708,62 @@ function noise(t){const c=A(),n=c.sampleRate*3,b=c.createBuffer(1,n,c.sampleRate
 function stopS(){if(src){try{src.stop();src._l&&src._l.stop()}catch(e){}src=null}}
 function play(t){stopS();F.snd=t;sv();if(!t)return;const c=A();if(!c)return;src=c.createBufferSource();src.buffer=noise(t==='rain'?'white':t==='ocean'?'brown':t);src.loop=true;let n=src;if(t==='rain'){const f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=2200;f.Q.value=.5;n.connect(f);n=f}gain=c.createGain();gain.gain.value=F.vol;if(t==='ocean'){const o=c.createOscillator(),lg=c.createGain();o.frequency.value=.12;lg.gain.value=F.vol*.6;o.connect(lg);lg.connect(gain.gain);o.start();src._l=o}n.connect(gain);gain.connect(c.destination);src.start()}
 async function lock(on){try{if(on&&navigator.wakeLock)wl=await navigator.wakeLock.request('screen');else if(wl){await wl.release();wl=null}}catch(e){}}
-const dur=()=>(ph==='f'?F.dur:5)*60000;
+let roomSynced=null,rgTask=null,userPausedRoom=false;
+const creditedRooms=new Set();
+const syncObj=()=>window.LeaveItArenaSync||null;
+const activeSyncRoom=()=>{const s=syncObj(),rm=s?s.getRoom():null;return (rm&&roomSynced&&rm.roomCode===roomSynced)?rm:null};
+const dur=()=>{const rm=activeSyncRoom();if(rm&&ph==='f')return (rm.durationSec||F.dur*60)*1000;if(rgTask&&ph==='f')return rgTask.durMs||F.dur*60000;return (ph==='f'?F.dur:5)*60000};
 function streak(){let s=0;for(let i=day().m?0:1;i<400;i++){const x=new Date();x.setDate(x.getDate()-i);if(((F.days[td(x)]||{}).m||0)>0)s++;else break}return s}
+function creditRoomFocusOnce(rm){
+ if(!rm||creditedRooms.has(rm.roomCode))return;
+ creditedRooms.add(rm.roomCode);
+ const s=syncObj();
+ let mins=0;
+ if(s){
+   const st=s.getActivityState();
+   mins=Math.floor((st.focusSeconds||0)/60);
+ }
+ if(mins<1&&rm.startedAt){
+   const capEnd=Math.min(Date.now(),rm.endsAt||Date.now());
+   mins=Math.floor(Math.max(0,capEnd-rm.startedAt)/60000);
+ }
+ mins=Math.max(0,Math.min(180,mins));
+ if(mins>=1){credit(mins);toast('🍅 +'+mins+' min Arena focus synced')}
+}
+function completeRgTask(fromTimerFinish){
+ if(!rgTask)return;
+ const t=rgTask;
+ rgTask=null;
+ try{
+   const pl=JSON.parse(localStorage.getItem('leaveit_pl')||'{}');
+   const list=pl[t.dayKey]||[];
+   let item=list[t.index];
+   if(!item||item.t!==t.task){item=list.find(x=>x&&x.t===t.task&&!x.d)}
+   if(item){item.d=1;localStorage.setItem('leaveit_pl',JSON.stringify(pl))}
+   window.dispatchEvent(new CustomEvent('leaveit-planner-refresh'));
+ }catch(e){}
+ const s=syncObj();
+ if(s){
+   s.rewardPlannerTask({task:t.rawTask||{t:t.task,m:t.plannedMin,s:'O'},index:t.index,dayKey:t.dayKey,plannedMinutes:t.plannedMin,fromFocus:true});
+   s.setLinkedTask(null);
+ }
+ try{if(typeof confetti==='function')confetti()}catch(e){}
+ if(!fromTimerFinish){
+   const elMin=ph==='f'?Math.floor(((t.durMs||F.dur*60000)-Math.max(0,run?end-Date.now():left))/60000):0;
+   if(elMin>=1&&!roomSynced)credit(elMin);
+   if(!roomSynced){run=false;fin=true;left=0;lock(false);stopS()}
+   toast('✓ Task completed & Arena XP synced!');
+   ui();
+ }else{
+   toast('✓ Planner task completed!');
+ }
+}
 function home(){const d=day(),p=Math.min(100,Math.round(d.m/F.goal*100)),n=(typeof S!=='undefined'&&S.name)?', '+esc(S.name):'',h=new Date().getHours();
  const q=UM==='q',pr=q?100:p,an=2*Math.PI*pr/100,kx=(120+100*Math.cos(an)).toFixed(1),ky=(120+100*Math.sin(an)).toFixed(1),T0=(typeof H!=='undefined'&&typeof dk==='function'&&H[dk()])||{};
+ const s=syncObj(),rm=s?s.getRoom():null;
+ const barHtml=rm?`<div id="rgArenaBar">${s.renderRoomHudHtml({showOpenTimer:true})}</div>`:'<div id="rgArenaBar" hidden></div>';
  g('rgMain').innerHTML=`<div class="top"><div><h1>${h<5?'Late night':h<12?'Good morning':h<18?'Good afternoon':'Good evening'}${n}</h1><p class="sub">Focus. Block. Regain time.</p></div><span class="pill">🔥 ${streak()}</span></div>
+${barHtml}
 <div class="seg2"><i></i><button data-a="um" data-v="f" class="${q?'':'on'}">🎯 Focus</button><button data-a="um" data-v="q" class="${q?'on':''}">✍️ Questions</button></div>
 <div class="hero"><div class="rw"><svg viewBox="0 0 240 240"><circle class="tr" cx="120" cy="120" r="100"/><circle class="pg" cx="120" cy="120" r="100" pathLength="100" stroke-dasharray="100" stroke-dashoffset="${100-pr}"/><g class="kn" transform="translate(${kx} ${ky}) rotate(90)"><circle r="19"/><path d="M-8 0h16M2-7l7 7-7 7"/></g></svg><div class="rc"><div class="lab">${q?'Time per question':'Focus duration'}</div><b>${q?QB.dur+'s':F.dur+'m'}</b><span class="sub">${q?'Question '+QB.q:'Goal '+F.goal+' min'}</span></div></div>
 <div class="adj"><button class="rb" data-a="${q?'qm':'m'}">−</button><div class="ch">${q?[30,60,90,120,180].map(x=>`<button data-a="qd" data-v="${x}" class="${QB.dur===x?'on':''}">${x>=60?x/60+'m':x+'s'}</button>`).join(''):[15,25,45,60,90].map(x=>`<button data-a="d" data-v="${x}" class="${F.dur===x?'on':''}">${x}m</button>`).join('')}</div><button class="rb" data-a="${q?'qp':'p'}">+</button></div>
@@ -3381,28 +3788,53 @@ function sndSh(){sheet(`<h3>Focus sound</h3><p>Generated on your device — work
 function moreSh(){sheet(`<h3>More</h3>${[['mock','📝','Mock tests'],['tests','📈','Tests'],['plan','🗓️','Planner'],['rank','🏅','Rank'],['stats','📊','Question stats'],['settings','⚙️','Settings']].map(x=>`<button class="ln" data-g="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join('')}`)}
 function showS(){const s=g('rgS');s.classList.add('on');if(!g('rgSt')){let h='';for(let i=0;i<50;i++)h+='<i style="left:'+(Math.random()*100).toFixed(1)+'%;top:'+(Math.random()*100).toFixed(1)+'%;animation-delay:'+(Math.random()*4).toFixed(1)+'s"></i>';s.insertAdjacentHTML('afterbegin','<div id="rgSt">'+h+'</div>')}g('rgSd').textContent=F.sel.length?'🛡 Blocking '+F.sel.slice(0,4).join(' · ')+(F.sel.length>4?' +'+(F.sel.length-4):''):'🛡 Shield on';ui()}
 function knob(f){const k=g('rgKn');if(!k)return;const a=2*Math.PI*f;k.setAttribute('transform','translate('+(130+118*Math.cos(a)).toFixed(1)+' '+(130+118*Math.sin(a)).toFixed(1)+') rotate(90)');k.style.display=f>.002?'':'none'}
-function qui(){const l=Math.max(0,QB.left),t=QB.tot||1,s=g('rgS');g('rgTm').textContent=fmt(Math.ceil(l));g('rgArc').style.strokeDashoffset=100*(1-l/t);knob(l/t);
+function updateRgArenaHud(){
+ const ah=g('rgArenaHud'),s=syncObj();
+ if(!ah)return;
+ const rm=s?s.getRoom():null;
+ ah.innerHTML=rm?s.renderRoomHudHtml({compact:true}):'';
+}
+function qui(){const l=Math.max(0,QB.left),t=QB.tot||1,s=g('rgS'),rm=activeSyncRoom();updateRgArenaHud();if(g('rgTaskDone'))g('rgTaskDone').style.display='none';
+ if(rm&&rm.status==='countdown'){const cs=syncObj()?syncObj().getCountdownSec(rm):0;g('rgTm').textContent=cs+'s';g('rgArc').style.strokeDashoffset=0;knob(1);g('rgPh').textContent='Match starting in…';g('rgT').textContent='Get ready · Question '+QB.q;g('rgPs').style.display='none';g('rgEnd').textContent='Exit';g('rgBrk').style.display='none';g('rgQb').style.display='none';g('rgCp').style.display='none';return}
+ g('rgTm').textContent=fmt(Math.ceil(l));g('rgArc').style.strokeDashoffset=100*(1-l/t);knob(l/t);
  g('rgPh').textContent=QB.label;g('rgT').textContent='Question '+QB.q;g('rgPs').style.display='';g('rgPs').textContent=QB.running?'Pause':(l<t&&l>0?'Resume':'Start');g('rgEnd').textContent='Exit';
  g('rgSd').textContent=QB.cpOn?QB.cpMsg:'✍️ Solve it or leave it — move on at the limit';g('rgBrk').style.display='none';g('rgQb').style.display='flex';g('rgCp').style.display=QB.cpOn?'flex':'none';
  s.dataset.s=QB.running&&l<=5?'danger':QB.running&&l<=t*.33?'warn':'ok';document.title=QB.running?'✍️ '+fmt(Math.ceil(l))+' · '+base:base}
-function swap(m){if(m===UM)return;if(live){if(UM==='f'){const el=ph==='f'?Math.floor((F.dur*60000-Math.max(0,run?end-Date.now():left))/60000):0;credit(el);run=false;stopS();ph='f';fin=false}else QB.pause()}UM=m;root.dataset.um=m;try{localStorage.setItem('leaveit_um',m)}catch(e){}if(live)begin();else render()}
-function ui(){document.querySelectorAll('#rgSeg button').forEach(b=>b.classList.toggle('on',b.dataset.um===UM));if(UM==='q'&&live){qui();return}
- g('rgQb').style.display='none';g('rgCp').style.display='none';g('rgBrk').style.display=(live&&ph==='f'&&!fin)?'':'none';g('rgS').dataset.s='ok';const l=run?Math.max(0,end-Date.now()):left,t=dur();g('rgTm').textContent=fmt(l/1000);g('rgArc').style.strokeDashoffset=fin?0:100*(1-l/t);knob(fin?0:l/t);
- g('rgPh').textContent=fin?'Complete 🎉':ph==='f'?'Focus':'Break · breathe';g('rgT').textContent=fin?'Great work':ph==='f'?'Stay focused':'Take a break';
+function swap(m){if(m===UM)return;if(live){if(UM==='f'){const el=ph==='f'?Math.floor((dur()-Math.max(0,run?end-Date.now():left))/60000):0;if(!roomSynced)credit(el);run=false;stopS();ph='f';fin=false}else QB.pause()}UM=m;root.dataset.um=m;try{localStorage.setItem('leaveit_um',m)}catch(e){}if(live)begin();else render();if(syncObj())syncObj().notifyStateChange(true)}
+function ui(){document.querySelectorAll('#rgSeg button').forEach(b=>b.classList.toggle('on',b.dataset.um===UM));updateRgArenaHud();if(UM==='q'&&live){qui();return}
+ g('rgQb').style.display='none';g('rgCp').style.display='none';
+ const rm=activeSyncRoom(),isCd=Boolean(rm&&rm.status==='countdown'),isSyncFin=Boolean(rm&&rm.status==='finished');
+ if(g('rgTaskDone'))g('rgTaskDone').style.display=(rgTask&&!fin&&!isCd&&live&&UM==='f')?'':'none';
+ g('rgBrk').style.display=(live&&ph==='f'&&!fin&&!rm&&!rgTask)?'':'none';
+ g('rgS').dataset.s='ok';
+ if(isCd){
+   const cs=syncObj()?syncObj().getCountdownSec(rm):0;
+   g('rgTm').textContent=cs+'s';g('rgArc').style.strokeDashoffset=0;knob(1);
+   g('rgPh').textContent='Arena starting soon…';g('rgT').textContent=rgTask?('📋 '+rgTask.task):'Get ready';
+   g('rgPs').style.display='none';g('rgEnd').textContent='Exit';armed=false;return;
+ }
+ const l=rm&&rm.status==='active'&&rm.endsAt&&!fin?Math.max(0,rm.endsAt-Date.now()):(run?Math.max(0,end-Date.now()):left),t=dur()||1;
+ g('rgTm').textContent=fmt(l/1000);g('rgArc').style.strokeDashoffset=fin?0:100*(1-l/t);knob(fin?0:l/t);
+ g('rgPh').textContent=fin?(isSyncFin&&rm.winnerDisplayName?'🏆 Winner: '+rm.winnerDisplayName:'Complete 🎉'):ph==='f'?'Focus':'Break · breathe';
+ g('rgT').textContent=fin?'Great work':rgTask?('📋 '+rgTask.task):ph==='f'?'Stay focused':'Take a break';
  g('rgPs').style.display=fin?'none':'';g('rgPs').textContent=run?'Pause':'Resume';g('rgEnd').textContent=fin?'Done':'End';armed=false;
  document.title=live&&run?(ph==='f'?'🍅 ':'☕ ')+fmt(l/1000)+' · '+base:base}
-function begin(){if(UM==='q'){A();live=true;fin=false;run=false;lock(true);if(F.snd)play(F.snd);QB.start();showS();return}beginF()}
-function beginF(){A();live=true;fin=false;ph='f';left=dur();run=true;end=Date.now()+left;lock(true);if(F.snd)play(F.snd);try{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}showS()}
+function begin(){const s=syncObj(),rm=s?s.getRoom():null;if(rm&&rm.status!=='finished')roomSynced=rm.roomCode;else roomSynced=null;userPausedRoom=false;if(UM==='q'){A();live=true;fin=false;run=false;lock(true);if(F.snd)play(F.snd);if(!rm||rm.status!=='countdown')QB.start();showS();if(s)s.notifyStateChange(true);return}beginF()}
+function beginF(){A();live=true;fin=false;ph='f';const rm=activeSyncRoom();if(rm&&rm.status==='countdown'){left=dur();end=Date.now()+left;run=false}else if(rm&&rm.status==='active'&&rm.endsAt){end=rm.endsAt;left=Math.max(0,end-Date.now());run=left>0}else{left=dur();run=true;end=Date.now()+left}lock(run);if(run&&F.snd)play(F.snd);try{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}showS();if(syncObj())syncObj().notifyStateChange(true)}
 function credit(m){if(m<1)return;const d=day();d.m+=m;d.s++;F.log.push({t:new Date().toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}),m});F.log=F.log.slice(-30);if(d.m>=F.goal&&d.m-m<F.goal)setTimeout(()=>toast('🎯 Daily goal reached!'),500);sv()}
-function stop(){if(UM==='q'&&live)QB.pause();live=false;run=false;fin=false;lock(false);stopS();g('rgS').classList.remove('on');ui();render()}
+function stop(){const rm=activeSyncRoom();if(rm&&(rm.status==='active'||rm.status==='finished'))creditRoomFocusOnce(rm);if(UM==='q'&&live)QB.pause();live=false;run=false;fin=false;roomSynced=null;userPausedRoom=false;if(rgTask){rgTask=null;if(syncObj())syncObj().setLinkedTask(null)}lock(false);stopS();g('rgS').classList.remove('on');ui();render();if(syncObj())syncObj().notifyStateChange(true)}
 function done(){beep();try{if(document.hidden&&Notification.permission==='granted')new Notification(ph==='f'?'Focus complete':'Break over')}catch(e){}
- if(ph==='f'){credit(F.dur);toast('🍅 +'+F.dur+' min focused');if(F.pom){ph='b';left=dur();end=Date.now()+left;ui();return}run=false;fin=true;left=0;lock(false);stopS();ui();return}
- ph='f';left=dur();end=Date.now()+left;ui()}
-setInterval(()=>{if(live&&UM==='q')qui()},200);
-setInterval(()=>{if(live&&run){if(end-Date.now()<=0)done();else ui()}},250);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){if(live&&run&&ph==='f')hid=Date.now()}else{if(live&&run&&!wl)lock(true);if(hid){const s=(Date.now()-hid)/1000;hid=0;if(live&&run&&ph==='f'&&s>=3){const d=day();d.a++;d.as+=Math.round(s);sv();if(F.strict){stop();toast('🔒 Strict mode — you left, session reset')}else toast('📵 Away for '+fmt(s)+' — back to focus')}}ui();if(root.dataset.rg)render()}});
-g('rgPs').onclick=()=>{if(UM==='q'){QB.running?QB.pause():QB.start();qui();return}if(run){left=Math.max(0,end-Date.now());run=false;lock(false)}else{run=true;end=Date.now()+left;lock(true)}ui()};
-g('rgEnd').onclick=()=>{if(UM==='q'){stop();return}if(fin){stop();return}if(!armed){armed=true;g('rgEnd').textContent='Tap again to end';setTimeout(()=>{if(armed&&live)ui()},2500);return}const el=ph==='f'?Math.floor((F.dur*60000-Math.max(0,run?end-Date.now():left))/60000):0;credit(el);stop()};
+ const rm=activeSyncRoom();
+ if(rm){creditRoomFocusOnce(rm);if(rgTask)completeRgTask(true);run=false;fin=true;left=0;lock(false);stopS();ui();if(syncObj())syncObj().notifyStateChange(true);return}
+ if(rgTask){const m=Math.max(1,Math.round((rgTask.durMs||F.dur*60000)/60000));credit(m);completeRgTask(true);run=false;fin=true;left=0;lock(false);stopS();ui();if(syncObj())syncObj().notifyStateChange(true);return}
+ if(ph==='f'){credit(F.dur);toast('🍅 +'+F.dur+' min focused');if(F.pom){ph='b';left=dur();end=Date.now()+left;ui();return}run=false;fin=true;left=0;lock(false);stopS();ui();if(syncObj())syncObj().notifyStateChange(true);return}
+ ph='f';left=dur();end=Date.now()+left;ui();if(syncObj())syncObj().notifyStateChange(true)}
+setInterval(()=>{if(live&&UM==='q'){const rm=activeSyncRoom();if(rm&&rm.status==='active'&&!QB.running&&!userPausedRoom){QB.start()}qui()}},200);
+setInterval(()=>{if(live){const rm=activeSyncRoom();if(rm&&rm.status==='active'&&rm.endsAt){if(rm.endsAt-Date.now()<=0)done();else ui()}else if(rm&&rm.status==='countdown'){ui()}else if(run){if(end-Date.now()<=0)done();else ui()}}},250);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(live&&run&&ph==='f')hid=Date.now()}else{if(live&&run&&!wl)lock(true);if(hid){const s=(Date.now()-hid)/1000;hid=0;if(live&&run&&ph==='f'&&s>=3){const d=day();d.a++;d.as+=Math.round(s);sv();if(F.strict&&!roomSynced){stop();toast('🔒 Strict mode — you left, session reset')}else toast('📵 Away for '+fmt(s)+' — back to focus')}}ui();if(root.dataset.rg)render()}});
+g('rgPs').onclick=()=>{if(UM==='q'){userPausedRoom=QB.running;QB.running?QB.pause():QB.start();qui();if(syncObj())syncObj().notifyStateChange(true);return}const rm=activeSyncRoom();if(run){left=Math.max(0,end-Date.now());run=false;if(rm)userPausedRoom=true;lock(false)}else{run=true;userPausedRoom=false;end=(rm&&rm.status==='active'&&rm.endsAt)?rm.endsAt:(Date.now()+left);lock(true)}ui();if(syncObj())syncObj().notifyStateChange(true)};
+if(g('rgTaskDone'))g('rgTaskDone').onclick=()=>{if(rgTask&&!fin)completeRgTask(false)};
+g('rgEnd').onclick=()=>{if(UM==='q'){stop();return}if(fin){stop();return}if(!armed){armed=true;g('rgEnd').textContent='Tap again to end';setTimeout(()=>{if(armed&&live)ui()},2500);return}const el=ph==='f'?Math.floor((dur()-Math.max(0,run?end-Date.now():left))/60000):0;if(roomSynced){const rm=activeSyncRoom();if(rm)creditRoomFocusOnce(rm)}else credit(el);stop()};
 g('rg').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
  if(a==='um'){swap(b.dataset.v);return}if(a==='qm'||a==='qp'||a==='qd'){QB.setDur(a==='qd'?+b.dataset.v:QB.dur+(a==='qp'?10:-10));home();return}if(a==='m'){F.dur=Math.max(5,F.dur-5);sv();home()}else if(a==='p'){F.dur=Math.min(180,F.dur+5);sv();home()}else if(a==='d'){F.dur=+b.dataset.v;sv();home()}else if(a==='start')begin();else if(a==='apps')appsSh();else if(a==='snd')sndSh()});
 g('rg').addEventListener('change',e=>{const k=e.target.dataset.k;if(k){F[k]=e.target.checked;sv()}else if(e.target.id==='rgGoal'){F.goal=Math.max(10,Math.min(600,+e.target.value||120));sv();stats()}});
@@ -3414,10 +3846,75 @@ g('rgSh').addEventListener('click',e=>{const t=e.target;if(t.id==='rgSh'){shut()
 g('rgSh').addEventListener('input',e=>{if(e.target.id==='rgVol'){F.vol=+e.target.value;if(gain)gain.gain.value=F.vol;sv()}});
 g('rgSeg').onclick=e=>{const b=e.target.closest('button');if(b)swap(b.dataset.um)};
 g('rgSv').onclick=()=>{QB.solved();qui()};g('rgNx').onclick=()=>{QB.skip();qui()};g('rgPlus').onclick=()=>{QB.cpExtend();qui()};g('rgLeave').onclick=()=>{QB.cpLeave();qui()};
-g('rgBrk').onclick=()=>{if(UM!=='f'||ph!=='f'||!live)return;credit(Math.floor((F.dur*60000-Math.max(0,run?end-Date.now():left))/60000));ph='b';left=dur();end=Date.now()+left;run=true;ui()};
+g('rgBrk').onclick=()=>{if(UM!=='f'||ph!=='f'||!live||roomSynced||rgTask)return;credit(Math.floor((F.dur*60000-Math.max(0,run?end-Date.now():left))/60000));ph='b';left=dur();end=Date.now()+left;run=true;ui();if(syncObj())syncObj().notifyStateChange(true)};
 g('rgNav').onclick=e=>{const b=e.target.closest('button');if(!b)return;b.dataset.n==='more'?moreSh():nav(b.dataset.n)};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')shut()});
 window.addEventListener('leaveit-sync-dur',e=>{const d=+((e.detail||{}).dur);if(d>=5&&d<=180){F.dur=Math.round(d);sv();render()}});
+if(window.LeaveItArenaSync){
+  const s=window.LeaveItArenaSync;
+  s.registerRegain(()=>({live,running:run||(UM==='q'&&QB.running),mode:UM,phase:ph,finished:fin,taskTitle:rgTask?rgTask.task:''}));
+  s.launchRegainRoomTimer=function(rm){
+    if(!rm)return;
+    roomSynced=rm.roomCode;userPausedRoom=false;
+    F.dur=Math.max(5,Math.min(180,Math.round((rm.durationSec||1500)/60)));
+    if(window.QB&&typeof window.QB.setDur==='function')window.QB.setDur(Math.max(15,Math.round(rm.questionLimitSec||90)));
+    sv();
+    const targetUm=rm.mode==='sprint_1v1'?'q':'f';
+    UM=targetUm;root.dataset.um=UM;try{localStorage.setItem('leaveit_um',UM)}catch(e){}
+    if(UM==='q'){
+      A();live=true;fin=(rm.status==='finished');run=false;lock(true);if(F.snd)play(F.snd);
+      if(rm.status==='active'&&!QB.running)QB.start();
+      showS();
+    }else{
+      A();live=true;ph='f';fin=(rm.status==='finished');
+      if(rm.status==='active'&&rm.endsAt){end=rm.endsAt;left=Math.max(0,end-Date.now());run=left>0}
+      else if(rm.status==='countdown'){left=Number(rm.durationSec||F.dur*60)*1000;end=Date.now()+left;run=false}
+      else{left=dur();end=Date.now()+left;run=true}
+      lock(run);if(run&&F.snd)play(F.snd);showS();
+    }
+    s.notifyStateChange(true);
+  };
+  s.launchRegainPlannerTask=function(opts){
+    if(!opts||!opts.task)return;
+    const t=opts.task,mins=Math.max(1,Math.min(600,Number(opts.durationMin||t.m)||25));
+    rgTask={task:t.t,index:opts.index,dayKey:opts.dayKey,rawTask:t,plannedMin:mins,durMs:mins*60000};
+    s.setLinkedTask({task:t.t,index:opts.index,dayKey:opts.dayKey,plannedMin:mins,subj:s.subjFromCode(t.s)});
+    const rm=s.getRoom();
+    UM='f';root.dataset.um='f';try{localStorage.setItem('leaveit_um','f')}catch(e){}
+    userPausedRoom=false;
+    if(rm&&rm.status!=='finished'){
+      roomSynced=rm.roomCode;
+      A();live=true;fin=false;ph='f';
+      if(rm.status==='active'&&rm.endsAt){end=rm.endsAt;left=Math.max(0,end-Date.now());run=left>0}
+      else if(rm.status==='countdown'){left=Number(rm.durationSec||mins*60)*1000;end=Date.now()+left;run=false}
+      else{left=rgTask.durMs;end=Date.now()+left;run=true}
+      lock(run);if(run&&F.snd)play(F.snd);showS();
+    }else{
+      roomSynced=null;
+      A();live=true;fin=false;ph='f';left=rgTask.durMs;run=true;end=Date.now()+left;lock(true);if(F.snd)play(F.snd);showS();
+    }
+    s.notifyStateChange(true);
+    toast('🎯 Focus started: '+t.t);
+  };
+}
+window.addEventListener('leaveit-room-sync',ev=>{
+  const d=ev.detail||{},rm=d.room;
+  if(!rm){roomSynced=null;userPausedRoom=false;if(root.dataset.rg==='home')render();if(live)ui();return}
+  if(live&&roomSynced===rm.roomCode){
+    if(rm.status==='active'&&rm.endsAt&&!fin){
+      if(UM==='f'){end=rm.endsAt;left=Math.max(0,end-Date.now());if(!userPausedRoom&&!run){run=true;lock(true);if(F.snd&&!src)play(F.snd)}}
+      else if(UM==='q'&&!QB.running&&!userPausedRoom){QB.start()}
+      ui();
+    }else if(rm.status==='finished'){
+      creditRoomFocusOnce(rm);
+      if(UM==='q'&&QB.running)QB.pause();
+      run=false;fin=true;left=0;lock(false);stopS();ui();
+    }else if(rm.status==='countdown'){
+      ui();
+    }
+  }
+  if(root.dataset.rg==='home')render();
+});
 root.dataset.rg='home';render();
 })();
 </script>
@@ -4630,10 +5127,38 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     busy:false,
     liveReady:false,
     showDiag:false,
-    diagLogs:[]
+    diagLogs:[],
+    createTitle:'',
+    createSubj:'Maths',
+    createDur:25,
+    selectedPlannerIdx:-1,
+    pendingTask:null
   };
 
   let unsubAuth=null,unsubRooms=null,unsubRoom=null,unsubLogs=null,claimedFinished=new Set();
+
+  function todayPlanKey(){
+    if(typeof dk==='function')return dk();
+    const d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  }
+  function subjFromCode(code){
+    return code==='M'?'Maths':code==='P'?'Physics':code==='C'?'Chemistry':'General';
+  }
+  function readTodayPlannerTasks(){
+    try{
+      const pl=JSON.parse(localStorage.getItem('leaveit_pl')||'{}');
+      const k=todayPlanKey();
+      const list=Array.isArray(pl[k])?pl[k]:[];
+      return list.map((t,idx)=>({idx,t:t.t||'',m:+t.m||0,s:t.s||'O',d:t.d?1:0,raw:t}));
+    }catch(e){return[]}
+  }
+  function syncBridgeState(){
+    const s=window.LeaveItArenaSync;
+    if(!s)return;
+    if(s.getUser()!==ST.user)s.setUser(ST.user);
+    if(s.getRoom()!==ST.activeRoom)s.setRoom(ST.activeRoom);
+  }
 
   // ---- Mount Unified Nav Items (Regain #rgNav + Classic #nav) ----
   const rg=document.getElementById('rg');
@@ -4706,11 +5231,20 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   });
 
   function goToStudyTimer(room){
+    const sync=window.LeaveItArenaSync;
     if(room){
       const dMin=Math.max(5,Math.min(180,Math.round((room.durationSec||1500)/60)));
       const qSec=Math.max(15,Math.round(room.questionLimitSec||90));
       if(window.QB&&typeof window.QB.setDur==='function')window.QB.setDur(qSec);
       window.dispatchEvent(new CustomEvent('leaveit-sync-dur',{detail:{dur:dMin}}));
+      if(root.dataset.ui==='regain'&&sync&&typeof sync.launchRegainRoomTimer==='function'){
+        sync.launchRegainRoomTimer(room);
+        return;
+      }
+      if(typeof window.LeaveItLaunchClassicRoomTimer==='function'){
+        window.LeaveItLaunchClassicRoomTimer(room);
+        return;
+      }
     }
     if(root.dataset.ui==='regain'){
       document.querySelector('#rgNav button[data-n="home"]')?.click();
@@ -4718,6 +5252,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       document.querySelector('#nav button[data-t="home"]')?.click();
     }
   }
+  window.LeaveItGoToSyncedTimer=goToStudyTimer;
 
   function syncSpaName(dn){
     if(!dn||typeof S==='undefined')return;
@@ -4750,6 +5285,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         const upd=await fb.claimDuelOutcome(room).catch(()=>null);
         if(upd)ST.user=upd;
       }
+      syncBridgeState();
       if(isArenaVisible())renderArena();
     },errMsg=>{
       ST.err=errMsg||'Live room sync error.';
@@ -4772,7 +5308,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     });
   }
 
-  // ---- Live Activity Sync from v103-arena-bridge ----
+  // ---- Live Activity Sync from v103-arena-bridge & Planner ----
   window.addEventListener('leaveit-arena-event',async ev=>{
     const d=ev.detail,fb=getFB();
     if(!d||d.type!=='leaveit-activity'||!ST.user||!fb)return;
@@ -4784,31 +5320,39 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         subject:d.subject,
         focusMinutes:d.focusMinutes,
         elapsedSec:d.elapsedSec,
-        mockAccuracy:d.mockAccuracy
+        mockAccuracy:d.mockAccuracy,
+        plannedMinutes:d.plannedMinutes,
+        fromFocus:d.fromFocus,
+        taskTitle:d.taskTitle
       });
-      if(res&&res.user)ST.user=res.user;
+      if(res&&res.user){ST.user=res.user;syncBridgeState()}
       if(res&&res.xpDelta>0)showToast('🏆 +'+res.xpDelta+' Arena XP synced');
+      if(d.kind==='task_completed')window.dispatchEvent(new CustomEvent('leaveit-planner-refresh'));
       if(isArenaVisible())renderArena();
     }catch(e){}
   });
 
-  // Live countdown ticker, auto-stage transitions & room heartbeat
+  // Live countdown ticker, auto-stage transitions & real activity heartbeat
   setInterval(()=>{
     const r=ST.activeRoom,fb=getFB();
     if(!r)return;
     const now=Date.now();
     if(r.status==='countdown'&&r.countdownEndsAt){
       const rem=Math.max(0,Math.ceil((r.countdownEndsAt-now)/1000));
+      const txt=rem+'s';
       const clk=arenaRoot.querySelector('.ar-clock');
-      if(clk)clk.textContent=rem+'s';
+      if(clk)clk.textContent=txt;
+      document.querySelectorAll('.ar-sync-hud .ash-clk').forEach(el=>{el.textContent=txt});
       if(now>=r.countdownEndsAt&&fb&&!r._activating){
         r._activating=true;
         fb.activateRoomIfDue(r.roomCode).catch(()=>{});
       }
     }else if(r.status==='active'&&r.endsAt){
       const rem=Math.max(0,Math.ceil((r.endsAt-now)/1000));
+      const txt=fmtClock(rem);
       const clk=arenaRoot.querySelector('.ar-clock');
-      if(clk)clk.textContent=fmtClock(rem);
+      if(clk)clk.textContent=txt;
+      document.querySelectorAll('.ar-sync-hud .ash-clk').forEach(el=>{el.textContent=txt});
       if(now>=r.endsAt&&fb&&!r._finishing){
         r._finishing=true;
         fb.finishRoom(r.roomCode).catch(()=>{});
@@ -4818,10 +5362,14 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
   setInterval(()=>{
     const r=ST.activeRoom,fb=getFB();
-    if(r&&r.status==='active'&&fb&&r.startedAt){
-      const sec=Math.max(0,Math.floor((Date.now()-r.startedAt)/1000));
-      fb.updateLiveProgress(r.roomCode,isArenaVisible()?'idle':'focusing',sec).catch(()=>{});
-    }
+    if(!r||r.status!=='active'||!fb)return;
+    const sync=window.LeaveItArenaSync;
+    const st=sync?sync.getActivityState():{
+      liveState:isArenaVisible()?'idle':'focusing',
+      focusSeconds:r.startedAt?Math.max(0,Math.floor((Date.now()-r.startedAt)/1000)):0,
+      activeTaskTitle:''
+    };
+    fb.updateLiveProgress(r.roomCode,st.liveState,st.focusSeconds,st.activeTaskTitle).catch(()=>{});
   },5000);
 
   async function loadLb(){
@@ -5387,6 +5935,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         ST.activeRoom=null;
         startRoomsSub();
       }
+      syncBridgeState();
       if(typeof refreshTopLeftProfile==='function')refreshTopLeftProfile();
       if(isArenaVisible())renderArena();
     });
@@ -5459,6 +6008,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     else if(r.status==='finished'){clockTxt='00:00';clockSub='Match complete'}
 
     const winner=r.winnerUserId?r.participants.find(p=>p.userId===r.winnerUserId):null;
+    const tasks=readTodayPlannerTasks();
 
     return `<div class="ar-card">
       <div class="ar-top">
@@ -5504,11 +6054,11 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         const isWin=r.status==='finished'&&r.winnerUserId===p.userId;
         return `<div class="ar-card" style="${isWin?'border-color:var(--ok)':''}">
           <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div><p class="ar-sub" style="margin:0">@${escHtml(p.username)} · 🔥 ${p.streakDays}d${p.userId===ST.user.id?' · You':''}</p><h3 style="margin-top:4px">${escHtml(p.displayName)}</h3></div>
+            <div><p class="ar-sub" style="margin:0">@${escHtml(p.username)} · 🔥 ${p.streakDays}d${p.userId===ST.user.id?' · You':''}</p><h3 style="margin-top:4px">${escHtml(p.displayName)}</h3>${p.activeTaskTitle?`<p class="ar-sub" style="margin:4px 0 0;color:var(--accent);font-size:12px">📋 ${escHtml(p.activeTaskTitle)}</p>`:''}</div>
             <div style="text-align:right"><span class="ar-sub" style="margin:0">Score</span><b style="display:block;font-size:26px;color:var(--accent);font-variant-numeric:tabular-nums">${p.sprintScore}</b></div>
           </div>
           <div class="g3" style="border-top:1px solid var(--track);padding-top:14px;margin-top:14px">
-            <div><b style="color:var(--ok)">${p.solvedCount}</b><span>solved</span></div>
+            <div><b style="color:var(--ok)">${p.solvedCount} · 📋${p.tasksCompleted||0}</b><span>solved · tasks</span></div>
             <div><b>${disc}%</b><span>leave rate</span></div>
             <div><b style="font-size:15px;color:var(--warn)">${r.status==='lobby'?(p.ready?'Ready':'Waiting'):escHtml(p.liveState)}</b><span>status</span></div>
           </div>
@@ -5518,23 +6068,50 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       <h3>Live Room Standings (${r.participants.length}/${r.maxPlayers})</h3>
       <div class="ar-table-wrap">
         <table class="ar-tbl">
-          <thead><tr><th>#</th><th>Player</th><th>Status</th><th class="num">Solved</th><th class="num">Left On Time</th><th class="num">Overtime</th><th class="num">Score</th></tr></thead>
+          <thead><tr><th>#</th><th>Player</th><th>Status</th><th class="num">Solved</th><th class="num">Tasks</th><th class="num">Left On Time</th><th class="num">Overtime</th><th class="num">Score</th></tr></thead>
           <tbody>${r.participants.map((p,i)=>`<tr class="${p.userId===ST.user.id?'me':''}">
             <td>${i+1}</td>
-            <td><b>${escHtml(p.displayName)}</b> <span style="color:var(--muted);font-size:12px">@${escHtml(p.username)}${p.isHost?' · Host':''}</span></td>
+            <td><b>${escHtml(p.displayName)}</b> <span style="color:var(--muted);font-size:12px">@${escHtml(p.username)}${p.isHost?' · Host':''}</span>${p.activeTaskTitle?`<div style="color:var(--accent);font-size:11.5px;margin-top:2px">📋 ${escHtml(p.activeTaskTitle)}</div>`:''}</td>
             <td>${r.status==='lobby'?(p.ready?'Ready':'Waiting'):escHtml(p.liveState)}</td>
             <td class="num" style="color:var(--ok)">${p.solvedCount}</td>
+            <td class="num">${p.tasksCompleted||0}</td>
             <td class="num">${p.leftOnTimeCount}</td>
             <td class="num" style="color:var(--bad)">${p.overtimeCount}</td>
             <td class="num" style="font-weight:800;color:var(--accent)">${p.sprintScore}</td>
           </tr>`).join('')}</tbody>
         </table>
       </div>
-    </div>`}`;
+    </div>`}
+    ${tasks.length?`<div class="ar-card" style="margin-top:14px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+        <div><h3>📋 Today's Planner Tasks</h3><p class="ar-sub" style="margin:2px 0 0">Run tasks in synced focus or check them off for +25–55 XP &amp; +30 Sprint pts</p></div>
+      </div>
+      <div style="margin-top:10px">
+        ${tasks.map(t=>`<div class="ar-plan-room-row">
+          <div style="min-width:0;flex:1">
+            <b style="${t.d?'text-decoration:line-through;opacity:.55':''}">${escHtml(t.t)}</b>
+            <div class="ar-sub" style="margin:2px 0 0;font-size:11.5px">${t.m?t.m+' min · ':''}${escHtml(subjFromCode(t.s))}${t.d?' · Completed':''}</div>
+          </div>
+          <div style="display:flex;gap:6px;flex:none">
+            ${t.d?'<span class="pill" style="font-size:11px;padding:5px 10px">✓ Done</span>':`<button type="button" data-ar-plan-start="${t.idx}" class="ar-btn-ghost" style="padding:7px 11px;font-size:12px">🎯 Focus</button><button type="button" data-ar-plan-done="${t.idx}" class="ar-btn-ghost" style="padding:7px 11px;font-size:12px;background:var(--ok);color:#06241a;border-color:var(--ok)">✓ Done</button>`}
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`:''}`;
   }
 
   function renderLobby(){
     const u=ST.user;
+    const sync=window.LeaveItArenaSync;
+    const pf=sync?sync.getPrefillMatch():null;
+    if(pf){
+      ST.createTitle=pf.title||'';
+      ST.createSubj=pf.subject||'Maths';
+      ST.createDur=pf.durationMin||25;
+      ST.selectedPlannerIdx=typeof pf.index==='number'?pf.index:-1;
+      ST.pendingTask=pf;
+    }
+    const pendingTasks=readTodayPlannerTasks().filter(t=>!t.d);
     return `<div class="ar-card">
       <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
         <div><p class="ar-sub" style="margin:0">Signed in as @${escHtml(u.username)}</p><h3 style="margin-top:2px">${escHtml(u.displayName)}</h3></div>
@@ -5555,7 +6132,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         <div><b>${u.focusMinutes}m · 🔥${u.streakDays}</b><span>Focus &amp; Streak</span></div>
         <div><b style="color:var(--ok)">${u.questionsSolved} · ${u.solveRatePct}%</b><span>Solved &amp; Rate</span></div>
         <div><b style="color:var(--ok)">${u.disciplineRatePct}%</b><span>Leave Discipline</span></div>
-        <div><b style="color:var(--warn)">${u.mockTestsCount?u.mockAccuracyAvg+'%':'—'} · ${u.duelWins}W</b><span>Mocks &amp; 1v1</span></div>
+        <div><b style="color:var(--warn)">${u.mockTestsCount?u.mockAccuracyAvg+'%':'—'} · ${u.duelWins}W · 📋${u.tasksCompleted||0}</b><span>Mocks · 1v1 · Tasks</span></div>
       </div>
     </div>
     ${renderErrBox(ST.err)}
@@ -5575,14 +6152,18 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
             <button type="button" data-ar-cm="study_room" class="${ST.createMode==='study_room'?'on':''}">🏟 Live Room</button>
             <button type="button" data-ar-cm="sprint_1v1" class="${ST.createMode==='sprint_1v1'?'on':''}">⚔️ 1v1 Sprint</button>
           </div>
+          ${pendingTasks.length?`<div style="margin-top:12px">
+            <span class="ar-sub" style="margin:0;font-size:11.5px;font-weight:700">📋 From Today's Planner</span>
+            <div class="ar-plan-picks">${pendingTasks.slice(0,5).map(t=>`<button type="button" data-ar-pick-task="${t.idx}" class="ar-plan-pick ${ST.selectedPlannerIdx===t.idx?'on':''}">${escHtml(t.t)}${t.m?' · '+t.m+'m':''}</button>`).join('')}</div>
+          </div>`:''}
           <form id="arCreateForm">
             <div class="ar-field">
               <label for="arRTitle">Session Title</label>
-              <input class="ar-in" id="arRTitle" maxlength="48" placeholder="${ST.createMode==='sprint_1v1'?'Calculus Speed Duel':'Evening JEE Focus'}">
+              <input class="ar-in" id="arRTitle" maxlength="48" placeholder="${ST.createMode==='sprint_1v1'?'Calculus Speed Duel':'Evening JEE Focus'}" value="${escHtml(ST.createTitle)}">
             </div>
             <div class="ar-row3">
-              <div class="ar-field"><label for="arRSubj">Subject</label><input class="ar-in" id="arRSubj" maxlength="24" value="Maths"></div>
-              <div class="ar-field"><label for="arRDur">Min</label><input class="ar-in" id="arRDur" type="number" min="5" max="180" value="25"></div>
+              <div class="ar-field"><label for="arRSubj">Subject</label><input class="ar-in" id="arRSubj" maxlength="24" value="${escHtml(ST.createSubj||'Maths')}"></div>
+              <div class="ar-field"><label for="arRDur">Min</label><input class="ar-in" id="arRDur" type="number" min="5" max="180" value="${Number(ST.createDur)||25}"></div>
               <div class="ar-field"><label for="arRQCap">Q Cap (s)</label><input class="ar-in" id="arRQCap" type="number" min="15" max="600" value="90"></div>
             </div>
             <label style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;font-size:13px;color:var(--muted)">
@@ -5661,12 +6242,13 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       <div class="ar-table-wrap">
         ${ST.lbLoading?'<p class="ar-sub" style="padding:20px 0">Loading rankings…</p>':
           ST.lb.length?`<table class="ar-tbl">
-            <thead><tr><th>Rank</th><th>Player</th><th class="num">XP</th><th class="num">Focus</th><th class="num">Streak</th><th class="num">Solved · Leave %</th><th class="num">Mock Avg</th><th class="num">1v1</th></tr></thead>
+            <thead><tr><th>Rank</th><th>Player</th><th class="num">XP</th><th class="num">Focus</th><th class="num">Tasks</th><th class="num">Streak</th><th class="num">Solved · Leave %</th><th class="num">Mock Avg</th><th class="num">1v1</th></tr></thead>
             <tbody>${ST.lb.map(e=>`<tr class="${e.id===ST.user.id?'me':''}">
               <td style="font-weight:800">#${e.rank}</td>
               <td><b>${escHtml(e.displayName)}</b> <span style="color:var(--muted);font-size:12px">@${escHtml(e.username)}${e.id===ST.user.id?' · You':''}</span></td>
               <td class="num" style="color:var(--accent);font-weight:800">${e.xp.toLocaleString()}</td>
               <td class="num">${e.focusMinutes}m</td>
+              <td class="num">${e.tasksCompleted||0}</td>
               <td class="num" style="color:var(--warn)">${e.streakDays}d</td>
               <td class="num" style="color:var(--ok)">${e.questionsSolved} · ${e.disciplineRatePct}%</td>
               <td class="num">${e.mockTestsCount?e.mockAccuracyAvg+'%':'—'}</td>
@@ -5733,6 +6315,55 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     const tfBtn=e.target.closest('[data-ar-tf]');
     if(tfBtn){ST.lbTime=tfBtn.dataset.arTf;loadLb();return}
 
+    const pickTaskBtn=e.target.closest('[data-ar-pick-task]');
+    if(pickTaskBtn){
+      const idx=Number(pickTaskBtn.dataset.arPickTask);
+      const t=readTodayPlannerTasks().find(x=>x.idx===idx);
+      if(t){
+        ST.selectedPlannerIdx=idx;
+        ST.createTitle=t.t.slice(0,48);
+        ST.createSubj=subjFromCode(t.s);
+        ST.createDur=Math.max(5,Math.min(180,t.m||25));
+        ST.pendingTask={task:t.t,index:idx,dayKey:todayPlanKey(),plannedMin:t.m,subj:ST.createSubj};
+        renderArena();
+      }
+      return;
+    }
+
+    const planStartBtn=e.target.closest('[data-ar-plan-start]');
+    if(planStartBtn){
+      const idx=Number(planStartBtn.dataset.arPlanStart);
+      try{
+        const pl=JSON.parse(localStorage.getItem('leaveit_pl')||'{}');
+        const k=todayPlanKey();
+        const task=(pl[k]||[])[idx];
+        if(task&&!task.d&&typeof window.LeaveItLaunchPlannerFocus==='function'){
+          window.LeaveItLaunchPlannerFocus(task,idx,k);
+        }
+      }catch(err){}
+      return;
+    }
+
+    const planDoneBtn=e.target.closest('[data-ar-plan-done]');
+    if(planDoneBtn){
+      const idx=Number(planDoneBtn.dataset.arPlanDone);
+      try{
+        const pl=JSON.parse(localStorage.getItem('leaveit_pl')||'{}');
+        const k=todayPlanKey();
+        const list=pl[k]||[],task=list[idx];
+        if(task&&!task.d){
+          task.d=1;
+          localStorage.setItem('leaveit_pl',JSON.stringify(pl));
+          window.dispatchEvent(new CustomEvent('leaveit-planner-refresh'));
+          if(window.LeaveItArenaSync){
+            window.LeaveItArenaSync.rewardPlannerTask({task,index:idx,dayKey:k,plannedMinutes:+task.m||0,fromFocus:false});
+          }
+          renderArena();
+        }
+      }catch(err){}
+      return;
+    }
+
     const joinBtn=e.target.closest('[data-ar-join]');
     if(joinBtn){
       const fb=getFB();if(!fb)return;
@@ -5740,6 +6371,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       try{
         const room=await fb.joinRoom(joinBtn.dataset.arJoin);
         ST.activeRoom=room;
+        syncBridgeState();
         startRoomSub(room.roomCode);
       }catch(err){ST.err=formatArenaError(err,'Could not join room.')}
       finally{ST.busy=false;renderArena()}
@@ -5756,7 +6388,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       ST.authErr='';ST.authBusy=true;renderArena();
       try{
         const u=await fb.signInWithGoogle();
-        if(u){ST.user=u;ST.authErr=''}
+        if(u){ST.user=u;ST.authErr='';syncBridgeState()}
       }catch(err){
         ST.authErr=formatArenaError(err,'Google sign-in failed.');
       }finally{
@@ -5795,12 +6427,14 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       clearTimeout(syncDebounce);
       await flushCloudBackup(true);
       if(ST.activeRoom&&fb){try{await fb.leaveRoom(ST.activeRoom.roomCode)}catch(err){}stopRoomSub();ST.activeRoom=null}
+      syncBridgeState();
       clearUserStorageForSignOut();
       if(fb){try{await fb.signOut()}catch(err){}}
-      ST.user=null;
+      ST.user=null;syncBridgeState();
       triggerCloudReload('Signed out · device data cleared');
     }else if(act==='leaveRoom'&&ST.activeRoom){
       const c=ST.activeRoom.roomCode;stopRoomSub();ST.activeRoom=null;ST.err='';
+      syncBridgeState();
       if(fb){try{await fb.leaveRoom(c)}catch(err){}}
       renderArena();
     }else if(act==='toggleReady'&&ST.activeRoom&&fb){
@@ -5841,7 +6475,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       ST.err='';ST.busy=true;renderArena();
       try{
         const upd=await fb.updateProfile({username:u,displayName:d});
-        ST.user=upd;ST.editingProfile=false;
+        ST.user=upd;ST.editingProfile=false;syncBridgeState();
         syncSpaName(upd.displayName);
         showToast('Profile updated');
       }catch(err){ST.err=formatArenaError(err,'Could not update profile.')}
@@ -5853,6 +6487,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       try{
         const room=await fb.joinRoom(code);
         ST.activeRoom=room;
+        syncBridgeState();
         startRoomSub(room.roomCode);
       }catch(err){ST.err=formatArenaError(err,'Could not join room.')}
       finally{ST.busy=false;renderArena()}
@@ -5868,6 +6503,11 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
           isPublic:Boolean(document.getElementById('arRPub')?.checked)
         });
         ST.activeRoom=room;
+        if(ST.pendingTask&&window.LeaveItArenaSync){
+          window.LeaveItArenaSync.setLinkedTask(ST.pendingTask);
+        }
+        ST.pendingTask=null;ST.selectedPlannerIdx=-1;ST.createTitle='';ST.createSubj='Maths';ST.createDur=25;
+        syncBridgeState();
         startRoomSub(room.roomCode);
       }catch(err){ST.err=formatArenaError(err,'Could not create room.')}
       finally{ST.busy=false;renderArena()}
@@ -5879,6 +6519,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     if(e.target.id==='arEmail')ST.draftEmail=e.target.value||'';
     else if(e.target.id==='arEditUser')ST.editUser=e.target.value||'';
     else if(e.target.id==='arEditDisp')ST.editDisp=e.target.value||'';
+    else if(e.target.id==='arRTitle')ST.createTitle=e.target.value||'';
+    else if(e.target.id==='arRSubj')ST.createSubj=e.target.value||'';
+    else if(e.target.id==='arRDur')ST.createDur=Number(e.target.value)||25;
     else if(e.target.id==='arLbSearch'){
       ST.lbQ=e.target.value||'';
       clearTimeout(searchDebounce);

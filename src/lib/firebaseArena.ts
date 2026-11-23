@@ -39,7 +39,8 @@ export type ActivityKind =
   | 'question_solved'
   | 'question_left_on_time'
   | 'question_overtime'
-  | 'mock_test';
+  | 'mock_test'
+  | 'task_completed';
 
 export type RoomMode = 'study_room' | 'sprint_1v1';
 export type RoomStatus = 'lobby' | 'countdown' | 'active' | 'finished';
@@ -72,6 +73,9 @@ export interface ArenaUser {
   weekXp: number;
   weekFocusMinutes: number;
   weekQuestionsSolved: number;
+  tasksCompleted: number;
+  todayTasksCompleted: number;
+  weekTasksCompleted: number;
 }
 
 export interface RoomParticipantView {
@@ -87,6 +91,8 @@ export interface RoomParticipantView {
   overtimeCount: number;
   focusSeconds: number;
   sprintScore: number;
+  tasksCompleted: number;
+  activeTaskTitle: string;
 }
 
 export interface RoomSnapshot {
@@ -139,6 +145,7 @@ export interface LeaderboardEntry {
   mockAccuracyAvg: number;
   duelWins: number;
   duelPlayed: number;
+  tasksCompleted: number;
 }
 
 function todayStr(offsetDays = 0): string {
@@ -193,12 +200,14 @@ function computeSprintScore(p: {
   leftOnTimeCount: number;
   overtimeCount: number;
   focusSeconds: number;
+  tasksCompleted?: number;
 }): number {
   return (
     p.solvedCount * 25 +
     p.leftOnTimeCount * 15 +
     p.overtimeCount * 5 +
-    Math.floor(p.focusSeconds / 60) * 4
+    Math.floor(p.focusSeconds / 60) * 4 +
+    (p.tasksCompleted || 0) * 30
   );
 }
 
@@ -239,6 +248,9 @@ function toArenaUser(d: Record<string, unknown>): ArenaUser {
     weekFocusMinutes: d.weekKey === wKey ? Number(d.weekFocusMinutes || 0) : 0,
     weekQuestionsSolved:
       d.weekKey === wKey ? Number(d.weekQuestionsSolved || 0) : 0,
+    tasksCompleted: Number(d.tasksCompleted || 0),
+    todayTasksCompleted: d.todayKey === tKey ? Number(d.todayTasksCompleted || 0) : 0,
+    weekTasksCompleted: d.weekKey === wKey ? Number(d.weekTasksCompleted || 0) : 0,
   };
 }
 
@@ -300,6 +312,9 @@ async function ensurePlayerProfile(fbUser: User): Promise<ArenaUser> {
         weekXp: 0,
         weekFocusMinutes: 0,
         weekQuestionsSolved: 0,
+        tasksCompleted: 0,
+        todayTasksCompleted: 0,
+        weekTasksCompleted: 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       };
@@ -496,6 +511,9 @@ export async function recordArenaActivity(payload: {
   focusMinutes?: number;
   elapsedSec?: number;
   mockAccuracy?: number;
+  plannedMinutes?: number;
+  fromFocus?: boolean;
+  taskTitle?: string;
 }): Promise<{duplicate: boolean; user: ArenaUser; xpDelta: number}> {
   const fbUser = auth.currentUser;
   if (!fbUser) throw new Error('Sign in required.');
@@ -515,7 +533,7 @@ export async function recordArenaActivity(payload: {
     ? doc(db, 'rooms', cleanRoomCode, 'participants', uid)
     : null;
 
-  let xpDelta = 0;
+  let baseXpDelta = 0;
   let focusDelta = 0;
   let solvedDelta = 0;
   let leftDelta = 0;
@@ -523,6 +541,7 @@ export async function recordArenaActivity(payload: {
   let mockDelta = 0;
   let mockAccSumDelta = 0;
   let mockAccVal = 0;
+  let tasksDelta = 0;
 
   switch (payload.kind) {
     case 'focus_session': {
@@ -531,27 +550,38 @@ export async function recordArenaActivity(payload: {
         Math.min(240, Math.round(Number(payload.focusMinutes) || 0)),
       );
       focusDelta = mins;
-      xpDelta = mins * 2;
+      baseXpDelta = mins * 2;
       break;
     }
     case 'question_solved':
       solvedDelta = 1;
-      xpDelta = 15;
+      baseXpDelta = 15;
       break;
     case 'question_left_on_time':
       leftDelta = 1;
-      xpDelta = 10;
+      baseXpDelta = 10;
       break;
     case 'question_overtime':
       overDelta = 1;
-      xpDelta = 4;
+      baseXpDelta = 4;
       break;
     case 'mock_test': {
       const acc = Math.max(0, Math.min(100, Number(payload.mockAccuracy) || 0));
       mockDelta = 1;
       mockAccSumDelta = acc;
       mockAccVal = acc;
-      xpDelta = 30 + Math.round(acc * 0.4);
+      baseXpDelta = 30 + Math.round(acc * 0.4);
+      break;
+    }
+    case 'task_completed': {
+      const plannedMin = Math.max(
+        0,
+        Math.min(240, Math.round(Number(payload.plannedMinutes) || 0)),
+      );
+      const durBonus = Math.min(20, Math.floor(plannedMin / 10) * 3);
+      const focusBonus = payload.fromFocus ? 10 : 0;
+      tasksDelta = 1;
+      baseXpDelta = 15 + durBonus + focusBonus;
       break;
     }
   }
@@ -578,13 +608,18 @@ export async function recordArenaActivity(payload: {
         if (
           rData &&
           partSnap.exists() &&
-          rData.status === 'active' &&
+          (rData.status === 'active' || (payload.kind === 'task_completed' && rData.status === 'lobby')) &&
           pIds.includes(uid)
         ) {
           roomActive = true;
           partData = partSnap.data() as Record<string, unknown>;
         }
       }
+
+      const xpDelta = Math.min(
+        500,
+        baseXpDelta + (payload.kind === 'task_completed' && roomActive ? 10 : 0),
+      );
 
       const tKey = todayStr(0);
       const yesterday = todayStr(1);
@@ -601,12 +636,16 @@ export async function recordArenaActivity(payload: {
         pData.todayKey === tKey ? Number(pData.todayFocusMinutes || 0) : 0;
       const prevTodaySolved =
         pData.todayKey === tKey ? Number(pData.todayQuestionsSolved || 0) : 0;
+      const prevTodayTasks =
+        pData.todayKey === tKey ? Number(pData.todayTasksCompleted || 0) : 0;
 
       const prevWeekXp = pData.weekKey === wKey ? Number(pData.weekXp || 0) : 0;
       const prevWeekFocus =
         pData.weekKey === wKey ? Number(pData.weekFocusMinutes || 0) : 0;
       const prevWeekSolved =
         pData.weekKey === wKey ? Number(pData.weekQuestionsSolved || 0) : 0;
+      const prevWeekTasks =
+        pData.weekKey === wKey ? Number(pData.weekTasksCompleted || 0) : 0;
 
       const nextPlayerFields = {
         xp: Number(pData.xp || 0) + xpDelta,
@@ -628,6 +667,9 @@ export async function recordArenaActivity(payload: {
         weekXp: prevWeekXp + xpDelta,
         weekFocusMinutes: prevWeekFocus + focusDelta,
         weekQuestionsSolved: prevWeekSolved + solvedDelta,
+        tasksCompleted: Number(pData.tasksCompleted || 0) + tasksDelta,
+        todayTasksCompleted: prevTodayTasks + tasksDelta,
+        weekTasksCompleted: prevWeekTasks + tasksDelta,
         updatedAt: serverTimestamp(),
       };
 
@@ -652,6 +694,7 @@ export async function recordArenaActivity(payload: {
         const nextSolved = Number(partData.solvedCount || 0) + solvedDelta;
         const nextLeft = Number(partData.leftOnTimeCount || 0) + leftDelta;
         const nextOver = Number(partData.overtimeCount || 0) + overDelta;
+        const nextTasks = Math.min(1000, Number(partData.tasksCompleted || 0) + tasksDelta);
         const nextFocusSec = Math.min(
           14400,
           Number(partData.focusSeconds || 0) + focusDelta * 60,
@@ -661,11 +704,13 @@ export async function recordArenaActivity(payload: {
           leftOnTimeCount: nextLeft,
           overtimeCount: nextOver,
           focusSeconds: nextFocusSec,
+          tasksCompleted: nextTasks,
         });
         tx.update(partRef, {
           solvedCount: nextSolved,
           leftOnTimeCount: nextLeft,
           overtimeCount: nextOver,
+          tasksCompleted: nextTasks,
           focusSeconds: nextFocusSec,
           sprintScore: nextScore,
           updatedAt: serverTimestamp(),
@@ -767,6 +812,8 @@ export async function createArenaRoom(input: {
           overtimeCount: 0,
           focusSeconds: 0,
           sprintScore: 0,
+          tasksCompleted: 0,
+          activeTaskTitle: '',
           joinedAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -802,6 +849,8 @@ export async function createArenaRoom(input: {
               overtimeCount: 0,
               focusSeconds: 0,
               sprintScore: 0,
+              tasksCompleted: 0,
+              activeTaskTitle: '',
             },
           ],
         };
@@ -877,6 +926,8 @@ export async function joinArenaRoom(rawCode: string): Promise<RoomSnapshot> {
         overtimeCount: 0,
         focusSeconds: 0,
         sprintScore: 0,
+        tasksCompleted: 0,
+        activeTaskTitle: '',
         joinedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -1038,6 +1089,7 @@ export async function updateArenaLiveProgress(
   rawCode: string,
   liveState: LiveState,
   focusSeconds: number,
+  activeTaskTitle?: string,
 ): Promise<void> {
   const fbUser = auth.currentUser;
   if (!fbUser) return;
@@ -1056,11 +1108,17 @@ export async function updateArenaLiveProgress(
       leftOnTimeCount: Number(d.leftOnTimeCount || 0),
       overtimeCount: Number(d.overtimeCount || 0),
       focusSeconds: nextFocusSec,
+      tasksCompleted: Number(d.tasksCompleted || 0),
     });
+    const cleanTask =
+      activeTaskTitle !== undefined
+        ? activeTaskTitle.trim().replace(/\s+/g, ' ').slice(0, 60)
+        : String(d.activeTaskTitle || '').slice(0, 60);
     await updateDoc(partRef, {
       liveState,
       focusSeconds: nextFocusSec,
       sprintScore: nextScore,
+      activeTaskTitle: cleanTask,
       updatedAt: serverTimestamp(),
     });
   } catch {
@@ -1195,6 +1253,8 @@ function mapRoomDoc(
       overtimeCount: Number(p.overtimeCount || 0),
       focusSeconds: Number(p.focusSeconds || 0),
       sprintScore: Number(p.sprintScore || 0),
+      tasksCompleted: Number(p.tasksCompleted || 0),
+      activeTaskTitle: p.activeTaskTitle ? String(p.activeTaskTitle) : '',
     }))
     .sort((a, b) => {
       if (b.sprintScore !== a.sprintScore) return b.sprintScore - a.sprintScore;
@@ -1516,6 +1576,7 @@ export async function fetchLeaderboard(opts: {
       mockAccuracyAvg: u.mockAccuracyAvg,
       duelWins: u.duelWins,
       duelPlayed: u.duelPlayed,
+      tasksCompleted: u.tasksCompleted,
     }));
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'players');

@@ -50,6 +50,9 @@
         "weekXp": { "type": "number" },
         "weekFocusMinutes": { "type": "number" },
         "weekQuestionsSolved": { "type": "number" },
+        "tasksCompleted": { "type": "number" },
+        "todayTasksCompleted": { "type": "number" },
+        "weekTasksCompleted": { "type": "number" },
         "createdAt": {
           "type": "string",
           "format": "date-time"
@@ -111,7 +114,8 @@
             "question_left_on_time",
             "question_overtime",
             "mock_test",
-            "duel_win_bonus"
+            "duel_win_bonus",
+            "task_completed"
           ]
         },
         "roomCode": {
@@ -281,6 +285,11 @@
         "overtimeCount": { "type": "number" },
         "focusSeconds": { "type": "number" },
         "sprintScore": { "type": "number" },
+        "tasksCompleted": { "type": "number" },
+        "activeTaskTitle": {
+          "type": "string",
+          "maxLength": 60
+        },
         "joinedAt": {
           "type": "string",
           "format": "date-time"

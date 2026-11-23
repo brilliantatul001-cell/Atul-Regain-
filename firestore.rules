@@ -49,6 +49,7 @@ service cloud.firestore {
         'mockTestsCount', 'mockAccuracySum', 'duelWins', 'duelPlayed',
         'todayKey', 'todayXp', 'todayFocusMinutes', 'todayQuestionsSolved',
         'weekKey', 'weekXp', 'weekFocusMinutes', 'weekQuestionsSolved',
+        'tasksCompleted', 'todayTasksCompleted', 'weekTasksCompleted',
         'createdAt', 'updatedAt'
       ]) &&
       isValidId(data.uid) &&
@@ -73,6 +74,9 @@ service cloud.firestore {
       data.weekXp is number && data.weekXp >= 0 &&
       data.weekFocusMinutes is number && data.weekFocusMinutes >= 0 &&
       data.weekQuestionsSolved is number && data.weekQuestionsSolved >= 0 &&
+      (!('tasksCompleted' in data) || (data.tasksCompleted is number && data.tasksCompleted >= 0 && data.tasksCompleted <= 50000)) &&
+      (!('todayTasksCompleted' in data) || (data.todayTasksCompleted is number && data.todayTasksCompleted >= 0 && data.todayTasksCompleted <= 1000)) &&
+      (!('weekTasksCompleted' in data) || (data.weekTasksCompleted is number && data.weekTasksCompleted >= 0 && data.weekTasksCompleted <= 5000)) &&
       data.createdAt is timestamp &&
       data.updatedAt is timestamp;
     }
@@ -90,7 +94,7 @@ service cloud.firestore {
       ]) &&
       isValidId(data.uid) &&
       data.clientSessionId is string && data.clientSessionId.size() >= 4 && data.clientSessionId.size() <= 80 && data.clientSessionId.matches('^[a-zA-Z0-9_\\-]+$') &&
-      data.kind in ['focus_session', 'question_solved', 'question_left_on_time', 'question_overtime', 'mock_test', 'duel_win_bonus'] &&
+      data.kind in ['focus_session', 'question_solved', 'question_left_on_time', 'question_overtime', 'mock_test', 'duel_win_bonus', 'task_completed'] &&
       data.roomCode is string && data.roomCode.size() <= 8 &&
       data.subject is string && data.subject.size() <= 32 &&
       data.xpDelta is number && data.xpDelta >= 0 && data.xpDelta <= 500 &&
@@ -163,6 +167,7 @@ service cloud.firestore {
         'uid', 'roomCode', 'username', 'displayName', 'streakDays', 'isHost',
         'ready', 'roomIsPublic', 'allowedUids', 'liveState', 'solvedCount',
         'leftOnTimeCount', 'overtimeCount', 'focusSeconds', 'sprintScore',
+        'tasksCompleted', 'activeTaskTitle',
         'joinedAt', 'updatedAt'
       ]) &&
       isValidId(data.uid) &&
@@ -180,6 +185,8 @@ service cloud.firestore {
       data.overtimeCount is number && data.overtimeCount >= 0 && data.overtimeCount <= 1000 &&
       data.focusSeconds is number && data.focusSeconds >= 0 && data.focusSeconds <= 14400 &&
       data.sprintScore is number && data.sprintScore >= 0 && data.sprintScore <= 50000 &&
+      (!('tasksCompleted' in data) || (data.tasksCompleted is number && data.tasksCompleted >= 0 && data.tasksCompleted <= 1000)) &&
+      (!('activeTaskTitle' in data) || (data.activeTaskTitle is string && data.activeTaskTitle.size() <= 60)) &&
       data.joinedAt is timestamp &&
       data.updatedAt is timestamp;
     }
@@ -216,6 +223,7 @@ service cloud.firestore {
               'mockTestsCount', 'mockAccuracySum', 'duelWins', 'duelPlayed',
               'todayKey', 'todayXp', 'todayFocusMinutes', 'todayQuestionsSolved',
               'weekKey', 'weekXp', 'weekFocusMinutes', 'weekQuestionsSolved',
+              'tasksCompleted', 'todayTasksCompleted', 'weekTasksCompleted',
               'updatedAt'
             ]) &&
             incoming().xp >= existing().xp &&
@@ -223,7 +231,8 @@ service cloud.firestore {
             incoming().focusMinutes >= existing().focusMinutes &&
             incoming().questionsSolved >= existing().questionsSolved &&
             incoming().duelWins >= existing().duelWins &&
-            incoming().duelPlayed >= existing().duelPlayed
+            incoming().duelPlayed >= existing().duelPlayed &&
+            (!('tasksCompleted' in incoming()) || !('tasksCompleted' in existing()) || incoming().tasksCompleted >= existing().tasksCompleted)
           ) ||
           // Action: One-time guest summary migration when account starts at zero stats
           (
@@ -408,7 +417,8 @@ service cloud.firestore {
           request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'ready', 'liveState', 'solvedCount', 'leftOnTimeCount',
-            'overtimeCount', 'focusSeconds', 'sprintScore', 'updatedAt'
+            'overtimeCount', 'focusSeconds', 'sprintScore',
+            'tasksCompleted', 'activeTaskTitle', 'updatedAt'
           ]);
 
         allow delete: if isOwner(participantUid) && isValidRoomCode(roomCode) && isValidId(participantUid);

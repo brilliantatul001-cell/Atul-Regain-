@@ -1436,7 +1436,7 @@ function mkSvg0(mood){
  <g class="mk-sparkles" fill="#ffd34d"><path d="M17 48 L19 54 L25 56 L19 58 L17 64 L15 58 L9 56 L15 54 Z"/><path d="M103 60 L105 65 L110 67 L105 69 L103 74 L101 69 L96 67 L101 65 Z"/><circle cx="24" cy="30" r="2"/><circle cx="97" cy="92" r="2"/></g>
  </svg>`}
 document.head.insertAdjacentHTML('beforeend',`<style>
-#mk{position:fixed;left:6px;bottom:var(--mkb,100px);z-index:60;display:flex;align-items:flex-end;gap:0;max-width:calc(100vw - 12px);pointer-events:none;opacity:0;transform:var(--mkh,translateY(160%));transition:transform .55s cubic-bezier(.34,1.56,.64,1),opacity .3s}
+#mk{position:fixed;left:6px;bottom:var(--mkb,100px);z-index:560;display:flex;align-items:flex-end;gap:0;max-width:calc(100vw - 12px);pointer-events:none;opacity:0;transform:var(--mkh,translateY(160%));transition:transform .55s cubic-bezier(.34,1.56,.64,1),opacity .3s}
 #mk.on{transform:none;opacity:1}
 #mk.p-bl{left:6px;right:auto;bottom:var(--mkb,100px);top:auto;--mkh:translateY(170%)}#mk.p-br{right:6px;left:auto;bottom:var(--mkb,100px);top:auto;--mkh:translateY(170%)}
 #mk.p-tl{left:6px;right:auto;top:calc(env(safe-area-inset-top,0px) + 84px);bottom:auto;--mkh:translateY(-200%)}#mk.p-tr{right:6px;left:auto;top:calc(env(safe-area-inset-top,0px) + 84px);bottom:auto;--mkh:translateY(-200%)}
@@ -1460,7 +1460,23 @@ document.head.insertAdjacentHTML('beforeend',`<style>
 #mkT:before{content:"";position:absolute;left:-8px;bottom:16px;width:13px;height:13px;background:var(--card);border-left:2px solid color-mix(in srgb,var(--accent) 55%,var(--track));border-bottom:2px solid color-mix(in srgb,var(--accent) 55%,var(--track));transform:rotate(45deg)}
 #mkT small{display:block;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:#ffb52e;margin-bottom:2px}
 #mkX{position:absolute;top:4px;right:4px;width:26px;height:26px;border-radius:50%;background:none;color:var(--muted);font-size:14px;padding:0}
-body.focus #mk{display:none}
+body.focus #mk:not(.mk-focus-msg){display:none}
+#mk.mk-focus-msg #mkT{max-width:min(315px,calc(100vw - 108px));padding:10px 28px 11px 13px}
+#mk.mk-focus-msg.mk-rivalry #mkT,#mk.mk-focus-msg.mk-rivalry #mkT:before{border-color:var(--warn)}
+#mk.mk-focus-msg.mk-rivalry #mkT small{color:var(--warn)}
+#mk.mk-focus-msg.mk-cheer #mkT,#mk.mk-focus-msg.mk-cheer #mkT:before{border-color:var(--ok)}
+#mk.mk-focus-msg.mk-cheer #mkT small{color:var(--ok)}
+#mkReply{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding-top:8px;border-top:1px solid color-mix(in srgb,var(--track) 85%,transparent)}
+#mkReply[hidden]{display:none}
+.mk-rchips{display:flex;flex-wrap:wrap;gap:4px}
+.mk-rchip{border:1px solid var(--track);background:color-mix(in srgb,var(--bg) 65%,var(--card));color:var(--text);border-radius:99px;padding:4px 8px;font:inherit;font-size:11px;font-weight:750;cursor:pointer;line-height:1.2}
+.mk-rchip.rivalry{border-color:color-mix(in srgb,var(--warn) 55%,var(--track));color:var(--warn)}
+.mk-rchip.cheer{border-color:color-mix(in srgb,var(--ok) 55%,var(--track));color:var(--ok)}
+.mk-rchip:hover{filter:brightness(1.1)}
+.mk-rform{display:flex;gap:5px;align-items:center}
+.mk-rin{flex:1;min-width:0;padding:6px 10px;border-radius:99px;border:1.5px solid var(--track);background:var(--bg);color:var(--text);font:inherit;font-size:12px;font-weight:600;outline:none}
+.mk-rin:focus{border-color:var(--accent)}
+.mk-rsend{border:0;border-radius:99px;padding:6px 11px;background:var(--accent);color:#06241a;font:inherit;font-size:11.5px;font-weight:800;cursor:pointer;white-space:nowrap;flex:none}
 @media (orientation:landscape) and (max-height:520px){#mkB{width:62px;height:66px}#mkT{margin-bottom:26px;font-size:13px}}
 @media (prefers-reduced-motion:reduce){.mk-svg,.mk-eyes,.mk-arm,.mk-z,.mk-q{animation:none!important}}
 
@@ -1477,19 +1493,21 @@ body.focus #mk{display:none}
 @keyframes mkWing{0%,100%{opacity:.55}50%{opacity:1}}
 /* v66 Tick: focus-guardian shield badge and uncluttered strict-session screen. */
 .mk-badge{transform-origin:60px 92px;animation:mkBadge 2.4s ease-in-out infinite}
-body.strict-session-active #mk{display:none!important}
+body.strict-session-active #mk:not(.mk-focus-msg){display:none!important}
 #mkB{filter:drop-shadow(0 5px 10px rgba(0,0,0,.18))}
 #mkB:focus-visible{outline:3px solid var(--accent);outline-offset:3px;border-radius:22px}
-@media(max-width:380px){#mkB{width:74px;height:80px}#mkT{max-width:min(220px,calc(100vw - 104px));font-size:13px;padding:8px 28px 9px 11px}}
+@media(max-width:380px){#mkB{width:74px;height:80px}#mkT{max-width:min(220px,calc(100vw - 104px));font-size:13px;padding:8px 28px 9px 11px}#mk.mk-focus-msg #mkT{max-width:min(275px,calc(100vw - 96px))}}
 @media (prefers-reduced-motion:reduce){.mk-cap,.mk-scarf,.mk-badge,.mk-sparkles,.mk-wing-detail{animation:none!important}}
 
 </style>`);
-document.body.insertAdjacentHTML('beforeend',`<div id="mk" role="status" aria-live="polite"><button id="mkB" aria-label="Tick the study mascot. Tap to hear another tip"></button><div id="mkT"><small id="mkL">Tick</small><span id="mkS"></span><button id="mkX" aria-label="Dismiss">✕</button></div></div>`);
+document.body.insertAdjacentHTML('beforeend',`<div id="mk" role="status" aria-live="polite"><button id="mkB" aria-label="Tick the study mascot. Tap to hear another tip"></button><div id="mkT"><small id="mkL">Tick</small><span id="mkS"></span><div id="mkReply" hidden></div><button id="mkX" aria-label="Dismiss">✕</button></div></div>`);
 /* ---- v54 logic ---- */
 if(!['chatty','quiet','muted'].includes(S.mkMode))S.mkMode=S.mascot===false?'muted':'chatty';
 if(S.mkRem===undefined)S.mkRem=true;if(S.mkChat===undefined)S.mkChat=true;
 if(!['often','normal','rare'].includes(S.mascotFreq))S.mascotFreq='normal';
 const mkOff=()=>S.mkMode==='muted';
+const mkInFocusMode=()=>Boolean(document.body.classList.contains('focus')||document.getElementById('rgS')?.classList.contains('on')||document.body.classList.contains('strict-session-active'));
+function mkMountParent(){const el=$('mk');if(!el)return;const host=document.fullscreenElement||document.body;if(el.parentNode!==host)host.appendChild(el)}
 const MKS={q:[],last:0,shown:0,hideT:null,recent:[],cat:'',pos:'',next:Date.now()+14000,remNext:Date.now()+22000};
 let MKR={};try{MKR=JSON.parse(localStorage.getItem('leaveit_mkr')||'{}')}catch(e){}
 const mkSaveR=()=>{try{localStorage.setItem('leaveit_mkr',JSON.stringify(MKR))}catch(e){}};
@@ -1503,7 +1521,7 @@ function mkCats(){const h=new Date().getHours(),st=streakN(),q=dgToday().q,g=S.g
   out.push('leave','leave','gen','gen','gen','gen');if(typeof mkInsight==='function'&&mkInsight())out.push('insight','insight');
   if(u){const d=dTo(u.date);out.push(d===0?'test0':d===1?'test1':d<=14?'testN':'gen')}
   if(c&&c.d<=400)out.push('exam');return out}
-function mkBusy(){if(mkOff()||document.hidden)return true;if(typeof running!=='undefined'&&running)return true;if(typeof M!=='undefined'&&M.on)return true;if(document.body.classList.contains('focus'))return true;
+function mkBusy(){if(mkOff()||document.hidden||mkInFocusMode())return true;if(typeof running!=='undefined'&&running)return true;if(typeof M!=='undefined'&&M.on)return true;
   return !!(document.getElementById('splash')||['nm','gm','ts','pf','lv'].some(i=>{const e=document.getElementById(i);return e&&(e.classList.contains('on')||getComputedStyle(e).display!=='none')}))}
 /* ---- voice: small, cute, female-ish ---- */
 let mkVoices=[];const mkLoadV=()=>{try{mkVoices=(window.speechSynthesis&&speechSynthesis.getVoices())||[]}catch(e){mkVoices=[]}};
@@ -1513,18 +1531,97 @@ function mkBestVoice(){if(S.mkVoice){const v=mkVoices.find(v=>v.name===S.mkVoice
   const rk=v=>(fem.test(v.name)?4:0)-(male.test(v.name)&&!/female/i.test(v.name)?3:0)+(/en-IN/i.test(v.lang)?2:/en-GB|en-US/i.test(v.lang)?1:0);
   return mkVoices.filter(v=>/^en/i.test(v.lang)).sort((a,b)=>rk(b)-rk(a))[0]||null}
 const mkEmo=/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}️‍]/gu;
-function mkSpeak(t){if(S.mkMode!=='chatty'||!window.speechSynthesis)return;try{const c=t.replace(mkEmo,'').replace(/\s+/g,' ').trim();if(!c)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(c),v=mkBestVoice();if(v){u.voice=v;u.lang=v.lang}u.pitch=1.55;u.rate=1.06;u.volume=1;speechSynthesis.speak(u)}catch(e){}}
+function mkSpeak(t){if(mkInFocusMode()||S.mkMode!=='chatty'||!window.speechSynthesis)return;try{const c=t.replace(mkEmo,'').replace(/\s+/g,' ').trim();if(!c)return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(c),v=mkBestVoice();if(v){u.voice=v;u.lang=v.lang}u.pitch=1.55;u.rate=1.06;u.volume=1;speechSynthesis.speak(u)}catch(e){}}
 /* ---- random place ---- */
 const MKP=['bl','br','tl','tr','ml','mr'];
 function mkPlace(){const el=$('mk');if(el.classList.contains('on'))return;let p;do{p=mkPick(MKP)}while(p===MKS.pos);MKS.pos=p;
   el.className=el.className.replace(/\b(p-\w+|r|t)\b/g,'').trim();el.classList.add('p-'+p);if(p[1]==='r'||p==='mr'||p==='br'||p==='tr')el.classList.add('r');if(p[0]==='t')el.classList.add('t');
   const nv=$('nav');el.style.setProperty('--mkb',((nv?nv.getBoundingClientRect().height:90)+10)+'px')}
+function mkPlaceFocus(){const el=$('mk');if(!el)return;el.className=el.className.replace(/\b(p-\w+|r|t|al)\b/g,'').trim();el.classList.add('p-br','r');el.style.setProperty('--mkb','18px')}
 function mkShowText(txt,mood,o){o=o||{};if(mkOff())return false;
+  mkMountParent();
+  const el=$('mk'),rp=$('mkReply');
+  el.classList.remove('mk-focus-msg','mk-rivalry','mk-cheer');
+  if(rp){rp.hidden=true;rp.innerHTML=''}
   if(!$('mk').classList.contains('on'))mkPlace();
-  const el=$('mk');el.classList.toggle('al',!!o.alert);$('mkL').textContent=o.alert?'⏰ Reminder':'Tick';$('mkS').textContent=txt;$('mkB').innerHTML=mkSvg(mood||'happy');
+  el.classList.toggle('al',!!o.alert);$('mkL').textContent=o.alert?'⏰ Reminder':'Tick';$('mkS').textContent=txt;$('mkB').innerHTML=mkSvg(mood||'happy');
   MKS.last=Date.now();MKS.shown++;void el.offsetWidth;el.classList.add('on');clearTimeout(MKS.hideT);MKS.hideT=setTimeout(mkHide,Math.min(12000,5000+txt.length*70));
   if(S.vib&&navigator.vibrate)try{navigator.vibrate(o.alert?[40,50,40]:18)}catch(e){}
-  if(S.mkMode==='chatty'&&(o.voice||Math.random()<.4))setTimeout(()=>mkSpeak(txt),500);return true}
+  if(mkInFocusMode()){try{if(window.speechSynthesis)speechSynthesis.cancel()}catch(e){}}
+  else if(S.mkMode==='chatty'&&(o.voice||Math.random()<.4))setTimeout(()=>mkSpeak(txt),500);
+  return true}
+function mkSendArenaReply(text,kind){
+  const clean=String(text||'').trim().slice(0,140);
+  if(!clean)return;
+  window.dispatchEvent(new CustomEvent('leaveit-arena-send-chat',{detail:{text:clean,kind:kind||'chat'}}));
+  mkHide();
+  try{if(window.LeaveItArenaSync&&window.LeaveItArenaSync.emitToast)window.LeaveItArenaSync.emitToast('✓ Reply sent');else if(typeof xpToast==='function')xpToast('✓ Reply sent')}catch(e){}
+}
+const MK_FOCUS_REPLIES=[
+  {label:'🔥 On it!',text:'On it! Watch me 🔥',kind:'rivalry'},
+  {label:'⚡ Catch me!',text:'Catch me if you can ⚡',kind:'rivalry'},
+  {label:'🤝 Lock in!',text:'You got this, lock in! 🤝',kind:'cheer'},
+  {label:'👏 Nice!',text:'Nice pace! Keep pushing 👏',kind:'cheer'}
+];
+window.LeaveItTickShowArenaMsg=function(msg){
+  if(!msg||!msg.text)return false;
+  try{if(window.speechSynthesis)speechSynthesis.cancel()}catch(e){}
+  mkMountParent();
+  const el=$('mk'),lbl=$('mkL'),txtEl=$('mkS'),btn=$('mkB'),rp=$('mkReply');
+  if(!el||!lbl||!txtEl||!btn||!rp)return false;
+  mkPlaceFocus();
+  const kind=msg.kind==='rivalry'?'rivalry':msg.kind==='cheer'?'cheer':'chat';
+  const sender=String(msg.senderDisplayName||'Teammate').trim()||'Teammate';
+  el.classList.add('mk-focus-msg');
+  el.classList.toggle('mk-rivalry',kind==='rivalry');
+  el.classList.toggle('mk-cheer',kind==='cheer');
+  lbl.textContent=kind==='rivalry'?`🔥 ${sender} · Rivalry`:kind==='cheer'?`🤝 ${sender} · Good`:`💬 ${sender}`;
+  txtEl.textContent=String(msg.text);
+  btn.innerHTML=mkSvg(kind==='rivalry'?'wink':kind==='cheer'?'cheer':'happy');
+  rp.innerHTML='';
+  const chips=document.createElement('div');chips.className='mk-rchips';
+  MK_FOCUS_REPLIES.forEach(item=>{
+    const b=document.createElement('button');b.type='button';
+    b.className='mk-rchip '+item.kind;
+    b.textContent=item.label;
+    b.onclick=()=>mkSendArenaReply(item.text,item.kind);
+    chips.appendChild(b);
+  });
+  const form=document.createElement('form');form.className='mk-rform';
+  const inp=document.createElement('input');inp.type='text';inp.className='mk-rin';inp.maxLength=140;inp.placeholder='Custom reply…';inp.autocomplete='off';inp.setAttribute('aria-label','Custom reply');
+  const sb=document.createElement('button');sb.type='submit';sb.className='mk-rsend';sb.textContent='Send';
+  form.appendChild(inp);form.appendChild(sb);
+  form.onsubmit=ev=>{ev.preventDefault();const v=inp.value.trim();if(!v){inp.focus();return}mkSendArenaReply(v,'chat')};
+  rp.appendChild(chips);rp.appendChild(form);
+  rp.hidden=false;
+  MKS.last=Date.now();
+  void el.offsetWidth;
+  el.classList.add('on');
+  clearTimeout(MKS.hideT);
+  MKS.hideT=setTimeout(()=>{if(!rp.contains(document.activeElement))mkHide()},15000);
+  if(S.vib&&navigator.vibrate)try{navigator.vibrate(14)}catch(e){}
+  return true;
+};
+window.LeaveItTickHideFocusMsg=function(){const el=$('mk');if(el&&el.classList.contains('mk-focus-msg'))mkHide()};
+{const rp=$('mkReply');if(rp){
+  rp.addEventListener('focusin',()=>clearTimeout(MKS.hideT));
+  rp.addEventListener('input',()=>clearTimeout(MKS.hideT));
+  rp.addEventListener('focusout',()=>{if(!rp.hidden){clearTimeout(MKS.hideT);MKS.hideT=setTimeout(()=>{if(!rp.contains(document.activeElement))mkHide()},8000)}});
+}}
+function mkSyncFocusSilence(){
+  mkMountParent();
+  if(mkInFocusMode()){
+    try{if(window.speechSynthesis)speechSynthesis.cancel()}catch(e){}
+    const el=$('mk');if(el&&el.classList.contains('on')&&!el.classList.contains('mk-focus-msg'))mkHide();
+  }
+}
+document.addEventListener('fullscreenchange',mkSyncFocusSilence);
+if(typeof MutationObserver!=='undefined'){
+  const mkObs=new MutationObserver(mkSyncFocusSilence);
+  mkObs.observe(document.body,{attributes:true,attributeFilter:['class']});
+  const rgSEl=document.getElementById('rgS');
+  if(rgSEl)mkObs.observe(rgSEl,{attributes:true,attributeFilter:['class']});
+}
 /* Tick insights: hard facts from the saved question history (TM.samples). */
 function mkInsight(){
   const pct=x=>Math.round(x*100)+'%';
@@ -1556,9 +1653,9 @@ function mkShow(cat,force){if(!force&&mkBusy())return false;
   if(cat==='insight'){const t=mkInsight();if(t){MKS.recent.push(t);if(MKS.recent.length>10)MKS.recent.shift();MKS.cat=cat;return mkShowText(t,'think',{voice:false})}cat='gen'}
   const pool=MK_LINES[cat]||MK_LINES.gen;let line=null;for(let i=0;i<8;i++){const l=mkPick(pool);if(!MKS.recent.includes(l)){line=l;break}}if(!line)line=mkPick(pool);
   MKS.recent.push(line);if(MKS.recent.length>10)MKS.recent.shift();MKS.cat=cat;return mkShowText(mkFill(line),MK_MOOD[cat]||'happy',{voice:false})}
-function mkHide(){clearTimeout(MKS.hideT);$('mk').classList.remove('on');try{if(window.speechSynthesis&&S.mkMode==='chatty')speechSynthesis.cancel()}catch(e){}}
+function mkHide(){clearTimeout(MKS.hideT);const el=$('mk'),rp=$('mkReply');if(el)el.classList.remove('on','mk-focus-msg','mk-rivalry','mk-cheer');if(rp){rp.hidden=true;rp.innerHTML=''}try{if(window.speechSynthesis&&(S.mkMode==='chatty'||mkInFocusMode()))speechSynthesis.cancel()}catch(e){}}
 $('mkX').onclick=mkHide;
-$('mkB').onclick=()=>{if(mkOff())return;const el=$('mk');if(el.classList.contains('al')){mkHide();return}mkShow(mkPick(mkCats()),true)};
+$('mkB').onclick=()=>{const el=$('mk');if(el&&el.classList.contains('mk-focus-msg')){mkHide();return}if(mkOff()||mkInFocusMode())return;if(el.classList.contains('al')){mkHide();return}mkShow(mkPick(mkCats()),true)};
 /* ---- reminders: tests, planner, daily goal ---- */
 const H1=36e5;
 function mkRemList(){const out=[],h=new Date().getHours(),pl=n=>n+' task'+(n>1?'s':'');
@@ -5748,8 +5845,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
           if(!m||!m.id||seenMsgIds.has(m.id))return;
           seenMsgIds.add(m.id);
           if(ST.user&&m.senderUid!==ST.user.id){
-            const inFocus=Boolean(document.getElementById('rgS')?.classList.contains('on')||document.body.classList.contains('focus'));
-            if(inFocus||!isArenaVisible()){
+            const inFocus=Boolean(document.getElementById('rgS')?.classList.contains('on')||document.body.classList.contains('focus')||document.body.classList.contains('strict-session-active'));
+            if(inFocus&&typeof window.LeaveItTickShowArenaMsg==='function'){
+              window.LeaveItTickShowArenaMsg(m);
+            }else if(!isArenaVisible()){
               const icon=m.kind==='rivalry'?'🔥 ':m.kind==='cheer'?'🤝 ':'💬 ';
               showToast(icon+m.senderDisplayName+': '+m.text);
             }
@@ -5842,6 +5941,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         ST.roomMessages=[];
         ST.invitePickerOpen=false;
         if(window.LeaveItArenaSync)window.LeaveItArenaSync.setMessages([]);
+        if(window.LeaveItTickHideFocusMsg)window.LeaveItTickHideFocusMsg();
         if(room&&room.status==='finished'){
           ST.vanishNoticeRoom=room.roomCode;
           if(fb.purgeRoomMessages)fb.purgeRoomMessages(room.roomCode).catch(()=>{});
@@ -7296,6 +7396,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       await flushCloudBackup(true);
       if(ST.activeRoom&&fb){try{await fb.leaveRoom(ST.activeRoom.roomCode)}catch(err){}stopRoomSub();ST.activeRoom=null}
       stopSocialSubs();
+      if(window.LeaveItTickHideFocusMsg)window.LeaveItTickHideFocusMsg();
       ST.friends=[];ST.friendProfiles={};ST.invites=[];ST.roomMessages=[];
       syncBridgeState();
       clearUserStorageForSignOut();
@@ -7304,6 +7405,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       triggerCloudReload('Signed out · device data cleared');
     }else if(act==='leaveRoom'&&ST.activeRoom){
       const c=ST.activeRoom.roomCode;stopRoomSub();ST.activeRoom=null;ST.roomMessages=[];ST.invitePickerOpen=false;ST.err='';
+      if(window.LeaveItTickHideFocusMsg)window.LeaveItTickHideFocusMsg();
       syncBridgeState();
       if(fb){try{await fb.leaveRoom(c)}catch(err){}}
       renderArena();

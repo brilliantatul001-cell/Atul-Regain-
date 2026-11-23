@@ -4156,6 +4156,39 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     color: var(--bad);
     font-size: 13px;
     font-weight: 600;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  #arenaRoot .ar-diag-panel {
+    margin-top: 14px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--track) 55%, transparent);
+    border: 1px solid var(--track);
+    font-size: 12px;
+  }
+
+  #arenaRoot .ar-diag-list {
+    margin-top: 10px;
+    max-height: 220px;
+    overflow-y: auto;
+    display: grid;
+    gap: 6px;
+  }
+
+  #arenaRoot .ar-diag-row {
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--bg, #0b0b0b) 65%, transparent);
+    border: 1px solid color-mix(in srgb, var(--track) 80%, transparent);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.45;
+    word-break: break-word;
   }
 
   #arenaRoot .ar-go {
@@ -4538,6 +4571,40 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     if(o){o.textContent=msg;o.classList.add('on');clearTimeout(o._t);o._t=setTimeout(()=>o.classList.remove('on'),2600)}
   }
 
+  function formatArenaError(err,fallback){
+    let raw=(err&&typeof err==='object'&&'message' in err)?String(err.message||''):String(err||'');
+    let op='',p='';
+    for(let depth=0;depth<3&&raw.trim().startsWith('{');depth++){
+      try{
+        const info=JSON.parse(raw);
+        if(info&&typeof info.error==='string'){
+          if(info.operationType)op=String(info.operationType);
+          if(info.path)p=String(info.path);
+          raw=info.error;
+        }else break;
+      }catch(e){break}
+    }
+    const lower=raw.toLowerCase();
+    if(lower.includes('missing or insufficient permissions')||lower.includes('permission-denied')){
+      return 'Permission denied'+(p?` (${op||'access'} ${p})`:'')+'. Try refreshing or signing out and back in.';
+    }
+    if(lower.includes('offline')||lower.includes('network')){
+      return 'Network offline — check your connection and try again.';
+    }
+    if(lower.includes('quota')){
+      return 'Daily Firestore free-tier quota exceeded. Please try again tomorrow.';
+    }
+    if(lower.includes('requires an index')){
+      return 'Database index required for this query.';
+    }
+    return raw+(p&&!raw.includes(p)?` (${p})`:'')||fallback||'Something went wrong.';
+  }
+
+  function renderErrBox(msg){
+    if(!msg)return '';
+    return `<div class="ar-err"><span>${escHtml(msg)}</span><button type="button" data-ar-act="toggleDiag" class="ar-btn-ghost" style="padding:4px 10px;font-size:11px">Diagnostics</button></div>`;
+  }
+
   // ---- Arena State ----
   const ST={
     user:null,
@@ -4561,10 +4628,12 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     lbLoading:false,
     err:'',
     busy:false,
-    liveReady:false
+    liveReady:false,
+    showDiag:false,
+    diagLogs:[]
   };
 
-  let unsubAuth=null,unsubRooms=null,unsubRoom=null,claimedFinished=new Set();
+  let unsubAuth=null,unsubRooms=null,unsubRoom=null,unsubLogs=null,claimedFinished=new Set();
 
   // ---- Mount Unified Nav Items (Regain #rgNav + Classic #nav) ----
   const rg=document.getElementById('rg');
@@ -4682,6 +4751,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         if(upd)ST.user=upd;
       }
       if(isArenaVisible())renderArena();
+    },errMsg=>{
+      ST.err=errMsg||'Live room sync error.';
+      if(isArenaVisible())renderArena();
     });
   }
 
@@ -4693,6 +4765,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     unsubRooms=fb.subscribePublicRooms(list=>{
       ST.rooms=list||[];
       if(ST.user&&isArenaVisible()&&!ST.activeRoom&&ST.subTab!=='leaderboard')renderArena();
+    },errMsg=>{
+      ST.liveReady=false;
+      ST.err=errMsg||'Could not subscribe to open rooms.';
+      if(isArenaVisible())renderArena();
     });
   }
 
@@ -4751,11 +4827,14 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   async function loadLb(){
     const fb=getFB();
     if(!fb||!ST.user)return;
+    ST.err='';
     ST.lbLoading=true;
     if(isArenaVisible())renderArena();
     try{
       ST.lb=await fb.fetchLeaderboard({sort:ST.lbSort,timeframe:ST.lbTime,search:ST.lbQ});
-    }catch(e){ST.err=e.message||'Could not load leaderboard.'}
+    }catch(e){
+      ST.err=formatArenaError(e,'Could not load leaderboard.');
+    }
     ST.lbLoading=false;
     if(isArenaVisible())renderArena();
   }
@@ -5281,6 +5360,12 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         if(isArenaVisible())renderArena();
       });
     }
+    if(!unsubLogs&&fb.subscribeLogs){
+      unsubLogs=fb.subscribeLogs(logs=>{
+        ST.diagLogs=logs||[];
+        if(ST.showDiag&&isArenaVisible())renderArena();
+      });
+    }
     if(unsubAuth)return;
     unsubAuth=fb.subscribeAuth(user=>{
       ST.user=user;
@@ -5392,7 +5477,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
           <button type="button" data-ar-act="leaveRoom" class="ar-btn-ghost">Leave</button>
         </div>
       </div>
-      ${ST.err?`<div class="ar-err">${escHtml(ST.err)}</div>`:''}
+      ${renderErrBox(ST.err)}
       <div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid var(--track);align-items:center">
         ${r.status==='lobby'?`
           <button type="button" data-ar-act="toggleReady" class="ar-btn-ghost" style="${me&&me.ready?'background:var(--ok);color:#06241a;border-color:var(--ok)':''}">${me&&me.ready?'✓ Ready':'Mark Ready'}</button>
@@ -5473,7 +5558,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         <div><b style="color:var(--warn)">${u.mockTestsCount?u.mockAccuracyAvg+'%':'—'} · ${u.duelWins}W</b><span>Mocks &amp; 1v1</span></div>
       </div>
     </div>
-    ${ST.err?`<div class="ar-err">${escHtml(ST.err)}</div>`:''}
+    ${renderErrBox(ST.err)}
     <div class="ar-grid">
       <div class="ar-stack">
         <div class="ar-card">
@@ -5527,6 +5612,36 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     </div>`;
   }
 
+  function renderDiagnosticsPanel(){
+    if(!ST.showDiag)return '';
+    const fb=getFB();
+    const diag=fb&&fb.getDiagnostics?fb.getDiagnostics():{online:navigator.onLine,projectId:'—',databaseId:'—',uid:null,emailVerified:null};
+    const logs=ST.diagLogs||[];
+    return `<div class="ar-diag-panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+        <div>
+          <b>Arena &amp; Firestore Diagnostics</b>
+          <div class="ar-sub" style="margin:2px 0 0;font-size:11px">
+            Network: <b>${diag.online?'Online':'Offline'}</b> · Verified: <b>${diag.emailVerified===true?'Yes':diag.emailVerified===false?'No':'—'}</b> · DB: <span style="font-family:ui-monospace,monospace">${escHtml(diag.databaseId||'—')}</span>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button type="button" data-ar-act="copyDiag" class="ar-btn-ghost" style="padding:5px 10px;font-size:11px">Copy</button>
+          <button type="button" data-ar-act="clearDiag" class="ar-btn-ghost" style="padding:5px 10px;font-size:11px">Clear</button>
+          <button type="button" data-ar-act="toggleDiag" class="ar-btn-ghost" style="padding:5px 10px;font-size:11px">Close</button>
+        </div>
+      </div>
+      <div class="ar-diag-list">
+        ${logs.length?logs.map(l=>`<div class="ar-diag-row">
+          <div style="display:flex;justify-content:space-between;gap:8px;color:var(--muted)">
+            <span>[${new Date(l.ts).toLocaleTimeString()}] ${escHtml((l.level||'error').toUpperCase())} · ${escHtml(l.source||'arena')}${l.operationType?' · '+escHtml(l.operationType):''}${l.path?' '+escHtml(l.path):''}</span>
+          </div>
+          <div style="color:${l.level==='error'?'var(--bad)':'var(--text)'};margin-top:2px">${escHtml(l.message)}</div>
+        </div>`).join(''):'<div class="ar-sub" style="margin:6px 0 0;font-size:11.5px">No Firebase or network errors recorded in this session.</div>'}
+      </div>
+    </div>`;
+  }
+
   function renderLeaderboard(){
     return `<div class="ar-card">
       <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center">
@@ -5542,6 +5657,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         </div>
         <input class="ar-in" id="arLbSearch" type="search" placeholder="Search handle or name…" value="${escHtml(ST.lbQ)}" style="max-width:240px;padding:9px 13px">
       </div>
+      ${renderErrBox(ST.err)}
       <div class="ar-table-wrap">
         ${ST.lbLoading?'<p class="ar-sub" style="padding:20px 0">Loading rankings…</p>':
           ST.lb.length?`<table class="ar-tbl">
@@ -5567,16 +5683,18 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       arenaRoot.innerHTML=renderAuth();
       return;
     }
+    const errCount=(ST.diagLogs||[]).filter(l=>l.level==='error').length;
     const header=`<div class="ar-top">
       <div><h1>Arena</h1><p class="ar-sub">@${escHtml(ST.user.username)} · ${ST.liveReady?'Firebase live sync':'Connecting…'}</p></div>
       <div class="ar-top-actions">
         <span class="pill">⚡ ${ST.user.xp.toLocaleString()} XP</span>
+        <button type="button" data-ar-act="toggleDiag" class="ar-btn-ghost" title="Toggle Arena diagnostics">${ST.showDiag?'Hide Logs':(errCount?`Logs (${errCount})`:'Logs')}</button>
         <button type="button" data-ar-act="logout" class="ar-btn-ghost">Sign out</button>
       </div>
     </div>`;
 
     if(ST.activeRoom){
-      arenaRoot.innerHTML=header+renderRoomView(ST.activeRoom);
+      arenaRoot.innerHTML=header+renderDiagnosticsPanel()+renderRoomView(ST.activeRoom);
       return;
     }
 
@@ -5587,7 +5705,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     </div>`;
 
     const body=ST.subTab==='leaderboard'?renderLeaderboard():renderLobby();
-    arenaRoot.innerHTML=header+subBar+body;
+    arenaRoot.innerHTML=header+renderDiagnosticsPanel()+subBar+body;
   }
 
   // ---- Event Delegation for #arenaRoot ----
@@ -5600,6 +5718,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
     const subBtn=e.target.closest('[data-ar-sub]');
     if(subBtn){
+      ST.err='';
       ST.subTab=subBtn.dataset.arSub;
       if(ST.subTab==='duel')ST.createMode='sprint_1v1';
       else if(ST.subTab==='lobby')ST.createMode='study_room';
@@ -5622,7 +5741,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         const room=await fb.joinRoom(joinBtn.dataset.arJoin);
         ST.activeRoom=room;
         startRoomSub(room.roomCode);
-      }catch(err){ST.err=err.message||'Could not join room.'}
+      }catch(err){ST.err=formatArenaError(err,'Could not join room.')}
       finally{ST.busy=false;renderArena()}
       return;
     }
@@ -5639,11 +5758,28 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         const u=await fb.signInWithGoogle();
         if(u){ST.user=u;ST.authErr=''}
       }catch(err){
-        ST.authErr=(err&&err.message)||'Google sign-in failed.';
+        ST.authErr=formatArenaError(err,'Google sign-in failed.');
       }finally{
         ST.authBusy=false;
         if(isArenaVisible())renderArena();
       }
+    }
+    else if(act==='toggleDiag'){
+      ST.showDiag=!ST.showDiag;
+      if(fb&&fb.getDiagnostics)ST.diagLogs=fb.getDiagnostics().logs||[];
+      renderArena();
+    }
+    else if(act==='clearDiag'){
+      if(fb&&fb.clearLogs)fb.clearLogs();
+      ST.diagLogs=[];
+      renderArena();
+    }
+    else if(act==='copyDiag'){
+      try{
+        const diag=fb&&fb.getDiagnostics?fb.getDiagnostics():{logs:ST.diagLogs};
+        await navigator.clipboard.writeText(JSON.stringify(diag,null,2));
+        showToast('Diagnostics copied');
+      }catch(err){}
     }
     else if(act==='toggleEdit'){
       ST.editingProfile=!ST.editingProfile;
@@ -5664,16 +5800,16 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       ST.user=null;
       triggerCloudReload('Signed out · device data cleared');
     }else if(act==='leaveRoom'&&ST.activeRoom){
-      const c=ST.activeRoom.roomCode;stopRoomSub();ST.activeRoom=null;
+      const c=ST.activeRoom.roomCode;stopRoomSub();ST.activeRoom=null;ST.err='';
       if(fb){try{await fb.leaveRoom(c)}catch(err){}}
       renderArena();
     }else if(act==='toggleReady'&&ST.activeRoom&&fb){
       const me=ST.activeRoom.participants.find(p=>p.userId===ST.user.id);
-      try{await fb.setReady(ST.activeRoom.roomCode,!(me&&me.ready))}catch(err){ST.err=err.message;renderArena()}
+      try{ST.err='';await fb.setReady(ST.activeRoom.roomCode,!(me&&me.ready))}catch(err){ST.err=formatArenaError(err);renderArena()}
     }else if(act==='startRoom'&&ST.activeRoom&&fb){
-      try{ST.err='';await fb.startRoom(ST.activeRoom.roomCode)}catch(err){ST.err=err.message;renderArena()}
+      try{ST.err='';await fb.startRoom(ST.activeRoom.roomCode)}catch(err){ST.err=formatArenaError(err);renderArena()}
     }else if(act==='finishRoom'&&ST.activeRoom&&fb){
-      try{await fb.finishRoom(ST.activeRoom.roomCode)}catch(err){ST.err=err.message;renderArena()}
+      try{ST.err='';await fb.finishRoom(ST.activeRoom.roomCode)}catch(err){ST.err=formatArenaError(err);renderArena()}
     }
   });
 
@@ -5708,7 +5844,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         ST.user=upd;ST.editingProfile=false;
         syncSpaName(upd.displayName);
         showToast('Profile updated');
-      }catch(err){ST.err=err.message||'Could not update profile.'}
+      }catch(err){ST.err=formatArenaError(err,'Could not update profile.')}
       finally{ST.busy=false;renderArena()}
     }else if(e.target.id==='arJoinForm'){
       const code=(document.getElementById('arJoinIn')?.value||'').trim().toUpperCase();
@@ -5718,7 +5854,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         const room=await fb.joinRoom(code);
         ST.activeRoom=room;
         startRoomSub(room.roomCode);
-      }catch(err){ST.err=err.message||'Could not join room.'}
+      }catch(err){ST.err=formatArenaError(err,'Could not join room.')}
       finally{ST.busy=false;renderArena()}
     }else if(e.target.id==='arCreateForm'){
       ST.err='';ST.busy=true;renderArena();
@@ -5733,7 +5869,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         });
         ST.activeRoom=room;
         startRoomSub(room.roomCode);
-      }catch(err){ST.err=err.message||'Could not create room.'}
+      }catch(err){ST.err=formatArenaError(err,'Could not create room.')}
       finally{ST.busy=false;renderArena()}
     }
   });

@@ -186,7 +186,7 @@ service cloud.firestore {
 
     match /players/{userId} {
       allow get: if isVerifiedUser() && isValidId(userId);
-      allow list: if isVerifiedUser() && resource.data.uid is string && resource.data.xp >= 0;
+      allow list: if isVerifiedUser() && resource.data.xp >= 0;
 
       allow create: if isOwner(userId) &&
         isValidId(userId) &&
@@ -324,8 +324,9 @@ service cloud.firestore {
         incoming().hostUserId == existing().hostUserId &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time && (
-          // Action: Join room (only add self)
+          // Action: Join room (only add self while in lobby)
           (
+            existing().status == 'lobby' &&
             !(request.auth.uid in existing().participantIds) &&
             request.auth.uid in incoming().participantIds &&
             incoming().participantIds.hasAll(existing().participantIds) &&
@@ -381,11 +382,7 @@ service cloud.firestore {
             request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds
           );
 
-        allow list: if isVerifiedUser() && (
-          resource.data.roomIsPublic == true ||
-          resource.data.uid == request.auth.uid ||
-          request.auth.uid in resource.data.allowedUids
-        );
+        allow list: if false;
 
         allow create: if isOwner(participantUid) &&
           isValidRoomCode(roomCode) &&
@@ -398,7 +395,7 @@ service cloud.firestore {
           existsAfter(/databases/$(database)/documents/rooms/$(roomCode)) &&
           request.auth.uid in getAfter(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds;
 
-        allow update: if isVerifiedUser() &&
+        allow update: if isOwner(participantUid) &&
           isValidRoomCode(roomCode) &&
           isValidId(participantUid) &&
           isValidParticipant(incoming()) &&
@@ -407,25 +404,12 @@ service cloud.firestore {
           incoming().roomCode == existing().roomCode &&
           incoming().isHost == existing().isHost &&
           incoming().joinedAt == existing().joinedAt &&
-          incoming().updatedAt == request.time && (
-            // Action: Participant updates own ready flag, live state, or sprint score
-            (
-              request.auth.uid == participantUid &&
-              request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds &&
-              incoming().diff(existing()).affectedKeys().hasOnly([
-                'ready', 'liveState', 'solvedCount', 'leftOnTimeCount',
-                'overtimeCount', 'focusSeconds', 'sprintScore', 'updatedAt'
-              ])
-            ) ||
-            // Action: Joining/leaving room participant updates allowedUids visibility list
-            (
-              (
-                request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds ||
-                request.auth.uid in getAfter(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds
-              ) &&
-              incoming().diff(existing()).affectedKeys().hasOnly(['allowedUids', 'updatedAt'])
-            )
-          );
+          incoming().updatedAt == request.time &&
+          request.auth.uid in get(/databases/$(database)/documents/rooms/$(roomCode)).data.participantIds &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'ready', 'liveState', 'solvedCount', 'leftOnTimeCount',
+            'overtimeCount', 'focusSeconds', 'sprintScore', 'updatedAt'
+          ]);
 
         allow delete: if isOwner(participantUid) && isValidRoomCode(roomCode) && isValidId(participantUid);
       }

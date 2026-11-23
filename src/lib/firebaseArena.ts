@@ -15,16 +15,22 @@ import {
 } from 'firebase/firestore';
 import {
   auth,
+  clearArenaLogs,
   db,
+  firebaseConfig,
+  getArenaLogs,
   googleProvider,
   handleFirestoreError,
   isSignInWithEmailLink,
   onAuthStateChanged,
   OperationType,
+  recordArenaLog,
+  reportFirestoreListenerError,
   sendSignInLinkToEmail,
   signInWithEmailLink,
   signInWithPopup,
   signOut,
+  subscribeArenaLogs,
   type User,
 } from '../firebase';
 
@@ -149,13 +155,14 @@ function weekStartStr(): string {
 }
 
 function sanitizeUsername(raw: string, fallbackSuffix: string): string {
+  const safeSuffix = fallbackSuffix.toLowerCase().replace(/[^a-z0-9_.]/g, '0') || '001';
   let clean = raw
     .toLowerCase()
     .replace(/[^a-z0-9_.]/g, '_')
     .replace(/^_+|_+$/g, '')
     .slice(0, 20);
   if (clean.length < 3) {
-    clean = ('player_' + fallbackSuffix).slice(0, 20);
+    clean = ('player_' + safeSuffix).slice(0, 20);
   }
   return clean;
 }
@@ -236,6 +243,16 @@ function toArenaUser(d: Record<string, unknown>): ArenaUser {
 }
 
 async function ensurePlayerProfile(fbUser: User): Promise<ArenaUser> {
+  if (!fbUser.emailVerified) {
+    const msg = 'Email verification is required before using Arena.';
+    recordArenaLog({
+      level: 'warn',
+      source: 'auth',
+      message: msg,
+      detail: `uid=${fbUser.uid}`,
+    });
+    throw new Error(msg);
+  }
   const path = `players/${fbUser.uid}`;
   const playerRef = doc(db, 'players', fbUser.uid);
   try {
@@ -427,7 +444,14 @@ export function subscribeArenaAuth(
       const profile = await ensurePlayerProfile(fbUser);
       cb(profile);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
       console.error('Failed to load Arena profile:', err);
+      recordArenaLog({
+        level: 'error',
+        source: 'auth-profile',
+        message: msg,
+        path: `players/${fbUser.uid}`,
+      });
       cb(null);
     }
   });
@@ -549,10 +573,13 @@ export async function recordArenaActivity(payload: {
       if (roomRef && partRef) {
         const roomSnap = await tx.get(roomRef);
         const partSnap = await tx.get(partRef);
+        const rData = roomSnap.exists() ? (roomSnap.data() as Record<string, unknown>) : null;
+        const pIds = rData && Array.isArray(rData.participantIds) ? (rData.participantIds as string[]) : [];
         if (
-          roomSnap.exists() &&
+          rData &&
           partSnap.exists() &&
-          roomSnap.data().status === 'active'
+          rData.status === 'active' &&
+          pIds.includes(uid)
         ) {
           roomActive = true;
           partData = partSnap.data() as Record<string, unknown>;
@@ -680,7 +707,8 @@ export async function createArenaRoom(input: {
   const subject = (input.subject || 'General').trim().slice(0, 24) || 'General';
   const defaultTitle =
     mode === 'sprint_1v1' ? `${subject} 1v1 Sprint` : `${subject} Study Room`;
-  const title = (input.title || defaultTitle).trim().slice(0, 48) || defaultTitle;
+  const rawTitle = (input.title || '').trim().slice(0, 48);
+  const title = (rawTitle.length >= 2 ? rawTitle : defaultTitle).slice(0, 48);
   const isPublic = input.isPublic !== false;
 
   const playerRef = doc(db, 'players', uid);
@@ -852,20 +880,20 @@ export async function joinArenaRoom(rawCode: string): Promise<RoomSnapshot> {
         joinedAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-
-      for (const otherUid of existingIds) {
-        tx.update(doc(db, 'rooms', code, 'participants', otherUid), {
-          allowedUids: nextIds,
-          updatedAt: serverTimestamp(),
-        });
-      }
     });
 
     const snap = await fetchRoomSnapshot(code);
     if (!snap) throw new Error('Room not found.');
     return snap;
   } catch (error) {
-    if (error instanceof Error && !error.message.includes('permission')) {
+    if (error instanceof Error && !error.message.toLowerCase().includes('permission')) {
+      recordArenaLog({
+        level: 'error',
+        source: 'joinRoom',
+        message: error.message,
+        operationType: OperationType.WRITE,
+        path: `rooms/${code}`,
+      });
       throw error;
     }
     handleFirestoreError(error, OperationType.WRITE, `rooms/${code}`);
@@ -911,12 +939,6 @@ export async function leaveArenaRoom(rawCode: string): Promise<void> {
           updatedAt: serverTimestamp(),
         });
         tx.delete(partRef);
-        for (const otherUid of nextIds) {
-          tx.update(doc(db, 'rooms', code, 'participants', otherUid), {
-            allowedUids: nextIds,
-            updatedAt: serverTimestamp(),
-          });
-        }
       }
     });
   } catch (error) {
@@ -1051,12 +1073,22 @@ export async function finishArenaRoom(rawCode: string): Promise<void> {
   if (!fbUser) throw new Error('Sign in required.');
   const code = rawCode.trim().toUpperCase();
   const roomRef = doc(db, 'rooms', code);
-  const partsCol = collection(db, 'rooms', code, 'participants');
 
   try {
-    const partsSnap = await getDocs(partsCol);
-    const participants = partsSnap.docs
-      .map((d) => d.data() as Record<string, unknown>)
+    const initialRoomSnap = await getDoc(roomRef);
+    if (!initialRoomSnap.exists()) return;
+    const initialRoom = initialRoomSnap.data() as Record<string, unknown>;
+    const pIds = Array.isArray(initialRoom.participantIds)
+      ? (initialRoom.participantIds as string[])
+      : [];
+    const partSnaps = await Promise.all(
+      pIds.map((pUid) =>
+        getDoc(doc(db, 'rooms', code, 'participants', pUid)).catch(() => null),
+      ),
+    );
+    const participants = partSnaps
+      .filter((s): s is NonNullable<typeof s> => Boolean(s && s.exists()))
+      .map((s) => s.data() as Record<string, unknown>)
       .sort((a, b) => {
         const diffScore = Number(b.sprintScore || 0) - Number(a.sprintScore || 0);
         if (diffScore !== 0) return diffScore;
@@ -1074,8 +1106,8 @@ export async function finishArenaRoom(rawCode: string): Promise<void> {
 
       tx.update(roomRef, {
         status: 'finished',
-        winnerUserId: winner ? String(winner.uid || '') : '',
-        winnerDisplayName: winner ? String(winner.displayName || '') : '',
+        winnerUserId: winner ? String(winner.uid || '').slice(0, 128) : '',
+        winnerDisplayName: winner ? String(winner.displayName || '').slice(0, 24) : '',
         updatedAt: serverTimestamp(),
       });
     });
@@ -1193,16 +1225,26 @@ function mapRoomDoc(
 export async function fetchRoomSnapshot(
   rawCode: string,
 ): Promise<RoomSnapshot | null> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) return null;
   const code = rawCode.trim().toUpperCase();
   const roomRef = doc(db, 'rooms', code);
-  const partsCol = collection(db, 'rooms', code, 'participants');
   try {
-    const [rSnap, pSnap] = await Promise.all([getDoc(roomRef), getDocs(partsCol)]);
+    const rSnap = await getDoc(roomRef);
     if (!rSnap.exists()) return null;
-    return mapRoomDoc(
-      rSnap.data() as Record<string, unknown>,
-      pSnap.docs.map((d) => d.data() as Record<string, unknown>),
+    const rData = rSnap.data() as Record<string, unknown>;
+    const pIds = Array.isArray(rData.participantIds)
+      ? (rData.participantIds as string[])
+      : [];
+    const partSnaps = await Promise.all(
+      pIds.map((pUid) =>
+        getDoc(doc(db, 'rooms', code, 'participants', pUid)).catch(() => null),
+      ),
     );
+    const parts = partSnaps
+      .filter((s): s is NonNullable<typeof s> => Boolean(s && s.exists()))
+      .map((s) => s.data() as Record<string, unknown>);
+    return mapRoomDoc(rData, parts);
   } catch (error) {
     handleFirestoreError(error, OperationType.GET, `rooms/${code}`);
   }
@@ -1210,6 +1252,7 @@ export async function fetchRoomSnapshot(
 
 export function subscribePublicRooms(
   cb: (rooms: PublicRoomSummary[]) => void,
+  onError?: (msg: string) => void,
 ): Unsubscribe {
   const fbUser = auth.currentUser;
   if (!fbUser) {
@@ -1219,7 +1262,7 @@ export function subscribePublicRooms(
   const q = query(
     collection(db, 'rooms'),
     where('isPublic', '==', true),
-    limit(40),
+    limit(80),
   );
   return onSnapshot(
     q,
@@ -1251,7 +1294,8 @@ export function subscribePublicRooms(
       cb(list);
     },
     (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'rooms');
+      const friendly = reportFirestoreListenerError(error, OperationType.LIST, 'rooms');
+      onError?.(friendly);
     },
   );
 }
@@ -1259,51 +1303,117 @@ export function subscribePublicRooms(
 export function subscribeRoom(
   rawCode: string,
   cb: (room: RoomSnapshot | null) => void,
+  onError?: (msg: string) => void,
 ): Unsubscribe {
+  const fbUser = auth.currentUser;
+  if (!fbUser) {
+    cb(null);
+    return () => {};
+  }
   const code = rawCode.trim().toUpperCase();
   const roomRef = doc(db, 'rooms', code);
-  const partsCol = collection(db, 'rooms', code, 'participants');
 
   let latestRoom: Record<string, unknown> | null = null;
-  let latestParts: Record<string, unknown>[] = [];
+  const partMap = new Map<string, Record<string, unknown>>();
+  const partUnsubs = new Map<string, Unsubscribe>();
+  let disposed = false;
 
   const emit = () => {
+    if (disposed) return;
     if (!latestRoom) {
       cb(null);
       return;
     }
-    cb(mapRoomDoc(latestRoom, latestParts));
+    const pIds = Array.isArray(latestRoom.participantIds)
+      ? (latestRoom.participantIds as string[])
+      : [];
+    const parts = pIds
+      .map((id) => partMap.get(id))
+      .filter((p): p is Record<string, unknown> => Boolean(p));
+    cb(mapRoomDoc(latestRoom, parts));
+  };
+
+  const syncParticipantListeners = (participantIds: string[]) => {
+    const targetSet = new Set(participantIds);
+    for (const [pUid, unsub] of partUnsubs.entries()) {
+      if (!targetSet.has(pUid)) {
+        try {
+          unsub();
+        } catch {
+          // Ignore unsub error
+        }
+        partUnsubs.delete(pUid);
+        partMap.delete(pUid);
+      }
+    }
+    for (const pUid of participantIds) {
+      if (partUnsubs.has(pUid)) continue;
+      const pRef = doc(db, 'rooms', code, 'participants', pUid);
+      const unsub = onSnapshot(
+        pRef,
+        (pSnap) => {
+          if (pSnap.exists()) {
+            partMap.set(pUid, pSnap.data() as Record<string, unknown>);
+          } else {
+            partMap.delete(pUid);
+          }
+          emit();
+        },
+        (error) => {
+          const curIds =
+            latestRoom && Array.isArray(latestRoom.participantIds)
+              ? (latestRoom.participantIds as string[])
+              : [];
+          if (!curIds.includes(pUid)) return;
+          const friendly = reportFirestoreListenerError(
+            error,
+            OperationType.GET,
+            `rooms/${code}/participants/${pUid}`,
+          );
+          onError?.(friendly);
+        },
+      );
+      partUnsubs.set(pUid, unsub);
+    }
   };
 
   const unsubRoom = onSnapshot(
     roomRef,
     (snap) => {
       latestRoom = snap.exists() ? (snap.data() as Record<string, unknown>) : null;
+      const pIds =
+        latestRoom && Array.isArray(latestRoom.participantIds)
+          ? (latestRoom.participantIds as string[])
+          : [];
+      syncParticipantListeners(pIds);
       emit();
     },
     (error) => {
-      handleFirestoreError(error, OperationType.GET, `rooms/${code}`);
-    },
-  );
-
-  const unsubParts = onSnapshot(
-    partsCol,
-    (snap) => {
-      latestParts = snap.docs.map((d) => d.data() as Record<string, unknown>);
-      emit();
-    },
-    (error) => {
-      handleFirestoreError(
+      const friendly = reportFirestoreListenerError(
         error,
-        OperationType.LIST,
-        `rooms/${code}/participants`,
+        OperationType.GET,
+        `rooms/${code}`,
       );
+      onError?.(friendly);
     },
   );
 
   return () => {
-    unsubRoom();
-    unsubParts();
+    disposed = true;
+    try {
+      unsubRoom();
+    } catch {
+      // Ignore unsub error
+    }
+    for (const unsub of partUnsubs.values()) {
+      try {
+        unsub();
+      } catch {
+        // Ignore unsub error
+      }
+    }
+    partUnsubs.clear();
+    partMap.clear();
   };
 }
 
@@ -1318,6 +1428,7 @@ export async function fetchLeaderboard(opts: {
   try {
     const q = query(
       collection(db, 'players'),
+      where('xp', '>=', 0),
       orderBy('xp', 'desc'),
       limit(100),
     );
@@ -1650,6 +1761,17 @@ export const firebaseArenaBridge = {
   loadAccountBackup,
   saveAccountBackup,
   importGuestSummaryStats,
+  getDiagnostics: () => ({
+    logs: getArenaLogs(),
+    online: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    projectId: firebaseConfig.projectId,
+    databaseId: firebaseConfig.firestoreDatabaseId,
+    uid: auth.currentUser?.uid || null,
+    emailVerified: auth.currentUser?.emailVerified ?? null,
+  }),
+  subscribeLogs: subscribeArenaLogs,
+  clearLogs: clearArenaLogs,
+  logDiagnostic: recordArenaLog,
 };
 
 export type FirebaseArenaBridge = typeof firebaseArenaBridge;

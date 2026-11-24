@@ -145,4 +145,24 @@ if (!manifest.includes(componentsMarker)) {
 }
 
 fs.writeFileSync(manifestPath, manifest, 'utf8');
-console.log('Applied native Java App Blocker & Strict Mode components to android/.');
+
+// 3. Ensure required AndroidX dependencies (androidx.webkit, core, activity) are present in app/build.gradle
+const appGradlePath = path.join(root, 'android', 'app', 'build.gradle');
+if (fs.existsSync(appGradlePath)) {
+  let gradle = fs.readFileSync(appGradlePath, 'utf8');
+  const requiredDeps = [
+    'implementation "androidx.webkit:webkit:$androidxWebkitVersion"',
+    'implementation "androidx.core:core:$androidxCoreVersion"',
+    'implementation "androidx.activity:activity:$androidxActivityVersion"',
+  ];
+  const missingDeps = requiredDeps.filter((dep) => !gradle.includes(dep));
+  if (missingDeps.length > 0 && gradle.includes("implementation project(':capacitor-android')")) {
+    gradle = gradle.replace(
+      "implementation project(':capacitor-android')",
+      `implementation project(':capacitor-android')\n    ${missingDeps.join('\n    ')}`
+    );
+    fs.writeFileSync(appGradlePath, gradle, 'utf8');
+  }
+}
+
+console.log('Applied native Java App Blocker, OTA dependencies & Strict Mode components to android/.');

@@ -4,6 +4,11 @@ on:
   push:
     branches: [main, master]
   workflow_dispatch:
+    inputs:
+      live_app_url:
+        description: 'Optional live Vercel URL for instant OTA updates (e.g. https://your-app.vercel.app)'
+        required: false
+        default: ''
 
 jobs:
   build-apk:
@@ -32,21 +37,22 @@ jobs:
         run: npm ci
 
       - name: Stage offline SPA bundle for Capacitor
+        env:
+          LIVE_APP_URL: ${{ github.event.inputs.live_app_url || vars.LIVE_APP_URL || '' }}
         run: npm run apk:prepare
 
-      - name: Generate Android project & sync assets
+      - name: Generate Android project, apply native App Blocker & sync assets
+        env:
+          LIVE_APP_URL: ${{ github.event.inputs.live_app_url || vars.LIVE_APP_URL || '' }}
         run: |
           if [ ! -d "android" ]; then
             npx cap add android
           fi
+          node scripts/apply-android-native.mjs
           npx cap sync android
 
-      - name: Ensure WAKE_LOCK & VIBRATE permissions and app icons
+      - name: Ensure app icons
         run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          if ! grep -q "android.permission.WAKE_LOCK" "$MANIFEST"; then
-            sed -i 's|<application|<uses-permission android:name="android.permission.WAKE_LOCK" />\n    <uses-permission android:name="android.permission.VIBRATE" />\n    <application|' "$MANIFEST"
-          fi
           cp public/pwa-512x512.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png || true
           cp public/pwa-512x512.png android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png || true
           cp public/pwa-192x192.png android/app/src/main/res/mipmap-xhdpi/ic_launcher.png || true

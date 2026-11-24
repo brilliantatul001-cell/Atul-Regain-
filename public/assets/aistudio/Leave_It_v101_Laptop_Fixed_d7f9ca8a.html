@@ -18,6 +18,9 @@ html[data-mode="light"]:not([data-diwali="on"])::before{opacity:.5}
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Hour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Outfit:wght@500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#0f1220;--card:#181c30;--text:#eef0ff;--muted:#8d93b8;--accent:#7c6cff;--ok:#3ddc97;--warn:#ffb020;--bad:#ff4d6d;--track:#262b47;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f1f2fb;--card:#fff;--text:#1a1d36;--muted:#6b7099;--track:#e3e5f6}}
@@ -279,7 +282,7 @@ button:focus-visible,a:focus-visible,input:focus-visible { outline:2px solid var
 <div id="splash" aria-label="Hour welcome screen">
   <div class="sp-grid"></div><div class="sp-orb sp-orb-a"></div><div class="sp-orb sp-orb-b"></div>
   <div class="sp-box">
-    <div class="sp-topline sp-in"><span class="sp-live"><i></i> HOUR FOCUS SPACE</span><span class="sp-edition">EVERY SECOND COUNTS</span></div>
+    <div class="sp-topline sp-in"><span class="sp-live">HOUR FOCUS SPACE</span><span class="sp-edition">FOCUS OS</span></div>
     <div class="sp-emblem sp-in"><div class="sp-emblem-glow"></div><img class="sp-ic" src="/hour-logo.png" alt="Hour logo" style="object-fit:contain"></div>
     <div class="sp-g sp-in" id="spG">GOOD MORNING</div>
     <div class="sp-brandline sp-in">HOUR<b>.</b></div>
@@ -289,8 +292,8 @@ button:focus-visible,a:focus-visible,input:focus-visible { outline:2px solid var
     <div class="sp-q sp-in" style="animation-delay:1.1s" id="spQ"></div>
     <div class="sp-statsline sp-in" style="animation-delay:1.25s"><span>THINK CLEAR</span><b>·</b><span>MOVE FAST</span><b>·</b><span>STAY IN CONTROL</span></div>
     <div class="sp-bar sp-in" style="animation-delay:1.1s"><i></i></div>
-    <div class="sp-skip sp-in" style="animation-delay:1.4s"><span>ENTER YOUR SESSION</span><span class="sp-skip-arrow">↗</span></div>
-    <div class="sp-credit sp-in">Made with ❤️ by Atul</div>
+    <div class="sp-skip sp-in" style="animation-delay:1.4s"><span>TAP TO ENTER SESSION</span><span class="sp-skip-arrow">↗</span></div>
+    <div class="sp-credit sp-in">Crafted by Atul</div>
   </div>
 </div>
 <div id="nm"><div class="nm-box"><h2>What should I call you? 👋</h2><p>Your name shows on the splash, the header and your motivation messages.</p><input id="nmIn" maxlength="16" placeholder="Your name" autocomplete="off"><button id="nmSave">Save name</button></div></div>
@@ -3037,53 +3040,185 @@ html,body,*,*::before,*::after{scrollbar-width:none!important;-ms-overflow-style
 
 
 <style id="energy-recharge-v37">
-/* v37: replace the browser's top-edge pull-to-refresh with an in-app energy ritual. */
-html,body{overscroll-behavior-y:auto}
-#energyPull{position:fixed;z-index:9998;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;width:154px;height:154px;pointer-events:none;opacity:0;transform:translate(-50%,-34px) scale(.72);transition:opacity .16s,transform .18s cubic-bezier(.2,.8,.2,1);display:grid;place-items:center}
-#energyPull.show{opacity:1;transform:translate(-50%,0) scale(1)}
-#energyPull .ep-core{position:relative;width:94px;height:94px;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle at 50% 45%,rgba(255,255,255,.22),rgba(124,108,255,.18) 32%,rgba(8,12,30,.96) 72%);border:1px solid rgba(160,150,255,.65);box-shadow:0 0 22px rgba(124,108,255,.55),inset 0 0 22px rgba(124,108,255,.28);overflow:hidden}
-#energyPull .ep-core:before,#energyPull .ep-core:after{content:"";position:absolute;inset:7px;border-radius:50%;border:2px solid transparent;border-top-color:#9c8cff;border-right-color:#55dfff;transform:rotate(-35deg);filter:drop-shadow(0 0 5px #8d7cff)}
-#energyPull .ep-core:after{inset:16px;border-width:1px;border-bottom-color:#ff79c6;border-left-color:#62e7ff;transform:rotate(35deg)}
-#energyPull .ep-bolt{font-size:31px;line-height:1;color:#fff;text-shadow:0 0 9px #a99aff,0 0 20px #6bceff;transform:scale(var(--ep-power,.65));transition:transform .08s}
-#energyPull .ep-label{position:absolute;bottom:8px;left:0;right:0;text-align:center;font-size:9px;font-weight:900;letter-spacing:2px;color:var(--text);text-shadow:0 1px 8px #000;white-space:nowrap}
-#energyPull .ep-meter{position:absolute;bottom:0;left:50%;width:92px;height:3px;transform:translateX(-50%);border-radius:9px;background:rgba(255,255,255,.15);overflow:hidden}
-#energyPull .ep-meter i{display:block;width:0;height:100%;background:linear-gradient(90deg,#7c6cff,#5be0ff,#ff7ab8);box-shadow:0 0 9px #7c6cff}
-#energyPull.charged .ep-core{animation:epCharge .55s ease-in-out infinite alternate}
-@keyframes epCharge{to{box-shadow:0 0 45px rgba(91,224,255,.95),0 0 85px rgba(124,108,255,.65),inset 0 0 30px rgba(255,255,255,.35);filter:brightness(1.35)}}
-#energyToast{position:fixed;z-index:9999;top:calc(env(safe-area-inset-top,0px) + 112px);left:50%;transform:translate(-50%,-8px) scale(.94);opacity:0;pointer-events:none;padding:11px 17px;border-radius:99px;background:rgba(17,20,40,.92);border:1px solid rgba(150,140,255,.55);color:#fff;font-size:11px;font-weight:900;letter-spacing:1.4px;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.35),0 0 22px rgba(124,108,255,.35);transition:opacity .2s,transform .2s}
-#energyToast.show{opacity:1;transform:translate(-50%,0) scale(1)}
-#energyBurst{position:fixed;z-index:9997;inset:0;pointer-events:none;overflow:hidden}
-#energyBurst i{position:absolute;left:50%;top:70px;width:5px;height:5px;border-radius:50%;background:var(--burst,#9c8cff);box-shadow:0 0 12px currentColor;animation:epBurst .7s ease-out forwards}
-@keyframes epBurst{to{transform:translate(var(--dx),var(--dy)) scale(.1);opacity:0}}
-@media(prefers-reduced-motion:reduce){#energyPull,#energyPull * ,#energyToast{transition:none!important;animation-duration:.01ms!important}}
+/* Replaced old blocking energy orb with a non-blocking, passive Hour Sync Capsule */
+html,body,#rg{overscroll-behavior-y:contain}
+#hourPullSync{
+  position:fixed;
+  z-index:9998;
+  top:calc(env(safe-area-inset-top,0px) + 12px);
+  left:50%;
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  height:38px;
+  padding:0 15px 0 10px;
+  border-radius:99px;
+  background:color-mix(in srgb,var(--card) 92%,var(--bg));
+  border:1px solid var(--hairline-strong,rgba(255,255,255,.14));
+  color:var(--text);
+  font-family:var(--font-ui,system-ui,sans-serif);
+  font-size:12px;
+  font-weight:700;
+  letter-spacing:.02em;
+  box-shadow:0 10px 28px rgba(0,0,0,.28);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+  pointer-events:none;
+  opacity:0;
+  transform:translate3d(-50%,-18px,0) scale(.92);
+  transition:opacity 160ms ease,transform 180ms cubic-bezier(.16,1,.3,1),border-color 160ms ease;
+  white-space:nowrap;
+}
+#hourPullSync.show{
+  opacity:1;
+  transform:translate3d(-50%,0,0) scale(1);
+}
+#hourPullSync.ready{
+  border-color:color-mix(in srgb,var(--accent) 55%,transparent);
+}
+#hourPullSync.synced{
+  border-color:color-mix(in srgb,var(--ok,#3ddc97) 60%,transparent);
+  color:var(--ok,#3ddc97);
+}
+#hourPullSync svg{
+  width:20px;
+  height:20px;
+  flex:none;
+  transform:rotate(-90deg);
+}
+#hourPullSync circle{
+  fill:none;
+  stroke-width:2.5;
+  stroke-linecap:round;
+}
+#hourPullSync .hps-tr{
+  stroke:var(--track,rgba(255,255,255,.14));
+}
+#hourPullSync .hps-pg{
+  stroke:var(--accent,#7ed957);
+  transition:stroke-dashoffset 60ms linear,stroke 160ms ease;
+}
+#hourPullSync.synced .hps-pg{
+  stroke:var(--ok,#3ddc97);
+}
+@media(prefers-reduced-motion:reduce){
+  #hourPullSync,#hourPullSync .hps-pg{transition:none!important}
+}
 </style>
 <script id="energy-recharge-v37-script">
 (()=>{
-  const pull=document.createElement('div');pull.id='energyPull';pull.innerHTML='<div class="ep-core"><span class="ep-bolt">ϟ</span></div><div class="ep-label">ENERGY CHARGING</div><div class="ep-meter"><i></i></div>';
-  const toast=document.createElement('div');toast.id='energyToast';toast.setAttribute('role','status');toast.setAttribute('aria-live','polite');
-  const burst=document.createElement('div');burst.id='energyBurst';document.body.append(pull,toast,burst);
-  const label=pull.querySelector('.ep-label'),meter=pull.querySelector('.ep-meter i');
-  const threshold=116;let startY=0,lastY=0,pulling=false,active=false,toastTimer=0,hideTimer=0;
-  const messages=['ENERGY RECHARGED  ·  BACK TO WORK','FOCUS RESTORED  ·  NEXT QUESTION','SYSTEM RESET  ·  EXECUTE','POWER UP  ·  STAY SHARP'];
-  const topNow=()=>Math.max(window.scrollY||0,document.documentElement.scrollTop||0,document.body.scrollTop||0)<=1;
-  const blocked=t=>!!(t&&t.closest('input,textarea,select,button,a,[contenteditable="true"],[data-no-recharge]'));
-  function reset(){pulling=false;active=false;pull.classList.remove('show','charged');pull.style.transform='translate(-50%,-34px) scale(.72)';pull.style.setProperty('--ep-power','.65');meter.style.width='0%';pull.style.opacity='0'}
-  function recharge(){pull.classList.add('charged');label.textContent='FULL POWER';try{if(navigator.vibrate)navigator.vibrate([18,35,28])}catch(e){}
-    toast.textContent=messages[Math.floor(Math.random()*messages.length)];toast.classList.add('show');burst.innerHTML='';
-    for(let i=0;i<22;i++){const bit=document.createElement('i'),ang=(Math.PI*2*i/22)+(Math.random()-.5)*.22,d=55+Math.random()*105;bit.style.setProperty('--dx',Math.cos(ang)*d+'px');bit.style.setProperty('--dy',Math.sin(ang)*d+'px');bit.style.setProperty('--burst',['#9c8cff','#55dfff','#ff79c6','#ffffff'][i%4]);burst.append(bit)}
-    clearTimeout(toastTimer);clearTimeout(hideTimer);toastTimer=setTimeout(()=>toast.classList.remove('show'),1900);hideTimer=setTimeout(()=>{reset();label.textContent='ENERGY CHARGING'},720);
+  'use strict';
+  const pill=document.createElement('div');
+  pill.id='hourPullSync';
+  pill.setAttribute('role','status');
+  pill.setAttribute('aria-live','polite');
+  pill.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true"><circle class="hps-tr" cx="12" cy="12" r="9"/><circle class="hps-pg" cx="12" cy="12" r="9" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100"/></svg><span class="hps-txt">Pull to sync</span>`;
+  document.body.appendChild(pill);
+
+  const txt=pill.querySelector('.hps-txt');
+  const arc=pill.querySelector('.hps-pg');
+  const REVEAL_DY=42,TRIGGER_DY=115;
+  let startX=0,startY=0,lastY=0,tracking=false,ready=false,hideTimer=0;
+
+  function isOverlayOpen(){
+    const sp=document.getElementById('splash');
+    if(sp&&!sp.classList.contains('out'))return true;
+    if(document.body.classList.contains('focus'))return true;
+    const rgS=document.getElementById('rgS');
+    if(rgS&&rgS.classList.contains('on'))return true;
+    for(const id of ['rgSh','hx','ts','nm','gm']){
+      const el=document.getElementById(id);
+      if(el&&el.classList.contains('on'))return true;
+    }
+    return false;
   }
-  document.addEventListener('touchstart',e=>{if(e.touches.length!==1||!topNow()||blocked(e.target))return;startY=lastY=e.touches[0].clientY;pulling=true;active=false},{passive:true});
-  document.addEventListener('touchmove',e=>{if(!pulling||e.touches.length!==1)return;const y=e.touches[0].clientY,dy=y-startY;lastY=y;
-    if(dy<=0){if(!active)reset();return}if(!topNow()&&!active){reset();return}if(dy>7)active=true;if(!active)return;
-    /* Capture only a downward top-edge pull; upward swipes always remain native page scrolling. */
-    if(e.cancelable)e.preventDefault();
-    const amount=Math.min(1,dy/threshold);pull.classList.add('show');pull.style.transform=`translate(-50%,${Math.min(48,dy*.34)}px) scale(${.78+amount*.22})`;
-    pull.style.opacity=String(Math.min(1,.25+amount*.9));pull.style.setProperty('--ep-power',String(.55+amount*.65));meter.style.width=(amount*100)+'%';
-    label.textContent=dy>=threshold?'RELEASE TO RECHARGE':'ENERGY CHARGING';if(dy>=threshold)pull.classList.add('charged');else pull.classList.remove('charged');
-  },{passive:false});
-  const finish=()=>{if(!pulling)return;const dy=lastY-startY,fire=active&&dy>=threshold;pulling=false;if(fire)recharge();else reset()};
-  document.addEventListener('touchend',finish,{passive:true});document.addEventListener('touchcancel',()=>{pulling=false;reset()},{passive:true});
+
+  function allAncestorsAtTop(target){
+    if((window.scrollY||document.documentElement.scrollTop||document.body.scrollTop||0)>1)return false;
+    let node=target&&target.nodeType===1?target:null;
+    while(node&&node!==document.body&&node!==document.documentElement){
+      if(node.scrollHeight>node.clientHeight+2){
+        const st=getComputedStyle(node).overflowY;
+        if((st==='auto'||st==='scroll'||st==='overlay')&&node.scrollTop>1)return false;
+      }
+      node=node.parentElement;
+    }
+    const rg=document.getElementById('rg');
+    if(rg&&rg.scrollTop>1)return false;
+    return true;
+  }
+
+  function blockedTarget(t){
+    return !!(t&&t.closest('input,textarea,select,button,a,[contenteditable="true"],[data-no-recharge]'));
+  }
+
+  function reset(){
+    tracking=false;ready=false;
+    pill.classList.remove('show','ready','synced');
+    pill.style.transform='translate3d(-50%,-18px,0) scale(.92)';
+    arc.setAttribute('stroke-dashoffset','100');
+    txt.textContent='Pull to sync';
+  }
+
+  function runSync(){
+    clearTimeout(hideTimer);
+    pill.classList.add('show','synced');
+    pill.classList.remove('ready');
+    arc.setAttribute('stroke-dashoffset','0');
+    txt.textContent='✓ Up to date';
+    try{if(navigator.vibrate)navigator.vibrate(12)}catch(e){}
+    try{
+      window.dispatchEvent(new CustomEvent('leaveit-planner-refresh'));
+      if(window.LeaveItRegainControl&&typeof window.LeaveItRegainControl.refreshHome==='function'){
+        window.LeaveItRegainControl.refreshHome();
+      }
+    }catch(e){}
+    hideTimer=setTimeout(reset,1050);
+  }
+
+  // Strictly passive listeners: never intercept or block native upward/downward scrolling
+  document.addEventListener('touchstart',e=>{
+    if(e.touches.length!==1||isOverlayOpen()||blockedTarget(e.target)||!allAncestorsAtTop(e.target)){
+      tracking=false;
+      return;
+    }
+    clearTimeout(hideTimer);
+    startX=e.touches[0].clientX;
+    startY=lastY=e.touches[0].clientY;
+    tracking=true;
+    ready=false;
+  },{passive:true});
+
+  document.addEventListener('touchmove',e=>{
+    if(!tracking||e.touches.length!==1)return;
+    const x=e.touches[0].clientX,y=e.touches[0].clientY;
+    const dx=Math.abs(x-startX),dy=y-startY;
+    lastY=y;
+    // Cancel immediately on any upward scroll or horizontal gesture, or if any container scrolled
+    if(dy<8||dx>dy*0.75||!allAncestorsAtTop(e.target)){
+      if(pill.classList.contains('show')||tracking)reset();
+      return;
+    }
+    if(dy<REVEAL_DY)return;
+    const progress=Math.min(1,(dy-REVEAL_DY)/(TRIGGER_DY-REVEAL_DY));
+    pill.classList.remove('synced');
+    pill.classList.add('show');
+    pill.style.transform=`translate3d(-50%,${Math.min(18,(dy-REVEAL_DY)*0.18).toFixed(1)}px,0) scale(${(0.94+progress*0.06).toFixed(3)})`;
+    arc.setAttribute('stroke-dashoffset',String(Math.round(100-progress*100)));
+    ready=dy>=TRIGGER_DY;
+    pill.classList.toggle('ready',ready);
+    txt.textContent=ready?'Release to sync':'Pull to sync';
+  },{passive:true});
+
+  const finish=()=>{
+    if(!tracking)return;
+    const fire=ready&&(lastY-startY)>=TRIGGER_DY;
+    tracking=false;
+    if(fire)runSync();
+    else reset();
+  };
+  document.addEventListener('touchend',finish,{passive:true});
+  document.addEventListener('touchcancel',reset,{passive:true});
 })();
 </script>
 
@@ -3239,11 +3374,11 @@ html[data-layout="aurora"] .app>#timerCard,html[data-layout="aurora"] .app>#sess
 </style>
 
 <style id="v47-native-scroll-restoration">
-html,body{height:auto!important;min-height:100%;overflow-y:scroll!important;overflow-x:hidden!important;touch-action:pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:auto!important}
+html,body{height:auto!important;min-height:100%;overflow-y:scroll!important;overflow-x:hidden!important;touch-action:pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important}
 body{position:relative!important}
 body.focus{overflow:hidden!important;position:fixed!important;width:100%!important}
 .app{height:auto!important;min-height:100vh;min-height:100dvh;overflow:visible!important;touch-action:pan-y pinch-zoom!important}
-#energyPull,#energyToast,#energyBurst{touch-action:none;pointer-events:none}
+#hourPullSync{touch-action:none;pointer-events:none}
 </style>
 <script id="v47-scroll-safety">
 (()=>{
@@ -3274,10 +3409,10 @@ body.focus{overflow:hidden!important;position:fixed!important;width:100%!importa
 @media(max-width:360px){#timerCard .controls #skip{width:min(72%,210px)}}
 </style>
 <style id="v49-native-swipe-scroll">
-html,body{overflow-x:hidden!important;overflow-y:auto!important;min-height:100%!important;height:auto!important;touch-action:pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:auto!important}
+html,body{overflow-x:hidden!important;overflow-y:auto!important;min-height:100%!important;height:auto!important;touch-action:pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:contain!important}
 body:not(.focus){position:relative!important;inset:auto!important;width:auto!important;overflow-y:auto!important}
 body:not(.focus) .app{height:auto!important;min-height:100dvh!important;overflow:visible!important;touch-action:pan-y pinch-zoom!important}
-#energyPull,#energyToast,#energyBurst{pointer-events:none!important}
+#hourPullSync{pointer-events:none!important}
 </style>
 
 <style id="v51-settings-overflow-fix">
@@ -4003,7 +4138,7 @@ function render(){const t=root.dataset.rg;if(t==='home')home();else if(t==='stat
 function nav(t){root.dataset.rg=t;if(t==='old')go('home');render();scrollTo(0,0);const m=g('rg');if(m)m.scrollTop=0}
 function sheet(h){g('rgShB').innerHTML=h;g('rgSh').classList.add('on')}
 const shut=()=>g('rgSh').classList.remove('on');
-function appsSh(){const l=[...ALL,...F.cus];sheet(`<h3>Select apps to block</h3><p>Your shield list for focus sessions. A web page can't lock other apps, so this keeps them front of mind and flags when you leave.</p><div class="ch" style="margin-bottom:14px">${l.map(a=>`<button data-s="${esc(a)}" class="${F.sel.includes(a)?'on':''}">${esc(a)}</button>`).join('')}</div><div style="display:flex;gap:8px"><input type="text" id="rgAdd" maxlength="20" placeholder="Add app or site"><button class="go" id="rgAddB" style="width:auto;padding:12px 20px;font-size:15px">Add</button></div>`)}
+function appsSh(){if(window.LeaveItStrictBlocker&&typeof window.LeaveItStrictBlocker.openBlockerSheet==='function'){window.LeaveItStrictBlocker.openBlockerSheet();return}const l=[...ALL,...F.cus];sheet(`<h3>Select apps to block</h3><p>Pick apps to shield during focus sessions.</p><div class="ch" style="margin-bottom:14px">${l.map(a=>`<button data-s="${esc(a)}" class="${F.sel.includes(a)?'on':''}">${esc(a)}</button>`).join('')}</div><div style="display:flex;gap:8px"><input type="text" id="rgAdd" maxlength="20" placeholder="Add app or site"><button class="go" id="rgAddB" style="width:auto;padding:12px 20px;font-size:15px">Add</button></div>`)}
 function sndSh(){sheet(`<h3>Focus sound</h3><p>Generated on your device — works offline.</p><div class="ch">${[['rain','🌧 Rain'],['ocean','🌊 Ocean'],['brown','🟤 Deep'],['pink','🌸 Soft'],['white','⚪ Static'],['','⏹ Off']].map(s=>`<button data-p="${s[0]}" class="${F.snd===s[0]?'on':''}">${s[1]}</button>`).join('')}</div><p style="margin-top:16px">Volume</p><input type="range" id="rgVol" min="0" max="1" step=".05" value="${F.vol}" style="width:100%;accent-color:var(--accent)">`)}
 function moreSh(){sheet(`<h3>More</h3>${[['mock','📝','Mock tests'],['tests','📈','Tests'],['plan','🗓️','Planner'],['rank','🏅','Rank'],['stats','📊','Question stats'],['settings','⚙️','Settings']].map(x=>`<button class="ln" data-g="${x[0]}"><span>${x[1]}</span>${x[2]}</button>`).join('')}`)}
 function showS(){const s=g('rgS');s.classList.add('on');if(!g('rgSt')){let h='';for(let i=0;i<50;i++)h+='<i style="left:'+(Math.random()*100).toFixed(1)+'%;top:'+(Math.random()*100).toFixed(1)+'%;animation-delay:'+(Math.random()*4).toFixed(1)+'s"></i>';s.insertAdjacentHTML('afterbegin','<div id="rgSt">'+h+'</div>')}g('rgSd').textContent=F.sel.length?'🛡 Blocking '+F.sel.slice(0,4).join(' · ')+(F.sel.length>4?' +'+(F.sel.length-4):''):'🛡 Shield on';ui()}
@@ -4027,8 +4162,10 @@ function ui(){document.querySelectorAll('#rgSeg button').forEach(b=>b.classList.
  g('rgQb').style.display='none';g('rgCp').style.display='none';
  const rm=activeSyncRoom(),isCd=Boolean(rm&&rm.status==='countdown'),isSyncFin=Boolean(rm&&rm.status==='finished');
  if(g('rgTaskDone'))g('rgTaskDone').style.display=(rgTask&&!fin&&!isCd&&live&&UM==='f')?'':'none';
- g('rgBrk').style.display=(live&&ph==='f'&&!fin&&!rm&&!rgTask)?'':'none';
+ g('rgBrk').style.display=(live&&ph==='f'&&!fin&&!rm&&!rgTask&&!F.strict)?'':'none';
  g('rgS').dataset.s='ok';
+ const sbStrict=Boolean(live&&!fin&&F.strict);
+ g('rgS').classList.toggle('rg-strict-locked',sbStrict);
  if(isCd){
    const cs=syncObj()?syncObj().getCountdownSec(rm):0;
    g('rgTm').textContent=cs+'s';g('rgArc').style.strokeDashoffset=0;knob(1);
@@ -4039,27 +4176,28 @@ function ui(){document.querySelectorAll('#rgSeg button').forEach(b=>b.classList.
  g('rgTm').textContent=fmt(l/1000);g('rgArc').style.strokeDashoffset=fin?0:100*(1-l/t);knob(fin?0:l/t);
  g('rgPh').textContent=fin?(isSyncFin&&rm.winnerDisplayName?'🏆 Winner: '+rm.winnerDisplayName:'Complete 🎉'):ph==='f'?'Focus':'Break · breathe';
  g('rgT').textContent=fin?'Great work':rgTask?('📋 '+rgTask.task):ph==='f'?'Stay focused':'Take a break';
- g('rgPs').style.display=fin?'none':'';g('rgPs').textContent=run?'Pause':'Resume';g('rgEnd').textContent=fin?'Done':'End';armed=false;
+ g('rgPs').style.display=(fin||sbStrict)?'none':'';g('rgPs').textContent=run?'Pause':'Resume';g('rgEnd').textContent=fin?'Done':'End';armed=false;
  document.title=live&&run?(ph==='f'?'🍅 ':'☕ ')+fmt(l/1000)+' · '+base:base}
-function begin(){const s=syncObj(),rm=s?s.getRoom():null;if(rm&&rm.status!=='finished')roomSynced=rm.roomCode;else roomSynced=null;userPausedRoom=false;if(UM==='q'){A();live=true;fin=false;run=false;lock(true);if(F.snd)play(F.snd);if(!rm||rm.status!=='countdown')QB.start();showS();if(s)s.notifyStateChange(true);return}beginF()}
-function beginF(){A();live=true;fin=false;ph='f';const rm=activeSyncRoom();if(rm&&rm.status==='countdown'){left=dur();end=Date.now()+left;run=false}else if(rm&&rm.status==='active'&&rm.endsAt){end=rm.endsAt;left=Math.max(0,end-Date.now());run=left>0}else{left=dur();run=true;end=Date.now()+left}lock(run);if(run&&F.snd)play(F.snd);try{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}showS();if(syncObj())syncObj().notifyStateChange(true)}
+function begin(){const s=syncObj(),rm=s?s.getRoom():null;if(rm&&rm.status!=='finished')roomSynced=rm.roomCode;else roomSynced=null;userPausedRoom=false;if(UM==='q'){A();live=true;fin=false;run=false;lock(true);if(F.snd)play(F.snd);if(!rm||rm.status!=='countdown')QB.start();showS();if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStart({durationSec:F.dur*60,endsAtMs:Date.now()+F.dur*60000,strictMode:!!F.strict,taskTitle:rgTask?rgTask.task:''});if(s)s.notifyStateChange(true);return}beginF()}
+function beginF(){A();live=true;fin=false;ph='f';const rm=activeSyncRoom();if(rm&&rm.status==='countdown'){left=dur();end=Date.now()+left;run=false}else if(rm&&rm.status==='active'&&rm.endsAt){end=rm.endsAt;left=Math.max(0,end-Date.now());run=left>0}else{left=dur();run=true;end=Date.now()+left}lock(run);if(run&&F.snd)play(F.snd);try{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}showS();if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStart({durationSec:Math.max(60,Math.round((dur()||1500000)/1000)),endsAtMs:end,strictMode:!!F.strict,taskTitle:rgTask?rgTask.task:''});if(syncObj())syncObj().notifyStateChange(true)}
 function credit(m){if(m<1)return;const d=day();d.m+=m;d.s++;F.log.push({t:new Date().toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}),m});F.log=F.log.slice(-30);if(d.m>=F.goal&&d.m-m<F.goal)setTimeout(()=>toast('🎯 Daily goal reached!'),500);sv()}
-function stop(){const rm=activeSyncRoom();if(rm&&(rm.status==='active'||rm.status==='finished'))creditRoomFocusOnce(rm);if(UM==='q'&&live)QB.pause();live=false;run=false;fin=false;roomSynced=null;userPausedRoom=false;if(rgTask){rgTask=null;if(syncObj())syncObj().setLinkedTask(null)}lock(false);stopS();g('rgS').classList.remove('on');ui();render();if(syncObj())syncObj().notifyStateChange(true)}
+function stop(forceCompleted){if(!forceCompleted&&window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){toast('🔒 Strict Mode locked — finish your session first');return}const rm=activeSyncRoom();if(rm&&(rm.status==='active'||rm.status==='finished'))creditRoomFocusOnce(rm);if(UM==='q'&&live)QB.pause();live=false;run=false;fin=false;roomSynced=null;userPausedRoom=false;if(rgTask){rgTask=null;if(syncObj())syncObj().setLinkedTask(null)}lock(false);stopS();g('rgS').classList.remove('on','rg-strict-locked');if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStop(!!forceCompleted);ui();render();if(syncObj())syncObj().notifyStateChange(true)}
 function done(){beep();try{if(document.hidden&&Notification.permission==='granted')new Notification(ph==='f'?'Focus complete':'Break over')}catch(e){}
+ if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStop(true);
  const rm=activeSyncRoom();
  if(rm){creditRoomFocusOnce(rm);if(rgTask)completeRgTask(true);run=false;fin=true;left=0;lock(false);stopS();ui();if(syncObj())syncObj().notifyStateChange(true);return}
  if(rgTask){const m=Math.max(1,Math.round((rgTask.durMs||F.dur*60000)/60000));credit(m);completeRgTask(true);run=false;fin=true;left=0;lock(false);stopS();ui();if(syncObj())syncObj().notifyStateChange(true);return}
- if(ph==='f'){credit(F.dur);toast('🍅 +'+F.dur+' min focused');if(F.pom){ph='b';left=dur();end=Date.now()+left;ui();return}run=false;fin=true;left=0;lock(false);stopS();ui();if(syncObj())syncObj().notifyStateChange(true);return}
+ if(ph==='f'){credit(F.dur);toast('🍅 +'+F.dur+' min focused');if(F.pom&&!F.strict){ph='b';left=dur();end=Date.now()+left;ui();return}run=false;fin=true;left=0;lock(false);stopS();ui();if(syncObj())syncObj().notifyStateChange(true);return}
  ph='f';left=dur();end=Date.now()+left;ui();if(syncObj())syncObj().notifyStateChange(true)}
 setInterval(()=>{if(live&&UM==='q'){const rm=activeSyncRoom();if(rm&&rm.status==='active'&&!QB.running&&!userPausedRoom){QB.start()}qui()}},200);
 setInterval(()=>{if(live){const rm=activeSyncRoom();if(rm&&rm.status==='active'&&rm.endsAt){if(rm.endsAt-Date.now()<=0)done();else ui()}else if(rm&&rm.status==='countdown'){ui()}else if(run){if(end-Date.now()<=0)done();else ui()}}},250);
-document.addEventListener('visibilitychange',()=>{if(document.hidden){if(live&&run&&ph==='f')hid=Date.now()}else{if(live&&run&&!wl)lock(true);if(hid){const s=(Date.now()-hid)/1000;hid=0;if(live&&run&&ph==='f'&&s>=3){const d=day();d.a++;d.as+=Math.round(s);sv();if(F.strict&&!roomSynced){stop();toast('🔒 Strict mode — you left, session reset')}else toast('📵 Away for '+fmt(s)+' — back to focus')}}ui();if(root.dataset.rg)render()}});
-g('rgPs').onclick=()=>{if(UM==='q'){userPausedRoom=QB.running;QB.running?QB.pause():QB.start();qui();if(syncObj())syncObj().notifyStateChange(true);return}const rm=activeSyncRoom();if(run){left=Math.max(0,end-Date.now());run=false;if(rm)userPausedRoom=true;lock(false)}else{run=true;userPausedRoom=false;end=(rm&&rm.status==='active'&&rm.endsAt)?rm.endsAt:(Date.now()+left);lock(true)}ui();if(syncObj())syncObj().notifyStateChange(true)};
+document.addEventListener('visibilitychange',()=>{if(document.hidden){if(live&&run&&ph==='f')hid=Date.now()}else{if(live&&run&&!wl)lock(true);if(hid){const s=(Date.now()-hid)/1000;hid=0;if(live&&run&&ph==='f'&&s>=3){const d=day();d.a++;d.as+=Math.round(s);sv();if(F.strict){toast('🔒 Strict Mode active — stay inside Hour until the timer ends')}else toast('📵 Away for '+fmt(s)+' — back to focus')}}ui();if(root.dataset.rg)render()}});
+g('rgPs').onclick=()=>{if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){toast('🔒 Strict Mode locked — cannot pause');return}if(UM==='q'){userPausedRoom=QB.running;QB.running?QB.pause():QB.start();qui();if(syncObj())syncObj().notifyStateChange(true);return}const rm=activeSyncRoom();if(run){left=Math.max(0,end-Date.now());run=false;if(rm)userPausedRoom=true;lock(false)}else{run=true;userPausedRoom=false;end=(rm&&rm.status==='active'&&rm.endsAt)?rm.endsAt:(Date.now()+left);lock(true)}ui();if(syncObj())syncObj().notifyStateChange(true)};
 if(g('rgTaskDone'))g('rgTaskDone').onclick=()=>{if(rgTask&&!fin)completeRgTask(false)};
-g('rgEnd').onclick=()=>{if(UM==='q'){stop();return}if(fin){stop();return}if(!armed){armed=true;g('rgEnd').textContent='Tap again to end';setTimeout(()=>{if(armed&&live)ui()},2500);return}const el=ph==='f'?Math.floor((dur()-Math.max(0,run?end-Date.now():left))/60000):0;if(roomSynced){const rm=activeSyncRoom();if(rm)creditRoomFocusOnce(rm)}else credit(el);stop()};
+g('rgEnd').onclick=()=>{if(fin){stop(true);return}if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){toast('🔒 Strict Mode active — cannot end session early');return}if(UM==='q'){stop(false);return}if(!armed){armed=true;g('rgEnd').textContent='Tap again to end';setTimeout(()=>{if(armed&&live)ui()},2500);return}const el=ph==='f'?Math.floor((dur()-Math.max(0,run?end-Date.now():left))/60000):0;if(roomSynced){const rm=activeSyncRoom();if(rm)creditRoomFocusOnce(rm)}else credit(el);stop(false)};
 g('rg').addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a;
  if(a==='um'){swap(b.dataset.v);return}if(a==='qm'||a==='qp'||a==='qd'){QB.setDur(a==='qd'?+b.dataset.v:QB.dur+(a==='qp'?10:-10));home();return}if(a==='m'){F.dur=Math.max(5,F.dur-5);sv();home()}else if(a==='p'){F.dur=Math.min(180,F.dur+5);sv();home()}else if(a==='d'){F.dur=+b.dataset.v;sv();home()}else if(a==='start')begin();else if(a==='apps')appsSh();else if(a==='snd')sndSh()});
-g('rg').addEventListener('change',e=>{const k=e.target.dataset.k;if(k){F[k]=e.target.checked;sv()}else if(e.target.id==='rgGoal'){F.goal=Math.max(10,Math.min(600,+e.target.value||120));sv();stats()}});
+g('rg').addEventListener('change',e=>{const k=e.target.dataset.k;if(k){F[k]=e.target.checked;sv();if(k==='strict'&&window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.syncStrictFlag(!!F.strict)}else if(e.target.id==='rgGoal'){F.goal=Math.max(10,Math.min(600,+e.target.value||120));sv();stats()}});
 g('rgSh').addEventListener('click',e=>{const t=e.target;if(t.id==='rgSh'){shut();return}const b=t.closest('button');if(!b)return;
  if(b.dataset.s!==undefined){const a=b.dataset.s,i=F.sel.indexOf(a);i>=0?F.sel.splice(i,1):F.sel.push(a);sv();b.classList.toggle('on');home()}
  else if(b.dataset.p!==undefined){play(b.dataset.p);sndSh();home()}
@@ -4094,6 +4232,9 @@ if(window.LeaveItArenaSync){
       else{left=dur();end=Date.now()+left;run=true}
       lock(run);if(run&&F.snd)play(F.snd);showS();
     }
+    if(window.LeaveItStrictBlocker&&rm.status!=='finished'){
+      window.LeaveItStrictBlocker.onRegainStart({durationSec:Number(rm.durationSec||F.dur*60),endsAtMs:rm.endsAt||(Date.now()+Number(rm.durationSec||F.dur*60)*1000),strictMode:!!F.strict,taskTitle:rm.title||''});
+    }
     s.notifyStateChange(true);
   };
   s.launchRegainPlannerTask=function(opts){
@@ -4116,9 +4257,29 @@ if(window.LeaveItArenaSync){
       A();live=true;fin=false;ph='f';left=rgTask.durMs;run=true;end=Date.now()+left;lock(true);if(F.snd)play(F.snd);showS();
     }
     s.notifyStateChange(true);
+    if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStart({durationSec:Math.max(60,Math.round((t.durMs||mins*60000)/1000)),endsAtMs:end,strictMode:!!F.strict,taskTitle:t.t});
     toast('🎯 Focus started: '+t.t);
   };
 }
+window.LeaveItRegainControl={
+  getConfig:()=>F,
+  saveConfig:sv,
+  refreshHome:home,
+  openSheet:sheet,
+  closeSheet:shut,
+  toast,
+  isLive:()=>live,
+  restoreStrictSession:function(sess){
+    if(!sess||!sess.endsAtMs||sess.endsAtMs<=Date.now())return;
+    UM='f';root.dataset.um='f';
+    if(sess.taskTitle){rgTask={task:sess.taskTitle,index:-1,dayKey:td(),rawTask:null,plannedMin:Math.max(1,Math.round((sess.endsAtMs-Date.now())/60000)),durMs:Math.max(60000,sess.endsAtMs-Date.now())}}
+    A();live=true;fin=false;ph='f';
+    end=sess.endsAtMs;left=Math.max(0,end-Date.now());run=left>0;
+    lock(true);if(F.snd&&!src)play(F.snd);
+    showS();
+    ui();
+  }
+};
 window.addEventListener('leaveit-room-sync',ev=>{
   const d=ev.detail||{},rm=d.room;
   if(!rm){roomSynced=null;userPausedRoom=false;if(root.dataset.rg==='home')render();if(live)ui();return}
@@ -4404,7 +4565,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
-  const cap=window.Capacitor||null;
+  const cap=window.Capacitor||(window.parent&&window.parent.Capacitor)||null;
   const inCap=!!(cap&&(typeof cap.isNativePlatform==='function'?cap.isNativePlatform():cap.platform&&cap.platform!=='web'));
   const inWv=inCap||/; wv\)/i.test(navigator.userAgent);
   const inIframe=window.parent&&window.parent!==window;
@@ -4456,6 +4617,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
   // Dismiss topmost active modal/sheet/focus overlay on Android Back button
   function dismissOverlay(){
+    if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){
+      showToast('🔒 Strict Mode locked — finish your focus session first');
+      return true;
+    }
     const checks=[
       ()=>{const el=$('lpKeys');if(el&&el.classList.contains('on')){el.classList.remove('on');return true}},
       ()=>{const el=$('simpleSuggest');if(el&&el.classList.contains('on')){el.classList.remove('on');return true}},
@@ -4477,6 +4642,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
   let backArmed=0;
   function handleBackPress(){
+    if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){
+      showToast('🔒 Strict Mode locked — cannot exit app');
+      return true;
+    }
     if(dismissOverlay())return true;
     const now=Date.now();
     if(now-backArmed<2000)return false;
@@ -4487,6 +4656,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
   if(inCap&&cap.Plugins&&cap.Plugins.App&&cap.Plugins.App.addListener){
     cap.Plugins.App.addListener('backButton',()=>{
+      if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){
+        showToast('🔒 Strict Mode locked — cannot exit app');
+        return;
+      }
       if(!handleBackPress()){
         cap.Plugins.App.exitApp&&cap.Plugins.App.exitApp();
       }
@@ -8306,6 +8479,2078 @@ body.simple-mode .app > [data-tab="rank"] {
   }
 }
 </style>
+<style id="v106-android-blocker-css">
+/* v106: Android Native App Blocker & Strict Mode Hard Lock */
+html:not([data-ui="regain"]) #rgSh.on{display:flex!important;z-index:120!important}
+#rgS.rg-strict-locked #rgPs,
+#rgS.rg-strict-locked #rgBrk{display:none!important}
+#rgS.rg-strict-locked #rgEnd{
+  background:rgba(255,176,32,.14)!important;
+  color:#ffd166!important;
+  border:1px solid rgba(255,176,32,.42)!important;
+  cursor:not-allowed!important;
+  opacity:.92;
+}
+body.fm-strict-locked #fmX,
+body.fm-strict-locked #fmX2,
+body.fm-strict-locked #focusBtn{
+  opacity:.42!important;
+  pointer-events:auto!important;
+  cursor:not-allowed!important;
+}
+body.fm-strict-locked #fmGo{
+  opacity:.85!important;
+}
+#rgStrictBadge,#fmStrictBadge{
+  display:none;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  padding:8px 14px;
+  border-radius:99px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.3px;
+  background:rgba(255,176,32,.14);
+  color:#ffd166;
+  border:1px solid rgba(255,176,32,.4);
+  max-width:94%;
+  text-align:center;
+}
+#rgS.rg-strict-locked #rgStrictBadge{display:inline-flex}
+body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
+.hb-sec{margin-top:14px;padding:12px;border-radius:18px;border:1px solid var(--track);background:color-mix(in srgb,var(--card) 75%,var(--bg))}
+.hb-sec h4{margin:0 0 4px;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.hb-sec p{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.45}
+.hb-perms{display:grid;gap:7px}
+.hb-perm{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:13px;border:1px solid var(--track);background:var(--card);color:var(--text);text-align:left;width:100%;font:inherit;cursor:pointer}
+.hb-perm b{display:block;font-size:13px;font-weight:700}
+.hb-perm small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
+.hb-badge{flex:none;padding:5px 10px;border-radius:99px;font-size:11px;font-weight:800;background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.hb-badge.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.hb-search{width:100%;padding:10px 13px;border-radius:12px;border:1.5px solid var(--track);background:var(--bg);color:var(--text);font:inherit;font-size:13px;margin-bottom:10px}
+.hb-applist{display:grid;gap:6px;max-height:260px;overflow-y:auto;padding-right:2px}
+.hb-app{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border-radius:12px;border:1px solid var(--track);background:var(--card);color:var(--text);width:100%;text-align:left;font:inherit;cursor:pointer}
+.hb-app.on{border-color:color-mix(in srgb,var(--accent) 70%,transparent);background:color-mix(in srgb,var(--accent) 13%,var(--card))}
+.hb-app-l{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
+.hb-ico{width:30px;height:30px;border-radius:8px;flex:none;object-fit:cover;background:var(--track)}
+.hb-ico-fb{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;background:var(--track);font-size:15px}
+.hb-app-meta{min-width:0;flex:1}
+.hb-app-meta b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-app-meta small{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hb-chk{width:22px;height:22px;border-radius:7px;border:2px solid var(--track);display:grid;place-items:center;font-size:13px;font-weight:900;flex:none;color:#06140a}
+.hb-app.on .hb-chk{background:var(--accent);border-color:var(--accent)}
+.hb-row-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.hb-mini{padding:7px 12px;border-radius:99px;border:1px solid var(--track);background:var(--card);color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
+.hb-mini.p{background:var(--accent);border-color:var(--accent);color:#06140a}
+#clStrictBox{margin-top:12px;padding-top:12px;border-top:1px solid var(--track)}
+</style>
+<script id="v106-android-blocker">
+(function(){
+  'use strict';
+  const $=id=>document.getElementById(id);
+  const LOCK_KEY='leaveit_strict_lock_v106';
+  const ALL_PRESETS=['Instagram','TikTok','YouTube','X','Snapchat','Facebook','Reddit','WhatsApp','Netflix','Games'];
+  const DEFAULT_PKG_MATCH={
+    instagram:'com.instagram.android',
+    youtube:'com.google.android.youtube',
+    tiktok:'com.zhiliaoapp.musically',
+    snapchat:'com.snapchat.android',
+    facebook:'com.facebook.katana',
+    reddit:'com.reddit.frontpage',
+    x:'com.twitter.android',
+    whatsapp:'com.whatsapp',
+    netflix:'com.netflix.mediaclient',
+    telegram:'org.telegram.messenger',
+    discord:'com.discord'
+  };
+
+  function getParentBridge(){
+    try{if(window.LeaveItNativeBlocker)return window.LeaveItNativeBlocker}catch(e){}
+    try{if(window.parent&&window.parent!==window&&window.parent.LeaveItNativeBlocker)return window.parent.LeaveItNativeBlocker}catch(e){}
+    const cap=window.Capacitor||(window.parent&&window.parent.Capacitor)||null;
+    const p=cap&&cap.Plugins&&cap.Plugins.HourBlocker;
+    if(!p)return null;
+    return {
+      isNativeAndroid:()=>Boolean(cap&&(typeof cap.isNativePlatform==='function'?cap.isNativePlatform():cap.platform==='android')),
+      getPermissionStatus:()=>p.getPermissionStatus(),
+      requestPermission:type=>p.requestPermission({type}),
+      getInstalledApps:(includeIcons=true)=>p.getInstalledApps({includeIcons}),
+      setBlockedApps:(packages,names={})=>p.setBlockedApps({packages,names}),
+      startFocusSession:opts=>p.startFocusSession(opts),
+      updateFocusSession:opts=>p.updateFocusSession(opts),
+      stopFocusSession:(forceCompleted=false)=>p.stopFocusSession({forceCompleted}),
+      getActiveSession:()=>p.getActiveSession(),
+      getLiveServerUrl:()=>typeof p.getLiveServerUrl==='function'?p.getLiveServerUrl():Promise.resolve({savedUrl:'',mode:'',activeServerUrl:'',currentUrl:location.origin,localUrl:'https://localhost'}),
+      setLiveServerUrl:(url,mode='custom')=>typeof p.setLiveServerUrl==='function'?p.setLiveServerUrl({url,mode}):Promise.resolve({savedUrl:'',mode:'',reloading:false}),
+      reloadLiveApp:()=>typeof p.reloadLiveApp==='function'?p.reloadLiveApp():(location.reload(),Promise.resolve({reloaded:true,url:location.href}))
+    };
+  }
+
+  function isNative(){
+    const nb=getParentBridge();
+    try{return Boolean(nb&&nb.isNativeAndroid&&nb.isNativeAndroid())}catch(e){return false}
+  }
+
+  function getRg(){
+    if(window.LeaveItRegainControl)return window.LeaveItRegainControl;
+    return null;
+  }
+
+  function getRgCfg(){
+    const rc=getRg();
+    if(rc&&rc.getConfig)return rc.getConfig();
+    try{return JSON.parse(localStorage.getItem('leaveit_rg')||'{}')}catch(e){return {sel:['Instagram','TikTok','YouTube'],cus:[],pkgs:[],pkgNames:{},strict:false,dur:25}}
+  }
+
+  function saveRgCfg(cfg){
+    const rc=getRg();
+    if(rc&&rc.saveConfig){rc.saveConfig();return}
+    try{localStorage.setItem('leaveit_rg',JSON.stringify(cfg))}catch(e){}
+  }
+
+  function getStrictFlag(){
+    const cfg=getRgCfg();
+    let cs=false;
+    try{cs=Boolean(typeof S!=='undefined'?S.strict:JSON.parse(localStorage.getItem('leaveit')||'{}').strict)}catch(e){}
+    return Boolean(cfg.strict||cs);
+  }
+
+  function setStrictFlag(val){
+    const on=Boolean(val);
+    const cfg=getRgCfg();
+    cfg.strict=on;
+    saveRgCfg(cfg);
+    try{
+      if(typeof S!=='undefined'){S.strict=on;if(typeof save==='function')save()}
+      else{const s=JSON.parse(localStorage.getItem('leaveit')||'{}');s.strict=on;localStorage.setItem('leaveit',JSON.stringify(s))}
+    }catch(e){}
+    const sw1=document.querySelector('#rg input[data-k="strict"]');
+    if(sw1)sw1.checked=on;
+    const sw2=$('clStrictSw');
+    if(sw2)sw2.checked=on;
+  }
+
+  let lockState={active:false,strictMode:false,endsAtMs:0,source:'',taskTitle:''};
+  try{
+    const saved=JSON.parse(localStorage.getItem(LOCK_KEY)||'null');
+    if(saved&&saved.active&&saved.endsAtMs>Date.now())lockState=saved;
+    else localStorage.removeItem(LOCK_KEY);
+  }catch(e){}
+
+  function persistLock(){
+    try{
+      if(lockState.active&&lockState.endsAtMs>Date.now()){
+        localStorage.setItem(LOCK_KEY,JSON.stringify(lockState));
+      }else{
+        localStorage.removeItem(LOCK_KEY);
+      }
+    }catch(e){}
+  }
+
+  function isLocked(){
+    if(!lockState.active||!lockState.strictMode)return false;
+    if(lockState.endsAtMs>0&&Date.now()>=lockState.endsAtMs){
+      unlockSession(true);
+      return false;
+    }
+    return true;
+  }
+
+  function fmtLeft(ms){
+    const s=Math.max(0,Math.ceil(ms/1000));
+    const m=Math.floor(s/60),r=s%60;
+    return String(m).padStart(2,'0')+':'+String(r).padStart(2,'0');
+  }
+
+  function showToast(msg){
+    const rc=getRg();
+    if(rc&&rc.toast){rc.toast(msg);return}
+    const o=$('rgTo');
+    if(o){o.textContent=msg;o.classList.add('on');clearTimeout(o._t);o._t=setTimeout(()=>o.classList.remove('on'),2600)}
+  }
+
+  function buildBlockedPayload(){
+    const cfg=getRgCfg();
+    const pkgs=Array.isArray(cfg.pkgs)?cfg.pkgs:[];
+    const names=cfg.pkgNames&&typeof cfg.pkgNames==='object'?cfg.pkgNames:{};
+    return pkgs.map(p=>({packageName:p,appName:names[p]||p}));
+  }
+
+  async function syncSessionToNative(opts){
+    const nb=getParentBridge();
+    if(!nb||!isNative())return;
+    try{
+      await nb.startFocusSession({
+        durationSec:Math.max(60,Math.round(opts.durationSec||1500)),
+        endsAtMs:opts.endsAtMs,
+        strictMode:Boolean(opts.strictMode),
+        taskTitle:opts.taskTitle||'',
+        blockedPackages:buildBlockedPayload()
+      });
+    }catch(e){}
+  }
+
+  async function stopNativeSession(forceCompleted){
+    const nb=getParentBridge();
+    if(!nb||!isNative())return;
+    try{await nb.stopFocusSession(Boolean(forceCompleted))}catch(e){}
+  }
+
+  function beginSessionLock(opts){
+    const now=Date.now();
+    const durSec=Math.max(60,Math.round(opts.durationSec||1500));
+    const endsAt=(opts.endsAtMs&&opts.endsAtMs>now)?opts.endsAtMs:(now+durSec*1000);
+    const strict=opts.strictMode!==undefined?Boolean(opts.strictMode):getStrictFlag();
+    lockState={
+      active:true,
+      strictMode:strict,
+      endsAtMs:endsAt,
+      source:opts.source||'regain',
+      taskTitle:opts.taskTitle||''
+    };
+    persistLock();
+    syncLockUi();
+    syncSessionToNative({
+      durationSec:durSec,
+      endsAtMs:endsAt,
+      strictMode:strict,
+      taskTitle:opts.taskTitle||''
+    });
+  }
+
+  function unlockSession(forceCompleted){
+    if(!forceCompleted&&isLocked())return false;
+    lockState={active:false,strictMode:false,endsAtMs:0,source:'',taskTitle:''};
+    persistLock();
+    syncLockUi();
+    stopNativeSession(Boolean(forceCompleted));
+    return true;
+  }
+
+  function ensureLockBadges(){
+    const rgEnd=$('rgEnd');
+    if(rgEnd&&!$('rgStrictBadge')){
+      const b=document.createElement('div');
+      b.id='rgStrictBadge';
+      b.textContent='🔒 Strict Mode locked';
+      rgEnd.parentElement&&rgEnd.parentElement.insertAdjacentElement('beforebegin',b);
+    }
+    const fmGo=$('fmGo');
+    if(fmGo&&!$('fmStrictBadge')){
+      const b=document.createElement('div');
+      b.id='fmStrictBadge';
+      b.textContent='🔒 Strict Mode locked';
+      fmGo.insertAdjacentElement('afterend',b);
+    }
+  }
+
+  function syncLockUi(){
+    ensureLockBadges();
+    const locked=isLocked();
+    const remTxt=locked?fmtLeft(lockState.endsAtMs-Date.now()):'';
+    document.body.classList.toggle('fm-strict-locked',locked&&document.body.classList.contains('focus'));
+    const rgS=$('rgS');
+    if(rgS){
+      rgS.classList.toggle('rg-strict-locked',locked);
+      const rgEnd=$('rgEnd');
+      if(rgEnd&&rgS.classList.contains('on')){
+        if(locked)rgEnd.textContent='🔒 Locked · '+remTxt;
+      }
+      const rb=$('rgStrictBadge');
+      if(rb&&locked)rb.textContent='🔒 STRICT MODE ON · '+remTxt+' remaining (Exit & close disabled)';
+    }
+    const fb=$('fmStrictBadge');
+    if(fb&&locked)fb.textContent='🔒 STRICT MODE ON · '+remTxt+' remaining (Exit & pause disabled)';
+  }
+
+  // Periodically refresh countdown lock labels and auto-release at 00:00
+  setInterval(()=>{
+    if(!lockState.active)return;
+    if(lockState.endsAtMs>0&&Date.now()>=lockState.endsAtMs){
+      unlockSession(true);
+      showToast('🎉 Focus session complete · Strict lock released');
+      return;
+    }
+    syncLockUi();
+  },500);
+
+  // Intercept any UI attempt to exit/pause/cancel while Strict Mode lock is active
+  document.addEventListener('click',e=>{
+    if(!isLocked())return;
+    const t=e.target;
+    if(!t)return;
+    if(t.closest('#rgEnd,#rgPs,#rgBrk,#rgSeg button,#fmX,#fmX2,#focusBtn,#reset')){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      showToast('🔒 Strict Mode locked ('+fmtLeft(lockState.endsAtMs-Date.now())+' left) — cannot exit early');
+      return;
+    }
+    const fmGo=t.closest('#fmGo');
+    if(fmGo&&typeof running!=='undefined'&&running){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      showToast('🔒 Strict Mode locked — cannot pause before timer completes');
+    }
+  },true);
+
+  window.addEventListener('beforeunload',e=>{
+    if(isLocked()){
+      e.preventDefault();
+      e.returnValue='';
+    }
+  });
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&isLocked()){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      showToast('🔒 Strict Mode locked — Escape disabled');
+    }
+  },true);
+
+  // Also hook Classic timer start/focus launches into blocker + strict lock
+  const classicStartBtn=$('start'),classicFmGoBtn=$('fmGo'),classicFocusBtn=$('focusBtn');
+  function maybeStartClassicBlocker(){
+    setTimeout(()=>{
+      if(typeof running!=='undefined'&&running){
+        const cfg=getRgCfg();
+        const strict=getStrictFlag();
+        let endsAt=0,durSec=Math.max(60,(Number(cfg.dur)||25)*60),title='';
+        if(document.body.classList.contains('planner-task-focus')){
+          try{
+            const saved=JSON.parse(localStorage.getItem('leaveit_planner_focus_v1')||'null');
+            if(saved&&saved.deadline){endsAt=saved.deadline;durSec=Math.max(60,Math.round((saved.totalMs||durSec*1000)/1000));title=saved.task||''}
+          }catch(e){}
+        }
+        if(!endsAt)endsAt=Date.now()+durSec*1000;
+        if(strict||((cfg.pkgs&&cfg.pkgs.length)|| (cfg.sel&&cfg.sel.length))){
+          beginSessionLock({durationSec:durSec,endsAtMs:endsAt,strictMode:strict,source:'classic',taskTitle:title});
+        }
+      }else if(!isLocked()&&lockState.active&&lockState.source==='classic'){
+        unlockSession(true);
+      }
+    },40);
+  }
+  if(classicStartBtn)classicStartBtn.addEventListener('click',maybeStartClassicBlocker);
+  if(classicFmGoBtn)classicFmGoBtn.addEventListener('click',maybeStartClassicBlocker);
+  if(classicFocusBtn)classicFocusBtn.addEventListener('click',()=>{setTimeout(syncLockUi,40)});
+
+  window.addEventListener('click',e=>{
+    const b=e.target&&e.target.closest&&e.target.closest('[data-strict]');
+    if(!b)return;
+    setTimeout(maybeStartClassicBlocker,80);
+  });
+
+  // Listen for native Android strict block events
+  window.addEventListener('message',e=>{
+    if(e.origin!==location.origin||!e.data)return;
+    if(e.data.type==='leaveit-native-strict-blocked'){
+      showToast('🔒 Strict Mode locked — exit/closing blocked');
+    }else if(e.data.type==='leaveit-native-app-blocked'){
+      showToast('🚫 Distracting app blocked during focus');
+    }
+  });
+
+  // Installed Apps & Android Permission Sheet UI
+  let cachedApps=[];
+  let cachedPerms=null;
+  let cachedLiveCfg=null;
+  let sheetOpen=false;
+
+  const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  async function refreshPerms(){
+    const nb=getParentBridge();
+    if(!nb||!isNative())return null;
+    try{cachedPerms=await nb.getPermissionStatus()}catch(e){cachedPerms=null}
+    return cachedPerms;
+  }
+
+  async function refreshLiveCfg(){
+    const nb=getParentBridge();
+    if(!nb||!isNative()||typeof nb.getLiveServerUrl!=='function')return null;
+    try{cachedLiveCfg=await nb.getLiveServerUrl()}catch(e){cachedLiveCfg=null}
+    return cachedLiveCfg;
+  }
+
+  async function loadApps(forceReload){
+    const nb=getParentBridge();
+    if(!nb||!isNative())return [];
+    if(cachedApps.length&&!forceReload)return cachedApps;
+    try{
+      const res=await nb.getInstalledApps(true);
+      cachedApps=(res&&Array.isArray(res.apps))?res.apps:[];
+      const cfg=getRgCfg();
+      if((!Array.isArray(cfg.pkgs)||!cfg.pkgs.length)&&cachedApps.length){
+        const autoPkgs=[];
+        const names=cfg.pkgNames||{};
+        const wanted=(cfg.sel||['Instagram','TikTok','YouTube']).map(x=>x.toLowerCase());
+        cachedApps.forEach(a=>{
+          const n=a.appName.toLowerCase(),p=a.packageName.toLowerCase();
+          if(wanted.some(w=>n.includes(w)||p===DEFAULT_PKG_MATCH[w])){
+            autoPkgs.push(a.packageName);
+            names[a.packageName]=a.appName;
+          }
+        });
+        if(autoPkgs.length){
+          cfg.pkgs=autoPkgs;cfg.pkgNames=names;
+          saveRgCfg(cfg);
+          await nb.setBlockedApps(autoPkgs,names);
+        }
+      }
+    }catch(e){cachedApps=[]}
+    return cachedApps;
+  }
+
+  function syncAppListSelection(cfg,pkg,appName,enable){
+    cfg.pkgs=Array.isArray(cfg.pkgs)?cfg.pkgs:[];
+    cfg.pkgNames=cfg.pkgNames||{};
+    cfg.sel=Array.isArray(cfg.sel)?cfg.sel:[];
+    const idx=cfg.pkgs.indexOf(pkg);
+    if(enable&&idx<0){
+      cfg.pkgs.push(pkg);
+      cfg.pkgNames[pkg]=appName;
+      if(!cfg.sel.includes(appName))cfg.sel.push(appName);
+    }else if(!enable&&idx>=0){
+      cfg.pkgs.splice(idx,1);
+      const si=cfg.sel.indexOf(appName);
+      if(si>=0)cfg.sel.splice(si,1);
+    }
+    saveRgCfg(cfg);
+    const rc=getRg();
+    if(rc&&rc.refreshHome)rc.refreshHome();
+    updateClassicSettingsSummary();
+    const nb=getParentBridge();
+    if(nb&&isNative()){
+      nb.setBlockedApps(cfg.pkgs,cfg.pkgNames).catch(()=>{});
+    }
+  }
+
+  function renderPermsSection(perms,nativeApk){
+    if(!nativeApk){
+      return `<div class="hb-sec">
+        <h4>📱 Android System App Blocker <span class="hb-badge">APK Feature</span></h4>
+        <p>Install the <b>Hour Android APK</b> on your phone to block real installed apps (Instagram, YouTube, WhatsApp, games) with <b>Display Over Other Apps</b> and lock leaving/closing during Strict Mode.</p>
+      </div>`;
+    }
+    const items=[
+      {k:'overlay',t:'Display over other apps',d:'Draws full-screen Focus Shield on top of blocked apps',ok:Boolean(perms&&perms.overlay)},
+      {k:'accessibility',t:'Accessibility Focus Monitor',d:'Instant <50ms app blocking & prevents Settings/exit bypass',ok:Boolean(perms&&perms.accessibility)},
+      {k:'usageStats',t:'Usage Access permission',d:'Fallback foreground app detector for Xiaomi/Samsung/Vivo',ok:Boolean(perms&&perms.usageStats)},
+      {k:'battery',t:'Unrestricted battery',d:'Stops Android from killing Focus Shield in the background',ok:Boolean(perms&&perms.batteryUnrestricted)},
+      {k:'deviceAdmin',t:'Uninstall & Kill Guard (Optional)',d:'Prevents disabling/uninstalling Hour mid-Strict session',ok:Boolean(perms&&perms.deviceAdmin)}
+    ];
+    return `<div class="hb-sec">
+      <h4>🛡 Android Blocker Permissions <span class="hb-badge ${items.slice(0,3).every(x=>x.ok)?'ok':''}">${items.filter(x=>x.ok).length}/5 Ready</span></h4>
+      <p>Grant the first 3 permissions so Hour can display its block screen over distracting apps and lock Strict Mode.</p>
+      <div class="hb-perms">${items.map(it=>`<button type="button" class="hb-perm" data-hb-perm="${it.k}"><span><b>${it.t}</b><small>${it.d}</small></span><span class="hb-badge ${it.ok?'ok':''}">${it.ok?'✓ Active':'Enable'}</span></button>`).join('')}</div>
+    </div>`;
+  }
+
+  function renderAppsListHtml(cfg,query){
+    const nativeApk=isNative();
+    if(nativeApk){
+      const pkgs=Array.isArray(cfg.pkgs)?cfg.pkgs:[];
+      const q=(query||'').trim().toLowerCase();
+      const filtered=cachedApps.filter(a=>!q||a.appName.toLowerCase().includes(q)||a.packageName.toLowerCase().includes(q));
+      if(!cachedApps.length){
+        return '<div class="hb-sec"><p style="margin:0">Loading installed apps on your phone… Make sure QUERY_ALL_PACKAGES APK is installed.</p></div>';
+      }
+      return `<div class="hb-sec">
+        <h4>🚫 Apps on this phone <span class="hb-badge ok">${pkgs.length} Blocked</span></h4>
+        <div class="hb-row-btns">
+          <button type="button" class="hb-mini p" id="hbPickSocial">⚡ Block Social &amp; Video</button>
+          <button type="button" class="hb-mini" id="hbClearApps">Clear all</button>
+        </div>
+        <input type="search" class="hb-search" id="hbSearch" placeholder="🔍 Search installed apps..." value="${esc(query||'')}" autocomplete="off">
+        <div class="hb-applist">${filtered.slice(0,120).map(a=>{
+          const on=pkgs.includes(a.packageName);
+          return `<button type="button" class="hb-app ${on?'on':''}" data-hb-pkg="${esc(a.packageName)}" data-hb-name="${esc(a.appName)}">
+            <span class="hb-app-l">${a.icon?`<img class="hb-ico" src="${a.icon}" alt="">`:`<span class="hb-ico-fb">📱</span>`}<span class="hb-app-meta"><b>${esc(a.appName)}</b><small>${esc(a.packageName)}</small></span></span>
+            <span class="hb-chk">${on?'✓':''}</span>
+          </button>`;
+        }).join('')||'<p style="margin:6px 0">No matching apps found.</p>'}</div>
+      </div>`;
+    }
+    const sel=Array.isArray(cfg.sel)?cfg.sel:[];
+    const cus=Array.isArray(cfg.cus)?cfg.cus:[];
+    const all=[...ALL_PRESETS,...cus];
+    return `<div class="hb-sec">
+      <h4>🚫 Distraction Blocklist <span class="hb-badge ok">${sel.length} Selected</span></h4>
+      <p>Choose distracting apps to block during focus sessions.</p>
+      <div class="ch" style="margin-bottom:12px">${all.map(a=>`<button type="button" data-s="${esc(a)}" class="${sel.includes(a)?'on':''}">${esc(a)}</button>`).join('')}</div>
+      <div style="display:flex;gap:8px"><input type="text" id="rgAdd" maxlength="20" placeholder="Add app or site"><button type="button" class="go" id="rgAddB" style="width:auto;padding:11px 18px;font-size:14px">Add</button></div>
+    </div>`;
+  }
+
+  function renderLiveSyncSection(liveCfg,nativeApk){
+    if(!nativeApk){
+      return `<div class="hb-sec">
+        <h4>🔄 Live Auto-Updates (GitHub → Vercel → APK) <span class="hb-badge">APK Ready</span></h4>
+        <p style="margin:0">Set <b>LIVE_APP_URL</b> in GitHub Actions Variables (or enter your Vercel URL once inside the Android APK here) so every <code>git push</code> updates the installed APK automatically while keeping native App Blocker &amp; Strict Mode active.</p>
+      </div>`;
+    }
+    const activeUrl=liveCfg&&liveCfg.activeServerUrl||'';
+    const savedUrl=liveCfg&&liveCfg.savedUrl||'';
+    const currentUrl=liveCfg&&liveCfg.currentUrl||'';
+    const mode=liveCfg&&liveCfg.mode||'';
+    const isLive=Boolean(activeUrl&&(currentUrl.startsWith(activeUrl)||mode==='custom'||(!mode&&activeUrl)));
+    const displayHost=(activeUrl||savedUrl||'').replace(/^https?:\/\//,'').replace(/\/.*$/,'');
+    return `<div class="hb-sec">
+      <h4>🔄 Live Auto-Update (GitHub → Vercel) <span class="hb-badge ${isLive?'ok':''}">${isLive?'● Live Sync':'📦 Offline Bundle'}</span></h4>
+      <p>${isLive?`Connected to <b>${esc(displayHost)}</b> — GitHub pushes to Vercel appear automatically with offline fallback built in.`:'Paste your deployed Vercel URL below so every future GitHub push updates this APK automatically without reinstalling.'}</p>
+      <input type="url" class="hb-search" id="hbLiveUrl" placeholder="https://your-app.vercel.app" value="${esc(savedUrl||activeUrl||'')}" autocomplete="off" style="margin-bottom:8px">
+      <div class="hb-row-btns" style="margin-bottom:0">
+        <button type="button" class="hb-mini p" id="hbSaveLiveBtn">Save &amp; Sync Vercel</button>
+        ${isLive?'<button type="button" class="hb-mini" id="hbCheckSyncBtn">↻ Check Update</button>':''}
+        ${(isLive||savedUrl)?'<button type="button" class="hb-mini" id="hbOfflineBtn">Use Offline Bundle</button>':''}
+      </div>
+    </div>`;
+  }
+
+  let lastSearch='';
+  function renderSheetHtml(cfg,nativeApk){
+    return `<h3>App Blocker &amp; Strict Shield</h3><p>Block distracting apps over other apps and enforce Strict Mode lock.</p>${renderPermsSection(cachedPerms,nativeApk)}<div id="hbAppsMount">${renderAppsListHtml(cfg,lastSearch)}</div>${renderLiveSyncSection(cachedLiveCfg,nativeApk)}`;
+  }
+
+  async function openBlockerSheet(){
+    const sh=$('rgSh'),body=$('rgShB');
+    if(!sh||!body)return;
+    sheetOpen=true;
+    const cfg=getRgCfg();
+    const nativeApk=isNative();
+    body.innerHTML=renderSheetHtml(cfg,nativeApk);
+    sh.classList.add('on');
+    if(nativeApk){
+      await Promise.all([refreshPerms(),refreshLiveCfg(),loadApps(false)]);
+      if(sh.classList.contains('on')){
+        body.innerHTML=renderSheetHtml(getRgCfg(),nativeApk);
+        updateClassicSettingsSummary();
+      }
+    }
+  }
+
+  document.addEventListener('click',async e=>{
+    const permBtn=e.target&&e.target.closest&&e.target.closest('[data-hb-perm]');
+    if(permBtn){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const nb=getParentBridge();
+      if(nb){
+        try{await nb.requestPermission(permBtn.dataset.hbPerm)}catch(err){showToast(err&&err.message?err.message:'Cannot open settings right now')}
+      }
+      return;
+    }
+    const appBtn=e.target&&e.target.closest&&e.target.closest('[data-hb-pkg]');
+    if(appBtn){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const cfg=getRgCfg();
+      const pkg=appBtn.dataset.hbPkg,name=appBtn.dataset.hbName||pkg;
+      const cur=Array.isArray(cfg.pkgs)&&cfg.pkgs.includes(pkg);
+      syncAppListSelection(cfg,pkg,name,!cur);
+      const mount=$('hbAppsMount');
+      if(mount)mount.innerHTML=renderAppsListHtml(cfg,lastSearch);
+      return;
+    }
+    if(e.target&&e.target.id==='hbPickSocial'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const cfg=getRgCfg();
+      cachedApps.forEach(a=>{
+        const low=(a.appName+' '+a.packageName).toLowerCase();
+        if(/instagram|youtube|tiktok|musically|snapchat|facebook|reddit|twitter|netflix|whatsapp|telegram|discord|pubg|bgmi|freefire|roblox|hotstar/.test(low)){
+          syncAppListSelection(cfg,a.packageName,a.appName,true);
+        }
+      });
+      const mount=$('hbAppsMount');
+      if(mount)mount.innerHTML=renderAppsListHtml(cfg,lastSearch);
+      showToast('⚡ Social & video apps added to blocklist');
+      return;
+    }
+    if(e.target&&e.target.id==='hbClearApps'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      const cfg=getRgCfg();
+      cfg.pkgs=[];cfg.sel=[];
+      saveRgCfg(cfg);
+      const rc=getRg();if(rc&&rc.refreshHome)rc.refreshHome();
+      updateClassicSettingsSummary();
+      const nb=getParentBridge();
+      if(nb&&isNative())nb.setBlockedApps([],{}).catch(()=>{});
+      const mount=$('hbAppsMount');
+      if(mount)mount.innerHTML=renderAppsListHtml(cfg,lastSearch);
+      return;
+    }
+    if(e.target&&e.target.id==='hbSaveLiveBtn'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if(isLocked()){showToast('🔒 Strict Mode locked — finish session before switching source');return}
+      const inp=$('hbLiveUrl');
+      const raw=(inp&&inp.value||'').trim();
+      if(!raw){showToast('Enter your Vercel URL (e.g. https://hour-app.vercel.app)');return}
+      const nb=getParentBridge();
+      if(nb&&typeof nb.setLiveServerUrl==='function'){
+        showToast('🔄 Connecting APK to Vercel live updates...');
+        try{await nb.setLiveServerUrl(raw,'custom')}catch(err){showToast('Could not save URL')}
+      }
+      return;
+    }
+    if(e.target&&e.target.id==='hbCheckSyncBtn'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if(isLocked()){showToast('🔒 Strict Mode locked — finish session before refreshing');return}
+      const nb=getParentBridge();
+      if(nb&&typeof nb.reloadLiveApp==='function'){
+        showToast('↻ Checking Vercel for latest deployment...');
+        try{await nb.reloadLiveApp()}catch(err){showToast('Sync failed — staying on current version')}
+      }
+      return;
+    }
+    if(e.target&&e.target.id==='hbOfflineBtn'){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      if(isLocked()){showToast('🔒 Strict Mode locked — finish session before switching source');return}
+      const nb=getParentBridge();
+      if(nb&&typeof nb.setLiveServerUrl==='function'){
+        showToast('📦 Switching to bundled offline APK...');
+        try{await nb.setLiveServerUrl('','offline')}catch(err){showToast('Could not switch mode')}
+      }
+    }
+  },true);
+
+  document.addEventListener('input',e=>{
+    if(e.target&&e.target.id==='hbSearch'){
+      lastSearch=e.target.value||'';
+      const mount=$('hbAppsMount');
+      if(mount){
+        const pos=e.target.selectionStart;
+        mount.innerHTML=renderAppsListHtml(getRgCfg(),lastSearch);
+        const inp=$('hbSearch');
+        if(inp){inp.focus();try{inp.setSelectionRange(pos,pos)}catch(err){}}
+      }
+    }
+  });
+
+  // Auto-refresh permissions when user returns from Android Settings
+  document.addEventListener('visibilitychange',async ()=>{
+    if(!document.hidden&&$('rgSh')&&$('rgSh').classList.contains('on')&&isNative()){
+      await Promise.all([refreshPerms(),refreshLiveCfg()]);
+      const body=$('rgShB');
+      if(body&&body.querySelector('[data-hb-perm]')){
+        body.innerHTML=renderSheetHtml(getRgCfg(),true);
+      }
+    }
+  });
+
+  // Inject App Blocker & Strict Mode controls into Classic Settings card
+  function updateClassicSettingsSummary(){
+    const el=$('clAppsCount');
+    if(!el)return;
+    const cfg=getRgCfg();
+    const count=isNative()?(Array.isArray(cfg.pkgs)?cfg.pkgs.length:0):(Array.isArray(cfg.sel)?cfg.sel.length:0);
+    el.textContent=count?(count+' app'+(count===1?'':'s')+' blocked'):'None';
+  }
+  function mountClassicSettingsCard(){
+    const tickEl=$('tick');
+    const card=tickEl&&tickEl.closest('.card');
+    if(!card||$('clStrictBox'))return;
+    const strictOn=getStrictFlag();
+    card.insertAdjacentHTML('beforeend',`
+      <div id="clStrictBox">
+        <div class="tog"><span>🔒 Strict mode<small style="display:block;color:var(--muted);font-size:11px;font-weight:500">Locks exiting, closing app &amp; ending early</small></span><input type="checkbox" class="sw" id="clStrictSw" ${strictOn?'checked':''}></div>
+        <div class="tog" style="margin-top:4px"><span>🚫 Android App Blocker<small id="clAppsCount" style="display:block;color:var(--muted);font-size:11px;font-weight:500">Configure</small></span><button class="chip" id="clAppsBtn" type="button">Manage</button></div>
+      </div>
+    `);
+    updateClassicSettingsSummary();
+    $('clStrictSw').onchange=e=>{
+      setStrictFlag(e.target.checked);
+      showToast(e.target.checked?'🔒 Strict Mode ON for focus sessions':'Strict Mode turned off');
+    };
+    $('clAppsBtn').onclick=openBlockerSheet;
+  }
+  mountClassicSettingsCard();
+
+  window.LeaveItStrictBlocker={
+    isLocked,
+    isNativeAndroid:isNative,
+    openBlockerSheet,
+    syncStrictFlag:setStrictFlag,
+    onRegainStart:opts=>beginSessionLock(opts||{}),
+    onRegainStop:forceCompleted=>unlockSession(forceCompleted),
+    getLockState:()=>({...lockState})
+  };
+
+  // On boot: restore strict session if Android or user closed/killed the process mid-Strict-Mode
+  (async function restoreIfActive(){
+    let sess=lockState.active&&lockState.strictMode&&lockState.endsAtMs>Date.now()?lockState:null;
+    const nb=getParentBridge();
+    if(nb&&isNative()){
+      try{
+        const nativeSess=await nb.getActiveSession();
+        if(nativeSess&&nativeSess.sessionActive&&nativeSess.strictLockActive&&nativeSess.endsAtMs>Date.now()){
+          sess={
+            active:true,
+            strictMode:true,
+            endsAtMs:Number(nativeSess.endsAtMs),
+            source:'native',
+            taskTitle:nativeSess.taskTitle||''
+          };
+          lockState=sess;
+          persistLock();
+        }
+      }catch(e){}
+    }
+    if(sess){
+      const rc=getRg();
+      if(rc&&typeof rc.restoreStrictSession==='function'){
+        rc.restoreStrictSession(sess);
+      }
+      syncLockUi();
+      showToast('🔒 Strict Mode session restored ('+fmtLeft(sess.endsAtMs-Date.now())+' left)');
+    }
+  })();
+})();
+</script>
+<style id="v107-ui-revamp-css">
+/* =====================================================================
+   v107: Studio-Grade UI Revamp (Typography, Precision Dials, Surfaces)
+   Preserves Light/Dark/Batman/Diwali themes, Styles, Layouts & v105/v106
+   ===================================================================== */
+
+:root {
+  --font-display: 'Outfit', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-ui: 'Plus Jakarta Sans', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+  --hairline: rgba(255, 255, 255, 0.085);
+  --hairline-strong: rgba(255, 255, 255, 0.16);
+  --sheen: rgba(255, 255, 255, 0.045);
+  --ease-ui: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+html[data-mode="light"]:not([data-diwali="on"]) {
+  --hairline: rgba(18, 25, 58, 0.09);
+  --hairline-strong: rgba(18, 25, 58, 0.17);
+  --sheen: rgba(255, 255, 255, 0.78);
+}
+
+/* Global typography & crisp rendering (leave Batman custom display intact) */
+html:not([data-batman="on"]) body,
+html:not([data-batman="on"]) #rg,
+html:not([data-batman="on"]) #rgNav,
+html:not([data-batman="on"]) #rgS,
+html:not([data-batman="on"]) #rgSh {
+  font-family: var(--font-ui);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html:not([data-batman="on"]) h1,
+html:not([data-batman="on"]) h2,
+html:not([data-batman="on"]) h3,
+html:not([data-batman="on"]) .bname,
+html:not([data-batman="on"]) .sp-brandline,
+html:not([data-batman="on"]) #rg h1,
+html:not([data-batman="on"]) #plan h2,
+html:not([data-batman="on"]) #arenaRoot h3 {
+  font-family: var(--font-display);
+}
+
+#rg .rc b,
+#rgS .c b,
+#time,
+#fmT,
+.stats b,
+.sgrid b,
+#rg .g3 b,
+#arenaRoot .ar-clock,
+#arenaRoot .ar-stat5 b,
+#arenaRoot .num,
+.pill,
+#rgStrictBadge,
+#fmStrictBadge {
+  font-variant-numeric: tabular-nums;
+}
+
+#arenaRoot .ar-clock,
+#arenaRoot .ar-code-btn,
+#arenaRoot .num,
+.sp-statsline,
+.sp-topline {
+  font-family: var(--font-mono);
+}
+
+/* Interactive tactile micro-motion */
+button,
+.it,
+.ar-card,
+.card {
+  transition: transform 150ms var(--ease-ui), border-color 180ms ease, background-color 180ms ease, box-shadow 180ms ease, opacity 150ms ease;
+}
+button:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+/* ---------- 1. Splash Screen Editorial Polish ---------- */
+#splash {
+  background: radial-gradient(85% 65% at 50% 24%, rgba(112, 230, 189, 0.11), transparent 62%), #070b0f !important;
+}
+#splash::before {
+  background: radial-gradient(ellipse at 50% 38%, rgba(126, 217, 87, 0.12), transparent 56%),
+              linear-gradient(160deg, #091015 0%, #0d161b 52%, #070b0f 100%) !important;
+}
+#splash::after {
+  inset: 16px !important;
+  border-color: rgba(217, 255, 114, 0.09) !important;
+  border-radius: 22px !important;
+}
+.sp-grid {
+  opacity: 0.09 !important;
+  background-size: 48px 48px !important;
+}
+.sp-topline {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 10px;
+  font-size: 9.5px !important;
+  letter-spacing: 0.18em !important;
+}
+.sp-live {
+  color: var(--sp-mint) !important;
+}
+.sp-emblem {
+  width: clamp(86px, 21vw, 112px) !important;
+  height: clamp(86px, 21vw, 112px) !important;
+  border-radius: 28px !important;
+  background: linear-gradient(155deg, rgba(217, 255, 114, 0.14), rgba(16, 27, 32, 0.65)) !important;
+  border: 1px solid rgba(217, 255, 114, 0.25) !important;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.14) !important;
+}
+.sp-brandline {
+  font-size: clamp(40px, 11vw, 56px) !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.04em !important;
+}
+.sp-n {
+  font-family: var(--font-display);
+  font-weight: 700 !important;
+  letter-spacing: 0.2em !important;
+  font-size: clamp(19px, 5vw, 25px) !important;
+  text-wrap: balance;
+}
+.sp-s.st {
+  gap: 8px !important;
+}
+.sp-s.st span {
+  border-radius: 10px !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(217, 255, 114, 0.16) !important;
+  padding: 6px 11px !important;
+  font-size: 11.5px !important;
+}
+.sp-q {
+  background: rgba(16, 27, 32, 0.72) !important;
+  border: 1px solid rgba(217, 255, 114, 0.16) !important;
+  border-left: 3px solid var(--sp-lime) !important;
+  border-radius: 14px !important;
+  padding: 16px 18px !important;
+  font-size: 14.5px !important;
+  color: #edf4ea !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.24) !important;
+  text-wrap: balance;
+}
+.sp-bar {
+  height: 2px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+.sp-skip-arrow {
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 10px !important;
+  background: rgba(217, 255, 114, 0.08);
+  transition: transform 160ms var(--ease-ui), background-color 160ms ease;
+}
+#splash:hover .sp-skip-arrow {
+  transform: translate(2px, -2px);
+  background: rgba(217, 255, 114, 0.18);
+}
+
+/* ---------- 2. Regain Shell Surface & Dial Upgrade ---------- */
+html[data-ui="regain"]:not([data-batman="on"]):not([data-diwali="on"]) #rg {
+  background-image: radial-gradient(88% 42% at 50% -6%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 64%);
+}
+
+html[data-ui="regain"]:not([data-batman="on"]) #rg .top {
+  align-items: center;
+  margin-bottom: 18px;
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg h1 {
+  font-size: clamp(26px, 6.2vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.12;
+  text-wrap: balance;
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .sub {
+  font-size: 13.5px;
+  letter-spacing: 0.01em;
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .pill {
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--track));
+  border-radius: 12px;
+  padding: 8px 13px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* Segmented Mode Switcher (Focus vs Questions) */
+html:not([data-batman="on"]) .seg2 {
+  background: color-mix(in srgb, var(--card) 88%, var(--bg));
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 4px;
+}
+html:not([data-batman="on"]) .seg2 i {
+  top: 4px;
+  bottom: 4px;
+  left: 4px;
+  width: calc(50% - 4px);
+  border-radius: 12px;
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+html:not([data-batman="on"]) .seg2 button {
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  min-height: 44px;
+}
+
+/* Regain Dial Card & Precision SVG Ring */
+html[data-ui="regain"]:not([data-batman="on"]) #rg .hero {
+  background: linear-gradient(168deg, color-mix(in srgb, var(--accent) 6%, var(--card)), var(--card) 72%);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 28px;
+  padding: 22px 18px 20px;
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.22), inset 0 1px 0 var(--sheen);
+}
+html[data-ui="regain"][data-mode="light"]:not([data-batman="on"]):not([data-diwali="on"]) #rg .hero {
+  box-shadow: 0 12px 34px rgba(18, 25, 58, 0.07), inset 0 1px 0 var(--sheen);
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .rw .tr,
+html[data-ui="regain"]:not([data-batman="on"]) #rg .rw .pg {
+  stroke-width: 14;
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .rw .pg {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 34%, transparent));
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .rc b {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .lab {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+}
+
+/* Preset Duration Chips & +/- Stepper Buttons */
+html[data-ui="regain"]:not([data-batman="on"]) #rg .rb {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--hairline-strong);
+  background: color-mix(in srgb, var(--track) 65%, var(--card));
+  font-size: 20px;
+  line-height: 1;
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .rb:hover {
+  border-color: var(--accent);
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .ch button,
+html[data-ui="regain"]:not([data-batman="on"]) #rgSh .ch button {
+  border-radius: 12px;
+  border: 1px solid var(--hairline-strong);
+  min-height: 40px;
+  padding: 8px 13px;
+  font-size: 13.5px;
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .ch button.on,
+html[data-ui="regain"]:not([data-batman="on"]) #rgSh .ch button.on {
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 26%, transparent);
+}
+
+/* Primary Focus CTA (.go) */
+html[data-ui="regain"]:not([data-batman="on"]) #rg .go {
+  border-radius: 18px;
+  height: 60px;
+  padding: 0 8px 0 22px;
+  font-family: var(--font-display);
+  font-size: 17.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .go:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .go i {
+  width: 78px;
+  height: 44px;
+  border-radius: 13px;
+  font-size: 18px;
+}
+html[data-ui="regain"][data-mode="light"]:not([data-batman="on"]):not([data-diwali="on"]) #rg .go {
+  background: #131829;
+  color: #ffffff;
+  box-shadow: 0 10px 24px rgba(19, 24, 41, 0.22);
+}
+
+/* Regain Action Rows (.it) & Icon Wells */
+html[data-ui="regain"]:not([data-batman="on"]) #rg .it {
+  border: 1px solid var(--hairline);
+  border-radius: 18px;
+  padding: 13px 15px;
+  min-height: 66px;
+  box-shadow: inset 0 1px 0 var(--sheen);
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .it:hover {
+  border-color: var(--hairline-strong);
+  background: color-mix(in srgb, var(--accent) 4%, var(--card));
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .it .ic {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  font-size: 19px;
+  margin-right: 0;
+  background: color-mix(in srgb, var(--accent) 12%, var(--track));
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .card2 {
+  border: 1px solid var(--hairline);
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 var(--sheen);
+}
+html[data-ui="regain"]:not([data-batman="on"]) #rg .bars i {
+  border-radius: 7px;
+}
+
+/* Precision SVG Dial Ticks */
+.dial-ticks line {
+  stroke: var(--text);
+  opacity: 0.14;
+  stroke-linecap: round;
+}
+.dial-ticks line.maj {
+  opacity: 0.34;
+}
+#rgS .dial-ticks line,
+#fm .dial-ticks line {
+  stroke: #ffffff;
+  opacity: 0.16;
+}
+#rgS .dial-ticks line.maj,
+#fm .dial-ticks line.maj {
+  opacity: 0.38;
+}
+
+/* ---------- 3. Focus Screens (#rgS & #fm) ---------- */
+html:not([data-batman="on"]):not([data-diwali="on"]) #rgS {
+  background: radial-gradient(85% 58% at 50% 18%, color-mix(in srgb, var(--accent) 16%, #0b1628), #070d18 68%, #04070d) !important;
+}
+#rgS .rr .tr,
+#rgS .rr .pg {
+  stroke-width: 13 !important;
+}
+#rgS .kn circle {
+  r: 14px;
+}
+#rgS .c b {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+#rgS .sh {
+  border-radius: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+}
+#rgS .bt button,
+#rgQb button,
+#rgCp button,
+.brk {
+  border-radius: 15px !important;
+  min-height: 50px;
+}
+#rgS .bt button:not(.p),
+#rgQb button:not(.p),
+#rgCp button:not(.p),
+.brk {
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.065) !important;
+}
+
+/* Classic #fm Focus Sanctuary */
+html:not([data-batman="on"]):not([data-diwali="on"]) #fm {
+  background: radial-gradient(85% 56% at 50% 16%, color-mix(in srgb, var(--accent) 14%, #0b111c), #07090e 72%) !important;
+}
+#fm .fm-ring circle {
+  stroke-width: 18 !important;
+}
+#fm .fm-ring .t {
+  stroke: rgba(255, 255, 255, 0.09) !important;
+}
+#fm .fm-ring .p {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--g) 38%, transparent));
+}
+#fm #fmT {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+#fm .fm-card {
+  background: rgba(255, 255, 255, 0.045) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 22px !important;
+  backdrop-filter: blur(14px);
+}
+#fm .fm-go {
+  border-radius: 18px !important;
+  height: 68px !important;
+  padding: 8px 8px 8px 24px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.85) !important;
+}
+#fm .fm-go i {
+  border-radius: 13px !important;
+  height: 50px !important;
+  width: 78px !important;
+}
+#fm .fm-np {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 20px !important;
+  padding: 5px !important;
+}
+#fm .fm-np button {
+  border-radius: 14px !important;
+  min-height: 46px;
+}
+
+/* ---------- 4. Navigation Bars & Sheets ---------- */
+html:not([data-batman="on"]) #rgNav {
+  background: color-mix(in srgb, var(--card) 82%, transparent) !important;
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--hairline-strong) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.34) !important;
+}
+html[data-mode="light"]:not([data-batman="on"]):not([data-diwali="on"]) #rgNav {
+  box-shadow: 0 12px 32px rgba(18, 25, 58, 0.13) !important;
+}
+html:not([data-batman="on"]) #rgNav button {
+  border-radius: 14px !important;
+  min-height: 46px;
+}
+html:not([data-batman="on"]) #rgNav button.on {
+  background: color-mix(in srgb, var(--accent) 17%, transparent) !important;
+}
+
+html:not([data-batman="on"]) #nav .nav-p {
+  background: color-mix(in srgb, var(--card) 84%, transparent);
+  backdrop-filter: blur(22px) saturate(160%);
+  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  border: 1px solid var(--hairline-strong);
+  border-radius: 20px !important;
+}
+html:not([data-batman="on"]) #nav .nav-p button {
+  border-radius: 14px !important;
+}
+
+/* Bottom Sheet Grabber Handle & Blocker Sheet Rows */
+#rgSh {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#rgSh .sheet {
+  border-top: 1px solid var(--hairline-strong);
+  box-shadow: 0 -20px 60px rgba(0, 0, 0, 0.45);
+}
+@media (max-width: 899px) {
+  #rgSh .sheet::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 4px;
+    border-radius: 99px;
+    background: var(--hairline-strong);
+    margin: -6px auto 14px;
+  }
+}
+.hb-sec {
+  border-color: var(--hairline) !important;
+  border-radius: 16px !important;
+}
+.hb-perm,
+.hb-app {
+  border-radius: 13px !important;
+  border-color: var(--hairline) !important;
+  min-height: 52px;
+}
+.hb-perm:hover,
+.hb-app:hover {
+  border-color: var(--hairline-strong) !important;
+}
+
+/* ---------- 5. Classic Cards, Header, Planner & Arena Polish ---------- */
+html:not([data-batman="on"]):not([data-style="arcade"]) .logo {
+  border-radius: 13px;
+  background: linear-gradient(145deg, var(--accent), color-mix(in srgb, var(--accent) 68%, #111));
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 28%, transparent);
+  animation: none;
+}
+html:not([data-batman="on"]):not([data-style="arcade"]) .bname {
+  background: none;
+  color: var(--text);
+  animation: none;
+  letter-spacing: 0.08em;
+  font-weight: 800;
+}
+html:not([data-batman="on"]) .app > header .q,
+html:not([data-batman="on"]) .app > header #focusBtn {
+  min-height: 38px;
+  border-radius: 12px;
+  border: 1px solid var(--hairline-strong);
+}
+
+html:not([data-batman="on"]):not([data-style="command"]):not([data-style="arcade"]):not([data-layout="aurora"]) .app > .card {
+  border-radius: 22px;
+  border-color: var(--hairline);
+  box-shadow: inset 0 1px 0 var(--sheen);
+}
+#nm, #gm, #ts {
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#nm .nm-box, #ts .tsb {
+  border: 1px solid var(--hairline-strong);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+html:not([data-batman="on"]) #timerCard .ring .tr,
+html:not([data-batman="on"]) #timerCard .ring .pg {
+  stroke-width: 10;
+}
+html:not([data-batman="on"]) #timerCard .time {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* Planner polish */
+html:not([data-batman="on"]) #plan .plan-hero {
+  border-radius: 20px;
+  border-color: var(--hairline-strong);
+}
+html:not([data-batman="on"]) #plan .pt {
+  border-radius: 16px;
+  border-color: var(--hairline);
+}
+
+/* Arena polish */
+html:not([data-batman="on"]) #arenaRoot .ar-card {
+  border-radius: 22px;
+  border-color: var(--hairline);
+  box-shadow: inset 0 1px 0 var(--sheen);
+}
+html:not([data-batman="on"]) #arenaRoot .ar-seg3,
+html:not([data-batman="on"]) #arenaRoot .ar-seg4 {
+  border-radius: 16px;
+  border-color: var(--hairline);
+}
+html:not([data-batman="on"]) #arenaRoot .ar-seg3 button,
+html:not([data-batman="on"]) #arenaRoot .ar-seg4 button,
+html:not([data-batman="on"]) #arenaRoot .ar-seg2 button {
+  border-radius: 12px;
+  min-height: 40px;
+}
+html:not([data-batman="on"]) #arenaRoot .ar-go {
+  border-radius: 16px;
+}
+html:not([data-batman="on"]) #arenaRoot .ar-go i {
+  border-radius: 12px;
+}
+html:not([data-batman="on"]) #arenaRoot .ar-in {
+  border-radius: 13px;
+  border-width: 1.5px;
+}
+</style>
+<script id="v107-ui-revamp-js">
+(function(){
+  'use strict';
+  const NS='http://www.w3.org/2000/svg';
+  const DIAL_SPECS=[
+    {sel:'#rg .rw svg',cx:120,cy:120,rIn:82,rOut:86,rMaj:79},
+    {sel:'#rgS .rr svg',cx:130,cy:130,rIn:97,rOut:102,rMaj:93},
+    {sel:'#timerCard .ring svg',cx:60,cy:60,rIn:41,rOut:43.5,rMaj:39},
+    {sel:'#fm .fm-ring svg',cx:100,cy:100,rIn:59,rOut:63,rMaj:56}
+  ];
+
+  function injectTicksInto(svg,spec){
+    if(!svg||svg.querySelector('.dial-ticks'))return;
+    const g=document.createElementNS(NS,'g');
+    g.setAttribute('class','dial-ticks');
+    g.setAttribute('aria-hidden','true');
+    const frag=document.createDocumentFragment();
+    for(let i=0;i<60;i++){
+      const isMaj=i%5===0;
+      const a=(i*6)*Math.PI/180;
+      const r1=isMaj?spec.rMaj:spec.rIn;
+      const r2=spec.rOut;
+      const line=document.createElementNS(NS,'line');
+      line.setAttribute('x1',(spec.cx+r1*Math.cos(a)).toFixed(2));
+      line.setAttribute('y1',(spec.cy+r1*Math.sin(a)).toFixed(2));
+      line.setAttribute('x2',(spec.cx+r2*Math.cos(a)).toFixed(2));
+      line.setAttribute('y2',(spec.cy+r2*Math.sin(a)).toFixed(2));
+      line.setAttribute('stroke-width',isMaj?'1.6':'0.9');
+      if(isMaj)line.setAttribute('class','maj');
+      frag.appendChild(line);
+    }
+    g.appendChild(frag);
+    svg.insertBefore(g,svg.firstChild);
+  }
+
+  function applyDialTicks(){
+    DIAL_SPECS.forEach(spec=>{
+      document.querySelectorAll(spec.sel).forEach(svg=>injectTicksInto(svg,spec));
+    });
+  }
+
+  applyDialTicks();
+  if(typeof MutationObserver!=='undefined'){
+    let raf=0;
+    const obs=new MutationObserver(()=>{
+      if(raf)return;
+      raf=requestAnimationFrame(()=>{raf=0;applyDialTicks()});
+    });
+    const targets=[document.getElementById('rgMain'),document.getElementById('rgS'),document.getElementById('app')];
+    targets.forEach(t=>{if(t)obs.observe(t,{childList:true,subtree:true})});
+  }
+})();
+</script>
+<style id="v108-product-tour-css">
+/* =====================================================================
+   v108: Animated Interactive Product Tour & Per-Page First-Visit Coach
+   ===================================================================== */
+#hourTour {
+  position: fixed;
+  inset: 0;
+  z-index: 2200;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+#hourTour.on {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+#htClickShield {
+  position: fixed;
+  inset: 0;
+  background: transparent;
+}
+#htSpot {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 20px;
+  box-shadow:
+    0 0 0 9999px rgba(5, 8, 16, 0.74),
+    0 0 0 2px var(--accent, #7ed957),
+    0 0 28px color-mix(in srgb, var(--accent, #7ed957) 42%, transparent);
+  pointer-events: none;
+  transition:
+    top 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    width 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    height 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-radius 360ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+html[data-mode="light"]:not([data-diwali="on"]) #htSpot {
+  box-shadow:
+    0 0 0 9999px rgba(13, 18, 40, 0.56),
+    0 0 0 2px var(--accent, #7c6cff),
+    0 0 24px color-mix(in srgb, var(--accent, #7c6cff) 38%, transparent);
+}
+#htSpot::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border-radius: inherit;
+  border: 1.5px solid color-mix(in srgb, var(--accent, #7ed957) 55%, transparent);
+  animation: htRadar 2.1s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+  pointer-events: none;
+}
+@keyframes htRadar {
+  0% { transform: scale(0.98); opacity: 0.8; }
+  75% { transform: scale(1.045); opacity: 0; }
+  100% { transform: scale(1.045); opacity: 0; }
+}
+#htCard {
+  position: fixed;
+  width: min(356px, calc(100vw - 24px));
+  background: color-mix(in srgb, var(--card, #181c30) 94%, var(--bg, #0f1220));
+  color: var(--text, #eef0ff);
+  border: 1px solid var(--hairline-strong, rgba(255, 255, 255, 0.16));
+  border-radius: 22px;
+  padding: 17px 18px 16px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.52), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  font-family: var(--font-ui, system-ui, sans-serif);
+  transition:
+    top 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    left 360ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 220ms ease,
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 2;
+}
+html[data-mode="light"]:not([data-diwali="on"]) #htCard {
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 22px 54px rgba(18, 25, 58, 0.24);
+}
+#htCard.swap {
+  opacity: 0.72;
+  transform: translateY(4px) scale(0.985);
+}
+.ht-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.ht-badge {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent, #7ed957);
+}
+.ht-skip {
+  border: 1px solid var(--hairline-strong, rgba(255, 255, 255, 0.16));
+  background: transparent;
+  color: var(--muted, #9aa3b2);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 5px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.ht-skip:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+.ht-title {
+  margin: 0 0 6px;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.ht-desc {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--muted, #9aa3b2);
+}
+.ht-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 15px;
+}
+.ht-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.ht-dots i {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--track, rgba(255, 255, 255, 0.18));
+  transition: width 220ms cubic-bezier(0.16, 1, 0.3, 1), background-color 220ms ease;
+}
+.ht-dots i.on {
+  width: 18px;
+  background: var(--accent, #7ed957);
+}
+.ht-acts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.ht-btn {
+  border: 1px solid var(--hairline-strong, rgba(255, 255, 255, 0.16));
+  background: var(--track, rgba(255, 255, 255, 0.08));
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  min-height: 38px;
+  padding: 7px 13px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.ht-btn.p {
+  border-color: transparent;
+  background: var(--accent, #7ed957);
+  color: #06140a;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent, #7ed957) 30%, transparent);
+}
+html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
+  color: #ffffff;
+}
+.ht-settings-box {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--track);
+}
+.ht-settings-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.ht-settings-btns button {
+  flex: 1;
+  font-size: 12.5px;
+  padding: 10px 8px;
+}
+@media (prefers-reduced-motion: reduce) {
+  #htSpot::after { animation: none !important; }
+  #hourTour, #htSpot, #htCard, .ht-dots i { transition: none !important; }
+}
+</style>
+<script id="v108-product-tour-js">
+(()=>{
+  'use strict';
+  const STORAGE_KEY='leaveit_tours_v108';
+  let store={auto:true,seen:{}};
+  try{
+    const parsed=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    if(parsed&&typeof parsed==='object'){
+      store.auto=parsed.auto!==false;
+      store.seen=parsed.seen&&typeof parsed.seen==='object'?parsed.seen:{};
+    }
+  }catch(e){}
+  const saveStore=()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(store))}catch(e){}};
+
+  // Build tour overlay once
+  const wrap=document.createElement('div');
+  wrap.id='hourTour';
+  wrap.setAttribute('role','dialog');
+  wrap.setAttribute('aria-modal','true');
+  wrap.setAttribute('aria-label','Interactive feature tour');
+  wrap.innerHTML=`
+    <div id="htClickShield"></div>
+    <div id="htSpot"></div>
+    <div id="htCard">
+      <div class="ht-head">
+        <span class="ht-badge" id="htBadge">TOUR</span>
+        <button type="button" class="ht-skip" id="htSkip">Skip</button>
+      </div>
+      <h3 class="ht-title" id="htTitle"></h3>
+      <p class="ht-desc" id="htDesc"></p>
+      <div class="ht-foot">
+        <div class="ht-dots" id="htDots"></div>
+        <div class="ht-acts">
+          <button type="button" class="ht-btn" id="htPrev">Back</button>
+          <button type="button" class="ht-btn p" id="htNext">Next</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(wrap);
+
+  const spot=document.getElementById('htSpot');
+  const card=document.getElementById('htCard');
+  const badgeEl=document.getElementById('htBadge');
+  const titleEl=document.getElementById('htTitle');
+  const descEl=document.getElementById('htDesc');
+  const dotsEl=document.getElementById('htDots');
+  const prevBtn=document.getElementById('htPrev');
+  const nextBtn=document.getElementById('htNext');
+  const skipBtn=document.getElementById('htSkip');
+
+  // Tour definitions per page/section
+  const TOURS={
+    'rg:home':{
+      label:'FOCUS HOME',
+      steps:[
+        {
+          find:()=>document.querySelector('#rgMain .top'),
+          title:'Welcome to Hour',
+          desc:'Your personal focus sanctuary. Track your daily focus streak right from the header badge.'
+        },
+        {
+          find:()=>document.querySelector('#rgMain .seg2'),
+          title:'Focus & Question Modes',
+          desc:'Switch anytime between deep Focus blocks and fast per-question speed drills.'
+        },
+        {
+          find:()=>document.querySelector('#rgMain .hero'),
+          title:'Precision Timer Dial',
+          desc:'Pick a preset or fine-tune minutes with − and +, then press Start to launch full-screen Focus Mode.'
+        },
+        {
+          find:()=>document.querySelector('#rgMain [data-a="apps"]'),
+          title:'App Blocker & Shield',
+          desc:'Choose distracting apps to block over other apps during sessions (supports real installed apps in the Android APK).'
+        },
+        {
+          find:()=>{
+            const inp=document.querySelector('#rgMain input[data-k="strict"]');
+            return inp?inp.closest('.it'):null;
+          },
+          title:'Strict Mode & Pomodoro',
+          desc:'Enable Strict Mode to prevent leaving or closing early mid-session, or turn on Pomodoro auto-breaks.'
+        },
+        {
+          find:()=>document.getElementById('rgNav'),
+          title:'Navigate Every Tool',
+          desc:'Jump between Focus, the Classic Timer workspace, Stats, Live Arena duels, and more tools under ⋯ More.'
+        }
+      ]
+    },
+    'rg:stats':{
+      label:'FOCUS STATS',
+      steps:[
+        {
+          find:()=>document.querySelector('#rgMain .bars')?.closest('.card2'),
+          title:'7-Day Consistency Chart',
+          desc:'Compare each day’s focus minutes against your daily target bar at a glance.'
+        },
+        {
+          find:()=>document.getElementById('rgGoal')?.closest('.card2'),
+          title:'Adjust Your Daily Goal',
+          desc:'Update your daily focus target here — your Home dial ring adapts automatically.'
+        }
+      ]
+    },
+    'arena':{
+      label:'LIVE ARENA',
+      steps:[
+        {
+          find:()=>document.querySelector('#arenaRoot .ar-top'),
+          title:'Leave It Arena',
+          desc:'Compete live with friends and peers with synchronized Focus and Question timers.'
+        },
+        {
+          find:()=>document.querySelector('#arenaRoot .ar-seg4'),
+          title:'Four Arena Spaces',
+          desc:'Switch between Live Rooms, Friends, Global Leaderboard, and your Arena Profile.'
+        },
+        {
+          find:()=>document.querySelector('#arenaRoot .ar-card'),
+          title:'Rooms & Ephemeral Chat',
+          desc:'Create a room code or join a friend to race timers together with auto-vanishing rivalry & cheer messages.'
+        }
+      ]
+    },
+    'cl:home':{
+      label:'QUESTION TIMER',
+      steps:[
+        {
+          find:()=>document.getElementById('timerCard'),
+          title:'Question Timing Discipline',
+          desc:'Solve before the checkpoint or auto-leave stuck questions instead of burning valuable exam minutes.'
+        },
+        {
+          find:()=>document.getElementById('dgCard'),
+          title:'Daily Question Target',
+          desc:'Tune your daily question goal with −5 / +5 and track live XP and streak progress.'
+        },
+        {
+          find:()=>document.getElementById('focusBtn'),
+          title:'Distraction-Free Focus',
+          desc:'Tap Focus for full-screen mode with silent Tick friend alerts and quick duel replies.'
+        },
+        {
+          find:()=>document.getElementById('nav'),
+          title:'Complete Study Suite',
+          desc:'Open Mock Tests, Test Scheduler, Daily Planner, Arena, Question Stats, Rank, and Settings anytime.'
+        }
+      ]
+    },
+    'cl:mock':{
+      label:'MOCK TESTS',
+      steps:[
+        {
+          find:()=>document.getElementById('mockCard'),
+          title:'Timed Mock Paper Runner',
+          desc:'Simulate real exams by subject, chapter selection, question count, and timer limit—with complete session history below.'
+        }
+      ]
+    },
+    'cl:tests':{
+      label:'TEST TRACKER',
+      steps:[
+        {
+          find:()=>document.getElementById('uCard'),
+          title:'Schedule Upcoming Exams',
+          desc:'Add upcoming mock dates, syllabus chapters, and book chapters to unlock countdowns and smart reminders.'
+        },
+        {
+          find:()=>document.getElementById('tOv'),
+          title:'Performance Analytics',
+          desc:'Track score curves, subject strengths, and OMR vs CBT accuracy trends over time.'
+        }
+      ]
+    },
+    'cl:plan':{
+      label:'DAILY PLANNER',
+      steps:[
+        {
+          find:()=>document.querySelector('#plan .plan-hero'),
+          title:'Weekly Command Centre',
+          desc:'Select any day to plan study blocks, mock targets, and book chapters.'
+        },
+        {
+          find:()=>document.querySelector('#plan .pp-add')||document.getElementById('plan'),
+          title:'Launch Into Focus & Arena',
+          desc:'Start any task straight into synced Focus Mode and earn XP + Arena rewards as soon as you mark it done.'
+        }
+      ]
+    },
+    'cl:stats':{
+      label:'ANALYTICS',
+      steps:[
+        {
+          find:()=>document.getElementById('progressCard'),
+          title:'15-Week Heatmap & Insights',
+          desc:'Inspect your long-term practice heatmap, average solve time, and time-limit discipline.'
+        }
+      ]
+    },
+    'cl:rank':{
+      label:'XP & RANK',
+      steps:[
+        {
+          find:()=>document.getElementById('xpCard'),
+          title:'Rank Progression',
+          desc:'Earn XP from solved questions, planner completions, streaks, and Arena sessions to climb ranks.'
+        }
+      ]
+    },
+    'cl:settings':{
+      label:'SETTINGS',
+      steps:[
+        {
+          find:()=>document.getElementById('magicMix'),
+          title:'Magic Mix & Themes',
+          desc:'Mix Layout (Classic / Aurora / Focus), Visual Style, and Color Palette in one tap—plus Light, Dark, Diwali & Batman themes.'
+        },
+        {
+          find:()=>document.getElementById('clStrictBox')||document.getElementById('backupBox'),
+          title:'App Blocker & Local Backups',
+          desc:'Manage native Android App Blocker permissions, Strict Mode lock, guided tours, and encrypted offline backups.'
+        }
+      ]
+    }
+  };
+
+  function getCurrentPageKey(){
+    const root=document.documentElement;
+    const ui=root.dataset.ui||'regain';
+    if(ui==='regain'){
+      const rg=root.dataset.rg||'home';
+      if(rg==='home')return 'rg:home';
+      if(rg==='stats')return 'rg:stats';
+      if(rg==='arena')return 'arena';
+      if(rg==='old'){
+        const tab=document.body.dataset.tab||'home';
+        if(tab==='arena')return 'arena';
+        return 'cl:'+tab;
+      }
+      return 'rg:home';
+    }
+    const tab=document.body.dataset.tab||'home';
+    if(tab==='arena')return 'arena';
+    return 'cl:'+tab;
+  }
+
+  function isElementVisible(el){
+    if(!el||!el.isConnected)return false;
+    const st=getComputedStyle(el);
+    if(st.display==='none'||st.visibility==='hidden'||parseFloat(st.opacity)===0)return false;
+    const r=el.getBoundingClientRect();
+    return r.width>16&&r.height>16;
+  }
+
+  function resolveSteps(pageKey){
+    const def=TOURS[pageKey];
+    if(!def)return null;
+    const valid=def.steps
+      .map(s=>({el:s.find(),title:s.title,desc:s.desc}))
+      .filter(s=>isElementVisible(s.el));
+    if(!valid.length)return null;
+    return {label:def.label,steps:valid};
+  }
+
+  function isBlockingUiOpen(){
+    const sp=document.getElementById('splash');
+    if(sp&&!sp.classList.contains('out')&&getComputedStyle(sp).display!=='none')return true;
+    const nm=document.getElementById('nm');
+    if(nm&&nm.classList.contains('on'))return true;
+    if(document.body.classList.contains('focus'))return true;
+    const rgS=document.getElementById('rgS');
+    if(rgS&&rgS.classList.contains('on'))return true;
+    if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked&&window.LeaveItStrictBlocker.isLocked())return true;
+    for(const id of ['rgSh','hx','ts','gm']){
+      const el=document.getElementById(id);
+      if(el&&el.classList.contains('on'))return true;
+    }
+    return false;
+  }
+
+  let activeTour=null; // { key, label, steps, index }
+  let autoTimer=0;
+  let settleTimer=0;
+
+  function clamp(v,min,max){return Math.max(min,Math.min(max,v))}
+
+  function positionSpotlightAndCard(){
+    if(!activeTour||!wrap.classList.contains('on'))return;
+    const step=activeTour.steps[activeTour.index];
+    if(!step||!isElementVisible(step.el))return;
+
+    const r=step.el.getBoundingClientRect();
+    const pad=6;
+    const vw=window.innerWidth;
+    const vh=window.innerHeight;
+
+    const sx=clamp(r.left-pad,4,vw-12);
+    const sy=clamp(r.top-pad,4,vh-12);
+    const sw=clamp(r.width+pad*2,24,vw-8);
+    const sh=clamp(r.height+pad*2,24,vh-8);
+
+    const cs=getComputedStyle(step.el);
+    const rad=Math.min(28,Math.max(12,(parseFloat(cs.borderRadius)||16)+4));
+
+    spot.style.left=sx.toFixed(1)+'px';
+    spot.style.top=sy.toFixed(1)+'px';
+    spot.style.width=sw.toFixed(1)+'px';
+    spot.style.height=sh.toFixed(1)+'px';
+    spot.style.borderRadius=rad+'px';
+
+    // Measure card size and pick best placement (below, above, or inside safe viewport)
+    const cr=card.getBoundingClientRect();
+    const cw=cr.width||Math.min(356,vw-24);
+    const ch=cr.height||185;
+    const margin=12;
+    const gap=12;
+
+    const cx=clamp(sx+sw/2-cw/2,margin,vw-cw-margin);
+    let cy=0;
+    const spaceBelow=vh-(sy+sh+gap+margin);
+    const spaceAbove=sy-(gap+margin);
+
+    if(spaceBelow>=ch){
+      cy=sy+sh+gap;
+    }else if(spaceAbove>=ch){
+      cy=sy-ch-gap;
+    }else if(spaceBelow>=spaceAbove&&spaceBelow>90){
+      cy=clamp(sy+sh+gap,margin,vh-ch-margin);
+    }else{
+      cy=clamp(sy>vh*0.45?margin:vh-ch-margin,margin,vh-ch-margin);
+    }
+
+    card.style.left=cx.toFixed(1)+'px';
+    card.style.top=cy.toFixed(1)+'px';
+  }
+
+  function renderStep(shouldScroll){
+    if(!activeTour)return;
+    const {label,steps,index}=activeTour;
+    const step=steps[index];
+    if(!step){closeTour(true);return}
+
+    badgeEl.textContent=`${label} · ${index+1}/${steps.length}`;
+    titleEl.textContent=step.title;
+    descEl.textContent=step.desc;
+    dotsEl.innerHTML=steps.map((_,i)=>`<i class="${i===index?'on':''}"></i>`).join('');
+    prevBtn.style.visibility=index>0?'visible':'hidden';
+    nextBtn.textContent=index>=steps.length-1?'Got it ✓':'Next →';
+
+    card.classList.add('swap');
+    clearTimeout(settleTimer);
+    if(shouldScroll){
+      try{step.el.scrollIntoView({behavior:'smooth',block:'center',inline:'nearest'})}catch(e){}
+    }
+    requestAnimationFrame(()=>{
+      positionSpotlightAndCard();
+      card.classList.remove('swap');
+    });
+    settleTimer=setTimeout(positionSpotlightAndCard,260);
+  }
+
+  function startTour(pageKey,force){
+    const key=pageKey||getCurrentPageKey();
+    if(!force&&(!store.auto||store.seen[key]))return false;
+    if(isBlockingUiOpen()&&!force)return false;
+    const resolved=resolveSteps(key);
+    if(!resolved)return false;
+
+    tourOpenedAt=Date.now();
+    activeTour={key,label:resolved.label,steps:resolved.steps,index:0};
+    wrap.classList.add('on');
+    renderStep(true);
+    return true;
+  }
+
+  function closeTour(markSeen){
+    clearTimeout(settleTimer);
+    if(activeTour&&markSeen!==false){
+      store.seen[activeTour.key]=true;
+      saveStore();
+    }
+    activeTour=null;
+    wrap.classList.remove('on');
+  }
+
+  prevBtn.onclick=()=>{
+    if(!activeTour||activeTour.index<=0)return;
+    activeTour.index--;
+    renderStep(true);
+  };
+  nextBtn.onclick=()=>{
+    if(!activeTour)return;
+    if(activeTour.index<activeTour.steps.length-1){
+      activeTour.index++;
+      renderStep(true);
+    }else{
+      closeTour(true);
+    }
+  };
+  skipBtn.onclick=()=>closeTour(true);
+
+  window.addEventListener('resize',()=>{if(activeTour)positionSpotlightAndCard()});
+  window.addEventListener('scroll',()=>{if(activeTour)positionSpotlightAndCard()},true);
+  document.addEventListener('keydown',e=>{
+    if(!activeTour)return;
+    if(e.key==='Escape'){e.preventDefault();closeTour(true)}
+    else if(e.key==='ArrowRight'||e.key==='Enter'){e.preventDefault();nextBtn.click()}
+    else if(e.key==='ArrowLeft'){e.preventDefault();prevBtn.click()}
+  });
+
+  function scheduleAutoTour(delay){
+    clearTimeout(autoTimer);
+    autoTimer=setTimeout(()=>{
+      if(activeTour||!store.auto||isBlockingUiOpen())return;
+      const key=getCurrentPageKey();
+      if(!store.seen[key])startTour(key,false);
+    },delay||520);
+  }
+
+  let tourOpenedAt=0;
+  document.getElementById('htClickShield').onclick=()=>{
+    if(activeTour&&Date.now()-tourOpenedAt>350)closeTour(true);
+  };
+
+  // Observe page/tab switches, splash dismissal, and name modal dismissal
+  if(typeof MutationObserver!=='undefined'){
+    const obs=new MutationObserver(()=>{
+      if(activeTour&&isBlockingUiOpen()){closeTour(false);return}
+      scheduleAutoTour(680);
+    });
+    obs.observe(document.documentElement,{attributes:true,attributeFilter:['data-ui','data-rg','data-layout']});
+    obs.observe(document.body,{attributes:true,attributeFilter:['data-tab','class']});
+    for(const id of ['splash','nm','rgS','rgSh','hx','ts']){
+      const el=document.getElementById(id);
+      if(el)obs.observe(el,{attributes:true,attributeFilter:['class','style']});
+    }
+    // Also inject tour trigger into Regain "More" bottom sheet whenever it opens
+    const rgShB=document.getElementById('rgShB');
+    if(rgShB){
+      new MutationObserver(()=>{
+        const h3=rgShB.querySelector('h3');
+        if(h3&&h3.textContent.trim()==='More'&&!rgShB.querySelector('.ht-more-btn')){
+          const btn=document.createElement('button');
+          btn.type='button';
+          btn.className='ln ht-more-btn';
+          btn.innerHTML='<span>🧭</span>Interactive App Tour';
+          btn.onclick=()=>{
+            const sh=document.getElementById('rgSh');
+            if(sh)sh.classList.remove('on');
+            setTimeout(()=>{
+              const cur=getCurrentPageKey();
+              if(!startTour(cur,true))startTour('rg:home',true);
+            },180);
+          };
+          rgShB.appendChild(btn);
+        }
+      }).observe(rgShB,{childList:true});
+    }
+  }
+
+  // Mount Tour controls inside Classic Settings card
+  function mountSettingsTourControls(){
+    const anchor=document.getElementById('clStrictBox')||document.getElementById('tick')?.closest('.card');
+    if(!anchor||document.getElementById('htSettingsBox'))return;
+    const host=anchor.id==='clStrictBox'?anchor.parentElement:anchor;
+    if(!host)return;
+    host.insertAdjacentHTML('beforeend',`
+      <div id="htSettingsBox" class="ht-settings-box">
+        <div class="tog">
+          <span>🧭 Guided page tours<small style="display:block;color:var(--muted);font-size:11px;font-weight:500">Show an animated guide on first visit to each page</small></span>
+          <input type="checkbox" class="sw" id="htAutoSw" ${store.auto?'checked':''}>
+        </div>
+        <div class="ht-settings-btns">
+          <button type="button" class="chip" id="htReplayBtn">▶ Tour this page</button>
+          <button type="button" class="chip" id="htResetAllBtn">↺ Reset all tours</button>
+        </div>
+      </div>
+    `);
+    document.getElementById('htAutoSw').onchange=e=>{
+      store.auto=e.target.checked;
+      saveStore();
+    };
+    document.getElementById('htReplayBtn').onclick=()=>startTour(getCurrentPageKey(),true);
+    document.getElementById('htResetAllBtn').onclick=()=>{
+      store.seen={};
+      store.auto=true;
+      saveStore();
+      const sw=document.getElementById('htAutoSw');
+      if(sw)sw.checked=true;
+      const rc=window.LeaveItRegainControl;
+      if(rc&&rc.toast)rc.toast('🧭 All page tours reset — visit any tab to view its guide');
+    };
+  }
+  mountSettingsTourControls();
+
+  window.LeaveItTour={
+    start:startTour,
+    replayCurrent:()=>startTour(getCurrentPageKey(),true),
+    resetAll:()=>{store.seen={};store.auto=true;saveStore()},
+    isActive:()=>Boolean(activeTour)
+  };
+
+  scheduleAutoTour(900);
+})();
+</script>
 </body>
 </html>
 

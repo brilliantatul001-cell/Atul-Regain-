@@ -11,7 +11,8 @@
     "clean": "rm -rf dist server.js",
     "lint": "tsc --noEmit",
     "apk:prepare": "node scripts/prepare-apk.mjs",
-    "apk:sync": "npm run apk:prepare && npx cap sync android"
+    "apk:native": "node scripts/apply-android-native.mjs",
+    "apk:sync": "npm run apk:prepare && node scripts/apply-android-native.mjs && npx cap sync android"
   },
   "dependencies": {
     "@capacitor/android": "^8.6.2",

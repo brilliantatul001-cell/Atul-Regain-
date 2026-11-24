@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="hour_accessibility_description">Detects distracting apps during Focus sessions and locks Strict Mode until your timer finishes. Hour never reads passwords or private screen text.</string>
+    <string name="hour_device_admin_label">Hour Strict Focus Shield</string>
+    <string name="hour_device_admin_description">Protects Hour from being closed or uninstalled while a Strict Mode focus timer is running.</string>
+</resources>

@@ -4561,29 +4561,16 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   },true);
 })();
 </script>
-<script id="v102-apk-bridge">
+<script id="v102-pwa-bridge">
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
-  const cap=window.Capacitor||(window.parent&&window.parent.Capacitor)||null;
-  const inCap=!!(cap&&(typeof cap.isNativePlatform==='function'?cap.isNativePlatform():cap.platform&&cap.platform!=='web'));
-  const inWv=inCap||/; wv\)/i.test(navigator.userAgent);
+  const inWv=/; wv\)/i.test(navigator.userAgent);
   const inIframe=window.parent&&window.parent!==window;
 
   function showToast(msg){
     const o=$('rgTo');
     if(o){o.textContent=msg;o.classList.add('on');clearTimeout(o._t);o._t=setTimeout(()=>o.classList.remove('on'),2600)}
-  }
-
-  // Hide browser install bar when running inside native APK or standalone app
-  if(inCap){
-    const ib=$('instBar');if(ib)ib.hidden=true;
-    try{
-      const sb=cap.Plugins&&cap.Plugins.StatusBar;
-      if(sb){sb.setStyle&&sb.setStyle({style:'DARK'});sb.setBackgroundColor&&sb.setBackgroundColor({color:'#0f1220'})}
-      const sp=cap.Plugins&&cap.Plugins.SplashScreen;
-      if(sp&&sp.hide)sp.hide();
-    }catch(e){}
   }
 
   // Bridge install prompt when hosted inside the Vite PWA shell iframe
@@ -4640,33 +4627,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     return false;
   }
 
-  let backArmed=0;
-  function handleBackPress(){
-    if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){
-      showToast('🔒 Strict Mode locked — cannot exit app');
-      return true;
-    }
-    if(dismissOverlay())return true;
-    const now=Date.now();
-    if(now-backArmed<2000)return false;
-    backArmed=now;
-    showToast('Press Back again to exit');
-    return true;
-  }
-
-  if(inCap&&cap.Plugins&&cap.Plugins.App&&cap.Plugins.App.addListener){
-    cap.Plugins.App.addListener('backButton',()=>{
-      if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){
-        showToast('🔒 Strict Mode locked — cannot exit app');
-        return;
-      }
-      if(!handleBackPress()){
-        cap.Plugins.App.exitApp&&cap.Plugins.App.exitApp();
-      }
-    });
-  }
-
-  // Android WebView / APK reliable export fallback (Web Share API -> Clipboard)
+  // WebView reliable export fallback (Web Share API -> Clipboard)
   if(inWv){
     const origClick=HTMLAnchorElement.prototype.click;
     HTMLAnchorElement.prototype.click=function(){
@@ -8479,8 +8440,8 @@ body.simple-mode .app > [data-tab="rank"] {
   }
 }
 </style>
-<style id="v106-android-blocker-css">
-/* v106: Android Native App Blocker & Strict Mode Hard Lock */
+<style id="v106-strict-mode-css">
+/* v106: Strict Mode Focus Lock & Distraction Blocklist */
 html:not([data-ui="regain"]) #rgSh.on{display:flex!important;z-index:120!important}
 #rgS.rg-strict-locked #rgPs,
 #rgS.rg-strict-locked #rgBrk{display:none!important}
@@ -8522,85 +8483,25 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
 .hb-sec{margin-top:14px;padding:12px;border-radius:18px;border:1px solid var(--track);background:color-mix(in srgb,var(--card) 75%,var(--bg))}
 .hb-sec h4{margin:0 0 4px;font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:space-between;gap:8px}
 .hb-sec p{margin:0 0 10px;font-size:12px;color:var(--muted);line-height:1.45}
-.hb-perms{display:grid;gap:7px}
-.hb-perm{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border-radius:13px;border:1px solid var(--track);background:var(--card);color:var(--text);text-align:left;width:100%;font:inherit;cursor:pointer}
-.hb-perm b{display:block;font-size:13px;font-weight:700}
-.hb-perm small{display:block;font-size:11px;color:var(--muted);margin-top:2px}
 .hb-badge{flex:none;padding:5px 10px;border-radius:99px;font-size:11px;font-weight:800;background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
 .hb-badge.ok{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
-.hb-search{width:100%;padding:10px 13px;border-radius:12px;border:1.5px solid var(--track);background:var(--bg);color:var(--text);font:inherit;font-size:13px;margin-bottom:10px}
-.hb-applist{display:grid;gap:6px;max-height:260px;overflow-y:auto;padding-right:2px}
-.hb-app{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border-radius:12px;border:1px solid var(--track);background:var(--card);color:var(--text);width:100%;text-align:left;font:inherit;cursor:pointer}
-.hb-app.on{border-color:color-mix(in srgb,var(--accent) 70%,transparent);background:color-mix(in srgb,var(--accent) 13%,var(--card))}
-.hb-app-l{display:flex;align-items:center;gap:10px;min-width:0;flex:1}
-.hb-ico{width:30px;height:30px;border-radius:8px;flex:none;object-fit:cover;background:var(--track)}
-.hb-ico-fb{width:30px;height:30px;border-radius:8px;flex:none;display:grid;place-items:center;background:var(--track);font-size:15px}
-.hb-app-meta{min-width:0;flex:1}
-.hb-app-meta b{display:block;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hb-app-meta small{display:block;font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hb-chk{width:22px;height:22px;border-radius:7px;border:2px solid var(--track);display:grid;place-items:center;font-size:13px;font-weight:900;flex:none;color:#06140a}
-.hb-app.on .hb-chk{background:var(--accent);border-color:var(--accent)}
-.hb-row-btns{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.hb-mini{padding:7px 12px;border-radius:99px;border:1px solid var(--track);background:var(--card);color:var(--text);font:inherit;font-size:12px;font-weight:700;cursor:pointer}
-.hb-mini.p{background:var(--accent);border-color:var(--accent);color:#06140a}
 #clStrictBox{margin-top:12px;padding-top:12px;border-top:1px solid var(--track)}
 </style>
-<script id="v106-android-blocker">
+<script id="v106-strict-mode">
 (function(){
   'use strict';
   const $=id=>document.getElementById(id);
   const LOCK_KEY='leaveit_strict_lock_v106';
   const ALL_PRESETS=['Instagram','TikTok','YouTube','X','Snapchat','Facebook','Reddit','WhatsApp','Netflix','Games'];
-  const DEFAULT_PKG_MATCH={
-    instagram:'com.instagram.android',
-    youtube:'com.google.android.youtube',
-    tiktok:'com.zhiliaoapp.musically',
-    snapchat:'com.snapchat.android',
-    facebook:'com.facebook.katana',
-    reddit:'com.reddit.frontpage',
-    x:'com.twitter.android',
-    whatsapp:'com.whatsapp',
-    netflix:'com.netflix.mediaclient',
-    telegram:'org.telegram.messenger',
-    discord:'com.discord'
-  };
-
-  function getParentBridge(){
-    try{if(window.LeaveItNativeBlocker)return window.LeaveItNativeBlocker}catch(e){}
-    try{if(window.parent&&window.parent!==window&&window.parent.LeaveItNativeBlocker)return window.parent.LeaveItNativeBlocker}catch(e){}
-    const cap=window.Capacitor||(window.parent&&window.parent.Capacitor)||null;
-    const p=cap&&cap.Plugins&&cap.Plugins.HourBlocker;
-    if(!p)return null;
-    return {
-      isNativeAndroid:()=>Boolean(cap&&(typeof cap.isNativePlatform==='function'?cap.isNativePlatform():cap.platform==='android')),
-      getPermissionStatus:()=>p.getPermissionStatus(),
-      requestPermission:type=>p.requestPermission({type}),
-      getInstalledApps:(includeIcons=true)=>p.getInstalledApps({includeIcons}),
-      setBlockedApps:(packages,names={})=>p.setBlockedApps({packages,names}),
-      startFocusSession:opts=>p.startFocusSession(opts),
-      updateFocusSession:opts=>p.updateFocusSession(opts),
-      stopFocusSession:(forceCompleted=false)=>p.stopFocusSession({forceCompleted}),
-      getActiveSession:()=>p.getActiveSession(),
-      getLiveServerUrl:()=>typeof p.getLiveServerUrl==='function'?p.getLiveServerUrl():Promise.resolve({savedUrl:'',mode:'',activeServerUrl:'',currentUrl:location.origin,localUrl:'https://localhost'}),
-      setLiveServerUrl:(url,mode='custom')=>typeof p.setLiveServerUrl==='function'?p.setLiveServerUrl({url,mode}):Promise.resolve({savedUrl:'',mode:'',reloading:false}),
-      reloadLiveApp:()=>typeof p.reloadLiveApp==='function'?p.reloadLiveApp():(location.reload(),Promise.resolve({reloaded:true,url:location.href}))
-    };
-  }
-
-  function isNative(){
-    const nb=getParentBridge();
-    try{return Boolean(nb&&nb.isNativeAndroid&&nb.isNativeAndroid())}catch(e){return false}
-  }
 
   function getRg(){
-    if(window.LeaveItRegainControl)return window.LeaveItRegainControl;
-    return null;
+    return window.LeaveItRegainControl||null;
   }
 
   function getRgCfg(){
     const rc=getRg();
     if(rc&&rc.getConfig)return rc.getConfig();
-    try{return JSON.parse(localStorage.getItem('leaveit_rg')||'{}')}catch(e){return {sel:['Instagram','TikTok','YouTube'],cus:[],pkgs:[],pkgNames:{},strict:false,dur:25}}
+    try{return JSON.parse(localStorage.getItem('leaveit_rg')||'{}')}catch(e){return {sel:['Instagram','TikTok','YouTube'],cus:[],strict:false,dur:25}}
   }
 
   function saveRgCfg(cfg){
@@ -8670,33 +8571,6 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
     if(o){o.textContent=msg;o.classList.add('on');clearTimeout(o._t);o._t=setTimeout(()=>o.classList.remove('on'),2600)}
   }
 
-  function buildBlockedPayload(){
-    const cfg=getRgCfg();
-    const pkgs=Array.isArray(cfg.pkgs)?cfg.pkgs:[];
-    const names=cfg.pkgNames&&typeof cfg.pkgNames==='object'?cfg.pkgNames:{};
-    return pkgs.map(p=>({packageName:p,appName:names[p]||p}));
-  }
-
-  async function syncSessionToNative(opts){
-    const nb=getParentBridge();
-    if(!nb||!isNative())return;
-    try{
-      await nb.startFocusSession({
-        durationSec:Math.max(60,Math.round(opts.durationSec||1500)),
-        endsAtMs:opts.endsAtMs,
-        strictMode:Boolean(opts.strictMode),
-        taskTitle:opts.taskTitle||'',
-        blockedPackages:buildBlockedPayload()
-      });
-    }catch(e){}
-  }
-
-  async function stopNativeSession(forceCompleted){
-    const nb=getParentBridge();
-    if(!nb||!isNative())return;
-    try{await nb.stopFocusSession(Boolean(forceCompleted))}catch(e){}
-  }
-
   function beginSessionLock(opts){
     const now=Date.now();
     const durSec=Math.max(60,Math.round(opts.durationSec||1500));
@@ -8711,12 +8585,6 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
     };
     persistLock();
     syncLockUi();
-    syncSessionToNative({
-      durationSec:durSec,
-      endsAtMs:endsAt,
-      strictMode:strict,
-      taskTitle:opts.taskTitle||''
-    });
   }
 
   function unlockSession(forceCompleted){
@@ -8724,7 +8592,6 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
     lockState={active:false,strictMode:false,endsAtMs:0,source:'',taskTitle:''};
     persistLock();
     syncLockUi();
-    stopNativeSession(Boolean(forceCompleted));
     return true;
   }
 
@@ -8758,13 +8625,12 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
         if(locked)rgEnd.textContent='🔒 Locked · '+remTxt;
       }
       const rb=$('rgStrictBadge');
-      if(rb&&locked)rb.textContent='🔒 STRICT MODE ON · '+remTxt+' remaining (Exit & close disabled)';
+      if(rb&&locked)rb.textContent='🔒 STRICT MODE ON · '+remTxt+' remaining (Exit & pause locked)';
     }
     const fb=$('fmStrictBadge');
-    if(fb&&locked)fb.textContent='🔒 STRICT MODE ON · '+remTxt+' remaining (Exit & pause disabled)';
+    if(fb&&locked)fb.textContent='🔒 STRICT MODE ON · '+remTxt+' remaining (Exit & pause locked)';
   }
 
-  // Periodically refresh countdown lock labels and auto-release at 00:00
   setInterval(()=>{
     if(!lockState.active)return;
     if(lockState.endsAtMs>0&&Date.now()>=lockState.endsAtMs){
@@ -8775,7 +8641,6 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
     syncLockUi();
   },500);
 
-  // Intercept any UI attempt to exit/pause/cancel while Strict Mode lock is active
   document.addEventListener('click',e=>{
     if(!isLocked())return;
     const t=e.target;
@@ -8809,7 +8674,6 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
     }
   },true);
 
-  // Also hook Classic timer start/focus launches into blocker + strict lock
   const classicStartBtn=$('start'),classicFmGoBtn=$('fmGo'),classicFocusBtn=$('focusBtn');
   function maybeStartClassicBlocker(){
     setTimeout(()=>{
@@ -8824,7 +8688,7 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
           }catch(e){}
         }
         if(!endsAt)endsAt=Date.now()+durSec*1000;
-        if(strict||((cfg.pkgs&&cfg.pkgs.length)|| (cfg.sel&&cfg.sel.length))){
+        if(strict||(cfg.sel&&cfg.sel.length)){
           beginSessionLock({durationSec:durSec,endsAtMs:endsAt,strictMode:strict,source:'classic',taskTitle:title});
         }
       }else if(!isLocked()&&lockState.active&&lockState.source==='classic'){
@@ -8842,316 +8706,27 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
     setTimeout(maybeStartClassicBlocker,80);
   });
 
-  // Listen for native Android strict block events
-  window.addEventListener('message',e=>{
-    if(e.origin!==location.origin||!e.data)return;
-    if(e.data.type==='leaveit-native-strict-blocked'){
-      showToast('🔒 Strict Mode locked — exit/closing blocked');
-    }else if(e.data.type==='leaveit-native-app-blocked'){
-      showToast('🚫 Distracting app blocked during focus');
-    }
-  });
-
-  // Installed Apps & Android Permission Sheet UI
-  let cachedApps=[];
-  let cachedPerms=null;
-  let cachedLiveCfg=null;
-  let sheetOpen=false;
-
   const esc=t=>String(t==null?'':t).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-  async function refreshPerms(){
-    const nb=getParentBridge();
-    if(!nb||!isNative())return null;
-    try{cachedPerms=await nb.getPermissionStatus()}catch(e){cachedPerms=null}
-    return cachedPerms;
-  }
-
-  async function refreshLiveCfg(){
-    const nb=getParentBridge();
-    if(!nb||!isNative()||typeof nb.getLiveServerUrl!=='function')return null;
-    try{cachedLiveCfg=await nb.getLiveServerUrl()}catch(e){cachedLiveCfg=null}
-    return cachedLiveCfg;
-  }
-
-  async function loadApps(forceReload){
-    const nb=getParentBridge();
-    if(!nb||!isNative())return [];
-    if(cachedApps.length&&!forceReload)return cachedApps;
-    try{
-      const res=await nb.getInstalledApps(true);
-      cachedApps=(res&&Array.isArray(res.apps))?res.apps:[];
-      const cfg=getRgCfg();
-      if((!Array.isArray(cfg.pkgs)||!cfg.pkgs.length)&&cachedApps.length){
-        const autoPkgs=[];
-        const names=cfg.pkgNames||{};
-        const wanted=(cfg.sel||['Instagram','TikTok','YouTube']).map(x=>x.toLowerCase());
-        cachedApps.forEach(a=>{
-          const n=a.appName.toLowerCase(),p=a.packageName.toLowerCase();
-          if(wanted.some(w=>n.includes(w)||p===DEFAULT_PKG_MATCH[w])){
-            autoPkgs.push(a.packageName);
-            names[a.packageName]=a.appName;
-          }
-        });
-        if(autoPkgs.length){
-          cfg.pkgs=autoPkgs;cfg.pkgNames=names;
-          saveRgCfg(cfg);
-          await nb.setBlockedApps(autoPkgs,names);
-        }
-      }
-    }catch(e){cachedApps=[]}
-    return cachedApps;
-  }
-
-  function syncAppListSelection(cfg,pkg,appName,enable){
-    cfg.pkgs=Array.isArray(cfg.pkgs)?cfg.pkgs:[];
-    cfg.pkgNames=cfg.pkgNames||{};
-    cfg.sel=Array.isArray(cfg.sel)?cfg.sel:[];
-    const idx=cfg.pkgs.indexOf(pkg);
-    if(enable&&idx<0){
-      cfg.pkgs.push(pkg);
-      cfg.pkgNames[pkg]=appName;
-      if(!cfg.sel.includes(appName))cfg.sel.push(appName);
-    }else if(!enable&&idx>=0){
-      cfg.pkgs.splice(idx,1);
-      const si=cfg.sel.indexOf(appName);
-      if(si>=0)cfg.sel.splice(si,1);
-    }
-    saveRgCfg(cfg);
-    const rc=getRg();
-    if(rc&&rc.refreshHome)rc.refreshHome();
-    updateClassicSettingsSummary();
-    const nb=getParentBridge();
-    if(nb&&isNative()){
-      nb.setBlockedApps(cfg.pkgs,cfg.pkgNames).catch(()=>{});
-    }
-  }
-
-  function renderPermsSection(perms,nativeApk){
-    if(!nativeApk){
-      return `<div class="hb-sec">
-        <h4>📱 Android System App Blocker <span class="hb-badge">APK Feature</span></h4>
-        <p>Install the <b>Hour Android APK</b> on your phone to block real installed apps (Instagram, YouTube, WhatsApp, games) with <b>Display Over Other Apps</b> and lock leaving/closing during Strict Mode.</p>
-      </div>`;
-    }
-    const items=[
-      {k:'overlay',t:'Display over other apps',d:'Draws full-screen Focus Shield on top of blocked apps',ok:Boolean(perms&&perms.overlay)},
-      {k:'accessibility',t:'Accessibility Focus Monitor',d:'Instant <50ms app blocking & prevents Settings/exit bypass',ok:Boolean(perms&&perms.accessibility)},
-      {k:'usageStats',t:'Usage Access permission',d:'Fallback foreground app detector for Xiaomi/Samsung/Vivo',ok:Boolean(perms&&perms.usageStats)},
-      {k:'battery',t:'Unrestricted battery',d:'Stops Android from killing Focus Shield in the background',ok:Boolean(perms&&perms.batteryUnrestricted)},
-      {k:'deviceAdmin',t:'Uninstall & Kill Guard (Optional)',d:'Prevents disabling/uninstalling Hour mid-Strict session',ok:Boolean(perms&&perms.deviceAdmin)}
-    ];
-    return `<div class="hb-sec">
-      <h4>🛡 Android Blocker Permissions <span class="hb-badge ${items.slice(0,3).every(x=>x.ok)?'ok':''}">${items.filter(x=>x.ok).length}/5 Ready</span></h4>
-      <p>Grant the first 3 permissions so Hour can display its block screen over distracting apps and lock Strict Mode.</p>
-      <div class="hb-perms">${items.map(it=>`<button type="button" class="hb-perm" data-hb-perm="${it.k}"><span><b>${it.t}</b><small>${it.d}</small></span><span class="hb-badge ${it.ok?'ok':''}">${it.ok?'✓ Active':'Enable'}</span></button>`).join('')}</div>
-    </div>`;
-  }
-
-  function renderAppsListHtml(cfg,query){
-    const nativeApk=isNative();
-    if(nativeApk){
-      const pkgs=Array.isArray(cfg.pkgs)?cfg.pkgs:[];
-      const q=(query||'').trim().toLowerCase();
-      const filtered=cachedApps.filter(a=>!q||a.appName.toLowerCase().includes(q)||a.packageName.toLowerCase().includes(q));
-      if(!cachedApps.length){
-        return '<div class="hb-sec"><p style="margin:0">Loading installed apps on your phone… Make sure QUERY_ALL_PACKAGES APK is installed.</p></div>';
-      }
-      return `<div class="hb-sec">
-        <h4>🚫 Apps on this phone <span class="hb-badge ok">${pkgs.length} Blocked</span></h4>
-        <div class="hb-row-btns">
-          <button type="button" class="hb-mini p" id="hbPickSocial">⚡ Block Social &amp; Video</button>
-          <button type="button" class="hb-mini" id="hbClearApps">Clear all</button>
-        </div>
-        <input type="search" class="hb-search" id="hbSearch" placeholder="🔍 Search installed apps..." value="${esc(query||'')}" autocomplete="off">
-        <div class="hb-applist">${filtered.slice(0,120).map(a=>{
-          const on=pkgs.includes(a.packageName);
-          return `<button type="button" class="hb-app ${on?'on':''}" data-hb-pkg="${esc(a.packageName)}" data-hb-name="${esc(a.appName)}">
-            <span class="hb-app-l">${a.icon?`<img class="hb-ico" src="${a.icon}" alt="">`:`<span class="hb-ico-fb">📱</span>`}<span class="hb-app-meta"><b>${esc(a.appName)}</b><small>${esc(a.packageName)}</small></span></span>
-            <span class="hb-chk">${on?'✓':''}</span>
-          </button>`;
-        }).join('')||'<p style="margin:6px 0">No matching apps found.</p>'}</div>
-      </div>`;
-    }
+  function openBlockerSheet(){
+    const sh=$('rgSh'),body=$('rgShB');
+    if(!sh||!body)return;
+    const cfg=getRgCfg();
     const sel=Array.isArray(cfg.sel)?cfg.sel:[];
     const cus=Array.isArray(cfg.cus)?cfg.cus:[];
     const all=[...ALL_PRESETS,...cus];
-    return `<div class="hb-sec">
-      <h4>🚫 Distraction Blocklist <span class="hb-badge ok">${sel.length} Selected</span></h4>
-      <p>Choose distracting apps to block during focus sessions.</p>
-      <div class="ch" style="margin-bottom:12px">${all.map(a=>`<button type="button" data-s="${esc(a)}" class="${sel.includes(a)?'on':''}">${esc(a)}</button>`).join('')}</div>
-      <div style="display:flex;gap:8px"><input type="text" id="rgAdd" maxlength="20" placeholder="Add app or site"><button type="button" class="go" id="rgAddB" style="width:auto;padding:11px 18px;font-size:14px">Add</button></div>
-    </div>`;
-  }
-
-  function renderLiveSyncSection(liveCfg,nativeApk){
-    if(!nativeApk){
-      return `<div class="hb-sec">
-        <h4>🔄 Live Auto-Updates (GitHub → Vercel → APK) <span class="hb-badge">APK Ready</span></h4>
-        <p style="margin:0">Set <b>LIVE_APP_URL</b> in GitHub Actions Variables (or enter your Vercel URL once inside the Android APK here) so every <code>git push</code> updates the installed APK automatically while keeping native App Blocker &amp; Strict Mode active.</p>
-      </div>`;
-    }
-    const activeUrl=liveCfg&&liveCfg.activeServerUrl||'';
-    const savedUrl=liveCfg&&liveCfg.savedUrl||'';
-    const currentUrl=liveCfg&&liveCfg.currentUrl||'';
-    const mode=liveCfg&&liveCfg.mode||'';
-    const isLive=Boolean(activeUrl&&(currentUrl.startsWith(activeUrl)||mode==='custom'||(!mode&&activeUrl)));
-    const displayHost=(activeUrl||savedUrl||'').replace(/^https?:\/\//,'').replace(/\/.*$/,'');
-    return `<div class="hb-sec">
-      <h4>🔄 Live Auto-Update (GitHub → Vercel) <span class="hb-badge ${isLive?'ok':''}">${isLive?'● Live Sync':'📦 Offline Bundle'}</span></h4>
-      <p>${isLive?`Connected to <b>${esc(displayHost)}</b> — GitHub pushes to Vercel appear automatically with offline fallback built in.`:'Paste your deployed Vercel URL below so every future GitHub push updates this APK automatically without reinstalling.'}</p>
-      <input type="url" class="hb-search" id="hbLiveUrl" placeholder="https://your-app.vercel.app" value="${esc(savedUrl||activeUrl||'')}" autocomplete="off" style="margin-bottom:8px">
-      <div class="hb-row-btns" style="margin-bottom:0">
-        <button type="button" class="hb-mini p" id="hbSaveLiveBtn">Save &amp; Sync Vercel</button>
-        ${isLive?'<button type="button" class="hb-mini" id="hbCheckSyncBtn">↻ Check Update</button>':''}
-        ${(isLive||savedUrl)?'<button type="button" class="hb-mini" id="hbOfflineBtn">Use Offline Bundle</button>':''}
-      </div>
-    </div>`;
-  }
-
-  let lastSearch='';
-  function renderSheetHtml(cfg,nativeApk){
-    return `<h3>App Blocker &amp; Strict Shield</h3><p>Block distracting apps over other apps and enforce Strict Mode lock.</p>${renderPermsSection(cachedPerms,nativeApk)}<div id="hbAppsMount">${renderAppsListHtml(cfg,lastSearch)}</div>${renderLiveSyncSection(cachedLiveCfg,nativeApk)}`;
-  }
-
-  async function openBlockerSheet(){
-    const sh=$('rgSh'),body=$('rgShB');
-    if(!sh||!body)return;
-    sheetOpen=true;
-    const cfg=getRgCfg();
-    const nativeApk=isNative();
-    body.innerHTML=renderSheetHtml(cfg,nativeApk);
+    body.innerHTML=`<h3>Distraction Blocklist</h3><p>Mark distracting apps and pair with Strict Mode during focus sessions.</p><div class="hb-sec"><h4>🚫 Selected Distractions <span class="hb-badge ok">${sel.length} Selected</span></h4><p>Choose apps or sites to keep out of sight while your focus timer is running.</p><div class="ch" style="margin-bottom:12px">${all.map(a=>`<button type="button" data-s="${esc(a)}" class="${sel.includes(a)?'on':''}">${esc(a)}</button>`).join('')}</div><div style="display:flex;gap:8px"><input type="text" id="rgAdd" maxlength="20" placeholder="Add app or site"><button type="button" class="go" id="rgAddB" style="width:auto;padding:11px 18px;font-size:14px">Add</button></div></div>`;
     sh.classList.add('on');
-    if(nativeApk){
-      await Promise.all([refreshPerms(),refreshLiveCfg(),loadApps(false)]);
-      if(sh.classList.contains('on')){
-        body.innerHTML=renderSheetHtml(getRgCfg(),nativeApk);
-        updateClassicSettingsSummary();
-      }
-    }
   }
 
-  document.addEventListener('click',async e=>{
-    const permBtn=e.target&&e.target.closest&&e.target.closest('[data-hb-perm]');
-    if(permBtn){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      const nb=getParentBridge();
-      if(nb){
-        try{await nb.requestPermission(permBtn.dataset.hbPerm)}catch(err){showToast(err&&err.message?err.message:'Cannot open settings right now')}
-      }
-      return;
-    }
-    const appBtn=e.target&&e.target.closest&&e.target.closest('[data-hb-pkg]');
-    if(appBtn){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      const cfg=getRgCfg();
-      const pkg=appBtn.dataset.hbPkg,name=appBtn.dataset.hbName||pkg;
-      const cur=Array.isArray(cfg.pkgs)&&cfg.pkgs.includes(pkg);
-      syncAppListSelection(cfg,pkg,name,!cur);
-      const mount=$('hbAppsMount');
-      if(mount)mount.innerHTML=renderAppsListHtml(cfg,lastSearch);
-      return;
-    }
-    if(e.target&&e.target.id==='hbPickSocial'){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      const cfg=getRgCfg();
-      cachedApps.forEach(a=>{
-        const low=(a.appName+' '+a.packageName).toLowerCase();
-        if(/instagram|youtube|tiktok|musically|snapchat|facebook|reddit|twitter|netflix|whatsapp|telegram|discord|pubg|bgmi|freefire|roblox|hotstar/.test(low)){
-          syncAppListSelection(cfg,a.packageName,a.appName,true);
-        }
-      });
-      const mount=$('hbAppsMount');
-      if(mount)mount.innerHTML=renderAppsListHtml(cfg,lastSearch);
-      showToast('⚡ Social & video apps added to blocklist');
-      return;
-    }
-    if(e.target&&e.target.id==='hbClearApps'){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      const cfg=getRgCfg();
-      cfg.pkgs=[];cfg.sel=[];
-      saveRgCfg(cfg);
-      const rc=getRg();if(rc&&rc.refreshHome)rc.refreshHome();
-      updateClassicSettingsSummary();
-      const nb=getParentBridge();
-      if(nb&&isNative())nb.setBlockedApps([],{}).catch(()=>{});
-      const mount=$('hbAppsMount');
-      if(mount)mount.innerHTML=renderAppsListHtml(cfg,lastSearch);
-      return;
-    }
-    if(e.target&&e.target.id==='hbSaveLiveBtn'){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      if(isLocked()){showToast('🔒 Strict Mode locked — finish session before switching source');return}
-      const inp=$('hbLiveUrl');
-      const raw=(inp&&inp.value||'').trim();
-      if(!raw){showToast('Enter your Vercel URL (e.g. https://hour-app.vercel.app)');return}
-      const nb=getParentBridge();
-      if(nb&&typeof nb.setLiveServerUrl==='function'){
-        showToast('🔄 Connecting APK to Vercel live updates...');
-        try{await nb.setLiveServerUrl(raw,'custom')}catch(err){showToast('Could not save URL')}
-      }
-      return;
-    }
-    if(e.target&&e.target.id==='hbCheckSyncBtn'){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      if(isLocked()){showToast('🔒 Strict Mode locked — finish session before refreshing');return}
-      const nb=getParentBridge();
-      if(nb&&typeof nb.reloadLiveApp==='function'){
-        showToast('↻ Checking Vercel for latest deployment...');
-        try{await nb.reloadLiveApp()}catch(err){showToast('Sync failed — staying on current version')}
-      }
-      return;
-    }
-    if(e.target&&e.target.id==='hbOfflineBtn'){
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      if(isLocked()){showToast('🔒 Strict Mode locked — finish session before switching source');return}
-      const nb=getParentBridge();
-      if(nb&&typeof nb.setLiveServerUrl==='function'){
-        showToast('📦 Switching to bundled offline APK...');
-        try{await nb.setLiveServerUrl('','offline')}catch(err){showToast('Could not switch mode')}
-      }
-    }
-  },true);
-
-  document.addEventListener('input',e=>{
-    if(e.target&&e.target.id==='hbSearch'){
-      lastSearch=e.target.value||'';
-      const mount=$('hbAppsMount');
-      if(mount){
-        const pos=e.target.selectionStart;
-        mount.innerHTML=renderAppsListHtml(getRgCfg(),lastSearch);
-        const inp=$('hbSearch');
-        if(inp){inp.focus();try{inp.setSelectionRange(pos,pos)}catch(err){}}
-      }
-    }
-  });
-
-  // Auto-refresh permissions when user returns from Android Settings
-  document.addEventListener('visibilitychange',async ()=>{
-    if(!document.hidden&&$('rgSh')&&$('rgSh').classList.contains('on')&&isNative()){
-      await Promise.all([refreshPerms(),refreshLiveCfg()]);
-      const body=$('rgShB');
-      if(body&&body.querySelector('[data-hb-perm]')){
-        body.innerHTML=renderSheetHtml(getRgCfg(),true);
-      }
-    }
-  });
-
-  // Inject App Blocker & Strict Mode controls into Classic Settings card
   function updateClassicSettingsSummary(){
     const el=$('clAppsCount');
     if(!el)return;
     const cfg=getRgCfg();
-    const count=isNative()?(Array.isArray(cfg.pkgs)?cfg.pkgs.length:0):(Array.isArray(cfg.sel)?cfg.sel.length:0);
-    el.textContent=count?(count+' app'+(count===1?'':'s')+' blocked'):'None';
+    const count=Array.isArray(cfg.sel)?cfg.sel.length:0;
+    el.textContent=count?(count+' item'+(count===1?'':'s')+' selected'):'None';
   }
+
   function mountClassicSettingsCard(){
     const tickEl=$('tick');
     const card=tickEl&&tickEl.closest('.card');
@@ -9159,8 +8734,8 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
     const strictOn=getStrictFlag();
     card.insertAdjacentHTML('beforeend',`
       <div id="clStrictBox">
-        <div class="tog"><span>🔒 Strict mode<small style="display:block;color:var(--muted);font-size:11px;font-weight:500">Locks exiting, closing app &amp; ending early</small></span><input type="checkbox" class="sw" id="clStrictSw" ${strictOn?'checked':''}></div>
-        <div class="tog" style="margin-top:4px"><span>🚫 Android App Blocker<small id="clAppsCount" style="display:block;color:var(--muted);font-size:11px;font-weight:500">Configure</small></span><button class="chip" id="clAppsBtn" type="button">Manage</button></div>
+        <div class="tog"><span>🔒 Strict mode<small style="display:block;color:var(--muted);font-size:11px;font-weight:500">Locks exiting, pausing &amp; ending sessions early</small></span><input type="checkbox" class="sw" id="clStrictSw" ${strictOn?'checked':''}></div>
+        <div class="tog" style="margin-top:4px"><span>🚫 Distraction blocklist<small id="clAppsCount" style="display:block;color:var(--muted);font-size:11px;font-weight:500">Configure</small></span><button class="chip" id="clAppsBtn" type="button">Manage</button></div>
       </div>
     `);
     updateClassicSettingsSummary();
@@ -9174,7 +8749,7 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
 
   window.LeaveItStrictBlocker={
     isLocked,
-    isNativeAndroid:isNative,
+    isNativeAndroid:()=>false,
     openBlockerSheet,
     syncStrictFlag:setStrictFlag,
     onRegainStart:opts=>beginSessionLock(opts||{}),
@@ -9182,35 +8757,14 @@ body.fm-strict-locked #fmStrictBadge{display:inline-flex;margin-top:8px}
     getLockState:()=>({...lockState})
   };
 
-  // On boot: restore strict session if Android or user closed/killed the process mid-Strict-Mode
-  (async function restoreIfActive(){
-    let sess=lockState.active&&lockState.strictMode&&lockState.endsAtMs>Date.now()?lockState:null;
-    const nb=getParentBridge();
-    if(nb&&isNative()){
-      try{
-        const nativeSess=await nb.getActiveSession();
-        if(nativeSess&&nativeSess.sessionActive&&nativeSess.strictLockActive&&nativeSess.endsAtMs>Date.now()){
-          sess={
-            active:true,
-            strictMode:true,
-            endsAtMs:Number(nativeSess.endsAtMs),
-            source:'native',
-            taskTitle:nativeSess.taskTitle||''
-          };
-          lockState=sess;
-          persistLock();
-        }
-      }catch(e){}
+  if(lockState.active&&lockState.strictMode&&lockState.endsAtMs>Date.now()){
+    const rc=getRg();
+    if(rc&&typeof rc.restoreStrictSession==='function'){
+      rc.restoreStrictSession(lockState);
     }
-    if(sess){
-      const rc=getRg();
-      if(rc&&typeof rc.restoreStrictSession==='function'){
-        rc.restoreStrictSession(sess);
-      }
-      syncLockUi();
-      showToast('🔒 Strict Mode session restored ('+fmtLeft(sess.endsAtMs-Date.now())+' left)');
-    }
-  })();
+    syncLockUi();
+    showToast('🔒 Strict Mode session restored ('+fmtLeft(lockState.endsAtMs-Date.now())+' left)');
+  }
 })();
 </script>
 <style id="v107-ui-revamp-css">
@@ -10117,8 +9671,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         },
         {
           find:()=>document.querySelector('#rgMain [data-a="apps"]'),
-          title:'App Blocker & Shield',
-          desc:'Choose distracting apps to block over other apps during sessions (supports real installed apps in the Android APK).'
+          title:'Distraction Blocklist',
+          desc:'Mark distracting apps and pair with Strict Mode lock during focus sessions.'
         },
         {
           find:()=>{

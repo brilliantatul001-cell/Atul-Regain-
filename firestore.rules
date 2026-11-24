@@ -50,6 +50,9 @@ service cloud.firestore {
         'todayKey', 'todayXp', 'todayFocusMinutes', 'todayQuestionsSolved',
         'weekKey', 'weekXp', 'weekFocusMinutes', 'weekQuestionsSolved',
         'tasksCompleted', 'todayTasksCompleted', 'weekTasksCompleted',
+        'avatarDataUrl', 'avatarPreset', 'statusBadge', 'bio',
+        'examTarget', 'targetYear', 'batch', 'goal', 'dailyGoalMin',
+        'studySlot', 'strongSubject', 'weakSubject', 'studyStyle',
         'createdAt', 'updatedAt'
       ]) &&
       isValidId(data.uid) &&
@@ -77,6 +80,19 @@ service cloud.firestore {
       (!('tasksCompleted' in data) || (data.tasksCompleted is number && data.tasksCompleted >= 0 && data.tasksCompleted <= 50000)) &&
       (!('todayTasksCompleted' in data) || (data.todayTasksCompleted is number && data.todayTasksCompleted >= 0 && data.todayTasksCompleted <= 1000)) &&
       (!('weekTasksCompleted' in data) || (data.weekTasksCompleted is number && data.weekTasksCompleted >= 0 && data.weekTasksCompleted <= 5000)) &&
+      (!('avatarDataUrl' in data) || (data.avatarDataUrl is string && data.avatarDataUrl.size() <= 28000 && (data.avatarDataUrl == '' || data.avatarDataUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')))) &&
+      (!('avatarPreset' in data) || (data.avatarPreset is string && data.avatarPreset.size() <= 16)) &&
+      (!('statusBadge' in data) || (data.statusBadge is string && data.statusBadge.size() <= 24)) &&
+      (!('bio' in data) || (data.bio is string && data.bio.size() <= 100)) &&
+      (!('examTarget' in data) || (data.examTarget is string && data.examTarget.size() <= 24)) &&
+      (!('targetYear' in data) || (data.targetYear is string && data.targetYear.size() <= 4 && (data.targetYear == '' || data.targetYear.matches('^20[2-3][0-9]$')))) &&
+      (!('batch' in data) || (data.batch is string && data.batch.size() <= 36)) &&
+      (!('goal' in data) || (data.goal is string && data.goal.size() <= 48)) &&
+      (!('dailyGoalMin' in data) || (data.dailyGoalMin is number && data.dailyGoalMin >= 0 && data.dailyGoalMin <= 720)) &&
+      (!('studySlot' in data) || (data.studySlot is string && data.studySlot.size() <= 28)) &&
+      (!('strongSubject' in data) || (data.strongSubject is string && data.strongSubject.size() <= 24)) &&
+      (!('weakSubject' in data) || (data.weakSubject is string && data.weakSubject.size() <= 24)) &&
+      (!('studyStyle' in data) || (data.studyStyle is string && data.studyStyle.size() <= 24)) &&
       data.createdAt is timestamp &&
       data.updatedAt is timestamp;
     }
@@ -289,8 +305,12 @@ service cloud.firestore {
         incoming().uid == existing().uid &&
         incoming().createdAt == existing().createdAt &&
         incoming().updatedAt == request.time && (
-          // Action: Edit handle or display name
-          (incoming().diff(existing()).affectedKeys().hasOnly(['username', 'displayName', 'updatedAt'])) ||
+          // Action: Edit handle, display name, avatar & study profile details
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'username', 'displayName', 'avatarDataUrl', 'avatarPreset', 'statusBadge', 'bio',
+            'examTarget', 'targetYear', 'batch', 'goal', 'dailyGoalMin',
+            'studySlot', 'strongSubject', 'weakSubject', 'studyStyle', 'updatedAt'
+          ])) ||
           // Action: Sync verified study / duel stats (bounded delta)
           (
             incoming().diff(existing()).affectedKeys().hasOnly([

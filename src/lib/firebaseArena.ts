@@ -48,7 +48,15 @@ export type ActivityKind =
 export type RoomMode = 'study_room' | 'sprint_1v1';
 export type RoomStatus = 'lobby' | 'countdown' | 'active' | 'finished';
 export type LiveState = 'idle' | 'focusing' | 'solving' | 'paused' | 'finished';
-export type LeaderboardSort = 'xp' | 'focus' | 'questions' | 'duels';
+export type LeaderboardSort =
+  | 'xp'
+  | 'focus'
+  | 'questions'
+  | 'streak'
+  | 'discipline'
+  | 'tasks'
+  | 'mocks'
+  | 'duels';
 export type LeaderboardTimeframe = 'today' | '7d' | 'all';
 export type FriendshipStatus = 'pending' | 'accepted';
 export type FriendDirection = 'incoming' | 'outgoing' | 'friend';
@@ -116,6 +124,19 @@ export interface ArenaUser {
   tasksCompleted: number;
   todayTasksCompleted: number;
   weekTasksCompleted: number;
+  avatarDataUrl: string;
+  avatarPreset: string;
+  statusBadge: string;
+  bio: string;
+  examTarget: string;
+  targetYear: string;
+  batch: string;
+  goal: string;
+  dailyGoalMin: number;
+  studySlot: string;
+  strongSubject: string;
+  weakSubject: string;
+  studyStyle: string;
 }
 
 export interface RoomParticipantView {
@@ -186,6 +207,19 @@ export interface LeaderboardEntry {
   duelWins: number;
   duelPlayed: number;
   tasksCompleted: number;
+  avatarDataUrl: string;
+  avatarPreset: string;
+  statusBadge: string;
+  bio: string;
+  examTarget: string;
+  targetYear: string;
+  batch: string;
+  goal: string;
+  dailyGoalMin: number;
+  studySlot: string;
+  strongSubject: string;
+  weakSubject: string;
+  studyStyle: string;
 }
 
 function todayStr(offsetDays = 0): string {
@@ -291,6 +325,19 @@ function toArenaUser(d: Record<string, unknown>): ArenaUser {
     tasksCompleted: Number(d.tasksCompleted || 0),
     todayTasksCompleted: d.todayKey === tKey ? Number(d.todayTasksCompleted || 0) : 0,
     weekTasksCompleted: d.weekKey === wKey ? Number(d.weekTasksCompleted || 0) : 0,
+    avatarDataUrl: typeof d.avatarDataUrl === 'string' ? d.avatarDataUrl.slice(0, 28000) : '',
+    avatarPreset: typeof d.avatarPreset === 'string' ? d.avatarPreset.slice(0, 16) : '',
+    statusBadge: typeof d.statusBadge === 'string' ? d.statusBadge.slice(0, 24) : '',
+    bio: typeof d.bio === 'string' ? d.bio.slice(0, 100) : '',
+    examTarget: typeof d.examTarget === 'string' ? d.examTarget.slice(0, 24) : '',
+    targetYear: typeof d.targetYear === 'string' ? d.targetYear.slice(0, 4) : '',
+    batch: typeof d.batch === 'string' ? d.batch.slice(0, 36) : '',
+    goal: typeof d.goal === 'string' ? d.goal.slice(0, 48) : '',
+    dailyGoalMin: Math.max(0, Math.min(720, Math.round(Number(d.dailyGoalMin || 0)))),
+    studySlot: typeof d.studySlot === 'string' ? d.studySlot.slice(0, 28) : '',
+    strongSubject: typeof d.strongSubject === 'string' ? d.strongSubject.slice(0, 24) : '',
+    weakSubject: typeof d.weakSubject === 'string' ? d.weakSubject.slice(0, 24) : '',
+    studyStyle: typeof d.studyStyle === 'string' ? d.studyStyle.slice(0, 24) : '',
   };
 }
 
@@ -512,10 +559,34 @@ export function subscribeArenaAuth(
   });
 }
 
-export async function updateArenaProfile(params: {
+function sanitizeTextField(val: unknown, maxLen: number): string {
+  return String(val ?? '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .slice(0, maxLen);
+}
+
+export interface UpdateArenaProfileParams {
   username: string;
   displayName: string;
-}): Promise<ArenaUser> {
+  avatarDataUrl?: string;
+  avatarPreset?: string;
+  statusBadge?: string;
+  bio?: string;
+  examTarget?: string;
+  targetYear?: string;
+  batch?: string;
+  goal?: string;
+  dailyGoalMin?: number;
+  studySlot?: string;
+  strongSubject?: string;
+  weakSubject?: string;
+  studyStyle?: string;
+}
+
+export async function updateArenaProfile(
+  params: UpdateArenaProfileParams,
+): Promise<ArenaUser> {
   const fbUser = auth.currentUser;
   if (!fbUser) throw new Error('Sign in required.');
   const cleanUser = params.username.trim().toLowerCase();
@@ -528,18 +599,92 @@ export async function updateArenaProfile(params: {
   if (cleanDisp.length < 2 || cleanDisp.length > 24) {
     throw new Error('Display name must be 2–24 characters.');
   }
+
+  const updatePayload: Record<string, unknown> = {
+    username: cleanUser,
+    displayName: cleanDisp,
+    updatedAt: serverTimestamp(),
+  };
+
+  if (params.avatarDataUrl !== undefined) {
+    const rawUrl = String(params.avatarDataUrl || '').trim();
+    if (
+      rawUrl !== '' &&
+      (rawUrl.length > 28000 ||
+        !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(rawUrl))
+    ) {
+      throw new Error(
+        'Profile photo must be a compressed JPEG, PNG, or WebP image under 28 KB.',
+      );
+    }
+    updatePayload.avatarDataUrl = rawUrl;
+  }
+  if (params.avatarPreset !== undefined) {
+    updatePayload.avatarPreset = sanitizeTextField(params.avatarPreset, 16);
+  }
+  if (params.statusBadge !== undefined) {
+    updatePayload.statusBadge = sanitizeTextField(params.statusBadge, 24);
+  }
+  if (params.bio !== undefined) {
+    updatePayload.bio = sanitizeTextField(params.bio, 100);
+  }
+  if (params.examTarget !== undefined) {
+    updatePayload.examTarget = sanitizeTextField(params.examTarget, 24);
+  }
+  if (params.targetYear !== undefined) {
+    const yr = String(params.targetYear || '').trim();
+    if (yr !== '' && !/^20[2-3][0-9]$/.test(yr)) {
+      throw new Error('Target year must be a 4-digit year (e.g. 2027).');
+    }
+    updatePayload.targetYear = yr;
+  }
+  if (params.batch !== undefined) {
+    updatePayload.batch = sanitizeTextField(params.batch, 36);
+  }
+  if (params.goal !== undefined) {
+    updatePayload.goal = sanitizeTextField(params.goal, 48);
+  }
+  if (params.dailyGoalMin !== undefined) {
+    const gMin = Math.round(Number(params.dailyGoalMin) || 0);
+    updatePayload.dailyGoalMin = Math.max(0, Math.min(720, gMin));
+  }
+  if (params.studySlot !== undefined) {
+    updatePayload.studySlot = sanitizeTextField(params.studySlot, 28);
+  }
+  if (params.strongSubject !== undefined) {
+    updatePayload.strongSubject = sanitizeTextField(params.strongSubject, 24);
+  }
+  if (params.weakSubject !== undefined) {
+    updatePayload.weakSubject = sanitizeTextField(params.weakSubject, 24);
+  }
+  if (params.studyStyle !== undefined) {
+    updatePayload.studyStyle = sanitizeTextField(params.studyStyle, 24);
+  }
+
   const path = `players/${fbUser.uid}`;
   const ref = doc(db, 'players', fbUser.uid);
   try {
-    await updateDoc(ref, {
-      username: cleanUser,
-      displayName: cleanDisp,
-      updatedAt: serverTimestamp(),
-    });
+    await updateDoc(ref, updatePayload);
     const fresh = await getDoc(ref);
     return toArenaUser(fresh.data() as Record<string, unknown>);
   } catch (error) {
     handleFirestoreError(error, OperationType.UPDATE, path);
+  }
+}
+
+export async function fetchPlayerProfile(
+  uid: string,
+): Promise<ArenaUser | null> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) return null;
+  const cleanUid = sanitizeId(uid);
+  const path = `players/${cleanUid}`;
+  try {
+    const snap = await getDoc(doc(db, 'players', cleanUid));
+    if (!snap.exists()) return null;
+    return toArenaUser(snap.data() as Record<string, unknown>);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.GET, path);
   }
 }
 
@@ -1524,6 +1669,8 @@ export async function fetchLeaderboard(opts: {
   sort: LeaderboardSort;
   timeframe: LeaderboardTimeframe;
   search: string;
+  examFilter?: string;
+  onlyActiveStreak?: boolean;
 }): Promise<LeaderboardEntry[]> {
   const fbUser = auth.currentUser;
   if (!fbUser) return [];
@@ -1533,7 +1680,7 @@ export async function fetchLeaderboard(opts: {
       collection(db, 'players'),
       where('xp', '>=', 0),
       orderBy('xp', 'desc'),
-      limit(100),
+      limit(150),
     );
     const snap = await getDocs(q);
     const players = snap.docs.map((d) =>
@@ -1541,6 +1688,7 @@ export async function fetchLeaderboard(opts: {
     );
 
     const searchLower = (opts.search || '').trim().toLowerCase();
+    const examFilterLower = (opts.examFilter || 'all').trim().toLowerCase();
     const mapped = players
       .map((u) => {
         const xp =
@@ -1561,21 +1709,46 @@ export async function fetchLeaderboard(opts: {
             : opts.timeframe === '7d'
               ? u.weekQuestionsSolved
               : u.questionsSolved;
+        const tasksCompleted =
+          opts.timeframe === 'today'
+            ? u.todayTasksCompleted
+            : opts.timeframe === '7d'
+              ? u.weekTasksCompleted
+              : u.tasksCompleted;
         return {
           ...u,
           xp,
           focusMinutes,
           questionsSolved,
+          tasksCompleted,
         };
       })
       .filter((u) => {
-        if (opts.timeframe !== 'all' && u.xp === 0 && u.focusMinutes === 0 && u.questionsSolved === 0) {
+        if (
+          opts.timeframe !== 'all' &&
+          u.xp === 0 &&
+          u.focusMinutes === 0 &&
+          u.questionsSolved === 0 &&
+          u.tasksCompleted === 0
+        ) {
           return false;
+        }
+        if (opts.onlyActiveStreak && u.streakDays <= 0) {
+          return false;
+        }
+        if (examFilterLower && examFilterLower !== 'all') {
+          const targetLower = (u.examTarget || '').toLowerCase();
+          if (!targetLower.includes(examFilterLower)) {
+            return false;
+          }
         }
         if (!searchLower) return true;
         return (
           u.username.toLowerCase().includes(searchLower) ||
-          u.displayName.toLowerCase().includes(searchLower)
+          u.displayName.toLowerCase().includes(searchLower) ||
+          u.examTarget.toLowerCase().includes(searchLower) ||
+          u.goal.toLowerCase().includes(searchLower) ||
+          u.statusBadge.toLowerCase().includes(searchLower)
         );
       })
       .sort((a, b) => {
@@ -1588,9 +1761,41 @@ export async function fetchLeaderboard(opts: {
           if (b.questionsSolved !== a.questionsSolved) {
             return b.questionsSolved - a.questionsSolved;
           }
+          if (b.disciplineRatePct !== a.disciplineRatePct) {
+            return b.disciplineRatePct - a.disciplineRatePct;
+          }
+          return b.xp - a.xp;
+        }
+        if (opts.sort === 'streak') {
+          if (b.streakDays !== a.streakDays) return b.streakDays - a.streakDays;
+          if (b.focusMinutes !== a.focusMinutes) return b.focusMinutes - a.focusMinutes;
+          return b.xp - a.xp;
+        }
+        if (opts.sort === 'discipline') {
+          const aHasLeaves = a.questionsLeftOnTime + a.questionsOvertime > 0 ? 1 : 0;
+          const bHasLeaves = b.questionsLeftOnTime + b.questionsOvertime > 0 ? 1 : 0;
+          if (bHasLeaves !== aHasLeaves) return bHasLeaves - aHasLeaves;
+          if (b.disciplineRatePct !== a.disciplineRatePct) {
+            return b.disciplineRatePct - a.disciplineRatePct;
+          }
+          if (b.questionsLeftOnTime !== a.questionsLeftOnTime) {
+            return b.questionsLeftOnTime - a.questionsLeftOnTime;
+          }
+          return b.xp - a.xp;
+        }
+        if (opts.sort === 'tasks') {
+          if (b.tasksCompleted !== a.tasksCompleted) return b.tasksCompleted - a.tasksCompleted;
+          if (b.focusMinutes !== a.focusMinutes) return b.focusMinutes - a.focusMinutes;
+          return b.xp - a.xp;
+        }
+        if (opts.sort === 'mocks') {
+          const aHasM = a.mockTestsCount > 0 ? 1 : 0;
+          const bHasM = b.mockTestsCount > 0 ? 1 : 0;
+          if (bHasM !== aHasM) return bHasM - aHasM;
           if (b.mockAccuracyAvg !== a.mockAccuracyAvg) {
             return b.mockAccuracyAvg - a.mockAccuracyAvg;
           }
+          if (b.mockTestsCount !== a.mockTestsCount) return b.mockTestsCount - a.mockTestsCount;
           return b.xp - a.xp;
         }
         if (opts.sort === 'duels') {
@@ -1620,6 +1825,19 @@ export async function fetchLeaderboard(opts: {
       duelWins: u.duelWins,
       duelPlayed: u.duelPlayed,
       tasksCompleted: u.tasksCompleted,
+      avatarDataUrl: u.avatarDataUrl,
+      avatarPreset: u.avatarPreset,
+      statusBadge: u.statusBadge,
+      bio: u.bio,
+      examTarget: u.examTarget,
+      targetYear: u.targetYear,
+      batch: u.batch,
+      goal: u.goal,
+      dailyGoalMin: u.dailyGoalMin,
+      studySlot: u.studySlot,
+      strongSubject: u.strongSubject,
+      weakSubject: u.weakSubject,
+      studyStyle: u.studyStyle,
     }));
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'players');
@@ -1629,8 +1847,8 @@ export async function fetchLeaderboard(opts: {
 function sanitizeBackupValue(val: unknown, depth = 0): unknown {
   if (depth > 8) return null;
   if (val === null || typeof val === 'boolean' || typeof val === 'string') {
-    return typeof val === 'string' && val.length > 20000
-      ? val.slice(0, 20000)
+    return typeof val === 'string' && val.length > 32000
+      ? val.slice(0, 32000)
       : val;
   }
   if (typeof val === 'number') {
@@ -2335,6 +2553,7 @@ export const firebaseArenaBridge = {
   signOut: signOutArena,
   subscribeAuth: subscribeArenaAuth,
   updateProfile: updateArenaProfile,
+  fetchPlayerProfile,
   recordActivity: recordArenaActivity,
   createRoom: createArenaRoom,
   joinRoom: joinArenaRoom,

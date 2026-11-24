@@ -181,5 +181,7 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes("'task_completed'"), 'Must allow task_completed activity kind');
   assert.ok(rulesText.includes('activeTaskTitle.size() <= 60'), 'Must bound activeTaskTitle length');
   assert.ok(rulesText.includes("data.kind in ['chat', 'rivalry', 'cheer']"), 'Must restrict room message kinds');
+  assert.ok(rulesText.includes('data.avatarDataUrl.size() <= 28000'), 'Must bound avatarDataUrl size');
+  assert.ok(rulesText.includes('data.dailyGoalMin <= 720'), 'Must bound dailyGoalMin');
 }
 

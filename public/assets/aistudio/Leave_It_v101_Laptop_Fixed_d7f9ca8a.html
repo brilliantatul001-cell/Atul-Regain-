@@ -1288,47 +1288,89 @@ document.head.insertAdjacentHTML('beforeend',`<style>.nav-in{align-items:center}
 function ringSvg(){return `<svg class='xr' viewBox='0 0 100 100' aria-hidden='true'><circle class='xt' cx='50' cy='50' r='46'/><circle class='xp' cx='50' cy='50' r='46' pathLength='100' stroke-dasharray='100' stroke-dashoffset='100'/></svg>`}
 document.querySelector('.nav-in').insertAdjacentHTML('beforeend',`<button id='dpBtn' aria-label='Profile'>${ringSvg()}<span class='dpl' id='dpL'>A</span></button>`);
 document.body.insertAdjacentHTML('beforeend',`<div id='pf'><div class='tsb'><div class='tsh'><b id='pfT'>Profile</b><button class='tdel' id='pfX' aria-label='Close'>✕</button></div><div id='pfBody'></div></div></div><input type='file' id='pfFile' accept='image/*' hidden>`);
-function dpApply(){const p=S.prof.photo,l=((S.name||'C').trim()[0]||'C').toUpperCase();
-  const b=$('dpBtn');if(b){const sp=$('dpL');if(p){b.style.backgroundImage='url('+p+')';b.style.backgroundSize='cover';b.style.backgroundPosition='center';if(sp)sp.textContent=''}else{b.style.backgroundImage='';if(sp)sp.textContent=l}}
-  const lg=$('logoI');if(lg){if(p){lg.style.backgroundImage='url('+p+')';lg.style.backgroundSize='cover';lg.style.backgroundPosition='center';lg.textContent=''}else{lg.style.backgroundImage='';lg.textContent=l}}
-  const fm=$('fmAv');if(fm){fm.textContent=p?'':l;fm.classList.toggle('dp',!!p)}
+function dpApply(){const p=S.prof.photo,pr=S.prof.avatarPreset||'',l=((S.name||'C').trim()[0]||'C').toUpperCase();
+  const b=$('dpBtn');if(b){const sp=$('dpL');if(p){b.style.backgroundImage='url('+p+')';b.style.backgroundSize='cover';b.style.backgroundPosition='center';if(sp)sp.textContent=''}else{b.style.backgroundImage='';if(sp)sp.textContent=pr||l}}
+  const lg=$('logoI');if(lg){if(p){lg.style.backgroundImage='url('+p+')';lg.style.backgroundSize='cover';lg.style.backgroundPosition='center';lg.textContent=''}else{lg.style.backgroundImage='';lg.textContent=pr||l}}
+  const fm=$('fmAv');if(fm){fm.textContent=p?'':(pr||l);fm.classList.toggle('dp',!!p)}
   document.documentElement.style.setProperty('--dp',p?'url("'+p+'")':'none')}
 {const _an=applyName;applyName=function(){_an();dpApply()}}
 dpApply();
 const closePf=()=>{$('pf').classList.remove('on');$('dpBtn').classList.remove('on');if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();go('home');setTimeout(()=>scrollTo(0,0),60)};
 $('pfX').onclick=closePf;$('pf').onclick=e=>{if(e.target.id==='pf')closePf()};
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closePf()});
+function pfCompressAvatar(file){return new Promise((resolve,reject)=>{
+  if(!file||!/^image\//.test(file.type)){reject(new Error('Please choose an image'));return}
+  const rd=new FileReader();rd.onerror=()=>reject(new Error('Could not read that image'));
+  rd.onload=()=>{const im=new Image();im.onerror=()=>reject(new Error('Could not open that image'));
+  im.onload=()=>{const tryEncode=(dim,mime,q)=>{const c=document.createElement('canvas');c.width=c.height=dim;const x=c.getContext('2d'),s=Math.min(im.width,im.height),sx=(im.width-s)/2,sy=(im.height-s)/2;x.fillStyle='#0b0d14';x.fillRect(0,0,dim,dim);x.drawImage(im,sx,sy,s,s,0,0,dim,dim);return c.toDataURL(mime,q)};
+    let out=tryEncode(128,'image/webp',.82);
+    if(!out.startsWith('data:image/webp')||out.length>20000){
+      for(const [dim,q] of [[128,.78],[128,.64],[128,.5],[96,.55],[96,.42]]){
+        const cand=tryEncode(dim,'image/jpeg',q);
+        out=cand;if(cand.length<=20000)break;
+      }
+    }
+    resolve(out)};im.src=rd.result};rd.readAsDataURL(file)})}
+window.LeaveItCompressAvatar=pfCompressAvatar;
 function pfView(){const p=S.prof,i=rankOf(X.xp),r=RK[i],a=allT(),nb=BG.filter(b=>X.b[b[0]]).length,nm=(S.name||'Champ');
   let first=null;const ds=Object.keys(H).filter(k=>H[k]&&H[k].q>0).sort();if(ds.length)first=ds[0];
-  const rows=[['Exam target',p.exam],['Target year',p.year],['Days to exam',(()=>{const c=cd();return c?(c.est?'~':'')+c.d+' days'+(c.est?' (estimated)':''):''})()],['Class / batch',p.batch],['Goal / college',p.goal]].filter(x=>x[1]);
+  const leaves=a.l+a.k,disc=leaves?Math.round(a.l/leaves*100):100,sr=a.q?Math.round(a.s/a.q*100):0;
+  const fields=[p.photo||p.avatarPreset,p.statusBadge,p.exam,p.year,p.batch,p.goal,p.dailyGoalMin,p.studySlot,p.strongSubject,p.motto];
+  const compPct=Math.round(fields.filter(Boolean).length/fields.length*100);
+  const rows=[['Status flair',p.statusBadge],['Exam target',p.exam],['Target year',p.year],['Days to exam',(()=>{const c=cd();return c?(c.est?'~':'')+c.d+' days'+(c.est?' (estimated)':''):''})()],['Class / batch',p.batch],['Goal / college',p.goal],['Daily study goal',p.dailyGoalMin?p.dailyGoalMin+' min/day':''],['Preferred slot',p.studySlot],['Study mode',p.studyStyle],['Strongest subject',p.strongSubject],['Focus subject',p.weakSubject]].filter(x=>x[1]);
+  const avTxt=p.photo?'':esc(p.avatarPreset||([...nm][0]||'C').toUpperCase());
   $('pfT').textContent='My profile';
-  $('pfBody').innerHTML=`<div class='pfh'><div class='pfrw'>${ringSvg()}<button class='pfav' id='pfPic' style='${p.photo?`background-image:url(${p.photo})`:''}'>${p.photo?'':esc(([...nm][0]||'C').toUpperCase())}<small>📷 Change</small></button></div><div class='pfn'>${esc(nm)}</div><div class='pfr' style='color:${XRC[i]}'>${r[1]} ${r[0]} · ${X.xp} XP</div><div class='pfx'>${RK[i+1]?(RK[i+1][2]-X.xp)+' XP to '+RK[i+1][1]+' '+RK[i+1][0]:'Top rank reached 🚀'}</div>${p.motto?`<div class='pfm'>“${esc(p.motto)}”</div>`:''}</div>
-<div class='pfg'><div><b>🔥 ${streakN()}</b><span>Day streak</span></div><div><b>${a.q}</b><span>Questions</span></div><div><b>${Math.round(a.sec/60)}m</b><span>Practice time</span></div><div><b>${TL.length}</b><span>Tests logged</span></div><div><b>${nb}/${BG.length}</b><span>Badges</span></div><div><b>${first?fdate(first):'–'}</b><span>Started</span></div></div>
-${rows.length?`<div class='pfd'>${rows.map(x=>`<div><span>${x[0]}</span><b>${esc(x[1])}</b></div>`).join('')}</div>`:`<div class='heatinfo' style='margin-bottom:10px'>Add your exam, year and goal to complete your profile.</div>`}
+  $('pfBody').innerHTML=`<div class='pfh'><div class='pfrw'>${ringSvg()}<button class='pfav' id='pfPic' style='${p.photo?`background-image:url(${p.photo})`:''}'>${avTxt}<small>📷 Change</small></button></div><div class='pfn'>${esc(nm)}</div><div class='pfr' style='color:${XRC[i]}'>${r[1]} ${r[0]} · ${X.xp} XP</div><div class='pfx'>${RK[i+1]?(RK[i+1][2]-X.xp)+' XP to '+RK[i+1][1]+' '+RK[i+1][0]:'Top rank reached 🚀'}</div>${p.statusBadge?`<div style='margin-top:4px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--track);color:var(--accent)'>${esc(p.statusBadge)}</div>`:''}${p.motto?`<div class='pfm'>“${esc(p.motto)}”</div>`:''}</div>
+<div style='margin:0 0 10px;padding:10px 12px;border-radius:14px;background:var(--track)'><div style='display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px'><span>Profile completeness</span><b>${compPct}%</b></div><div style='height:6px;border-radius:99px;background:var(--card);overflow:hidden'><i style='display:block;height:100%;width:${compPct}%;background:var(--ok);border-radius:99px'></i></div></div>
+<div class='pfg'><div><b>🔥 ${streakN()}</b><span>Day streak</span></div><div><b>${a.q}</b><span>Questions</span></div><div><b>${sr}% · ${disc}%</b><span>Solve · Leave</span></div><div><b>${Math.round(a.sec/60)}m</b><span>Practice time</span></div><div><b>${TL.length} · ${MH.length}</b><span>Tests · Mocks</span></div><div><b>${nb}/${BG.length}</b><span>Badges</span></div></div>
+${rows.length?`<div class='pfd'>${rows.map(x=>`<div><span>${x[0]}</span><b>${esc(x[1])}</b></div>`).join('')}</div>`:`<div class='heatinfo' style='margin-bottom:10px'>Add your exam, study slot, daily goal, and dream college to complete your profile.</div>`}
+${first?`<div style='font-size:11.5px;color:var(--muted);text-align:center;margin-bottom:8px'>Practicing since ${fdate(first)}</div>`:''}
 <a class='pf-quicklink' href='https://app.quizrr.in/' target='_blank' rel='noopener noreferrer' aria-label='Open Quizrr practice platform'><span class='qz-left'><span class='qz-mark'>Q</span><span><b>Open Quizrr</b><small>Practice &amp; test platform · app.quizrr.in</small></span></span><span class='qz-go'>↗</span></a>
 <div class='dbtn'><button class='ctl' id='pfEdit'>✎ Edit profile</button><button class='ctl' id='pfShare'>📤 Share card</button></div>`;
   $('pfPic').onclick=()=>$('pfFile').click();$('pfEdit').onclick=pfEdit;$('pfShare').onclick=()=>{closePf();setTimeout(showShare,80)};xrIntro($('pfBody'))}
 function pfEdit(){const p=S.prof;$('pfT').textContent='Edit profile';
-  $('pfBody').innerHTML=`<div class='pfh'><button class='pfav' id='pfPic' style='${p.photo?`background-image:url(${p.photo})`:''}'>${p.photo?'':esc(([...(S.name||'C')][0]||'C').toUpperCase())}<small>Choose photo</small></button>${p.photo?`<button class='chip' id='pfRm'>Remove photo</button>`:''}</div>
-<div class='tl' style='margin-top:0'>Name</div><input class='ti' id='pfName' maxlength='16' value='${esc(S.name||'')}' placeholder='Your name'>
-<div class='tl'>Exam target</div><div class='row' id='pfEx'>${['JEE Mains','JEE Advanced','Both'].map(x=>`<button class='chip ${p.exam===x?'on':''}' data-v='${x}'>${x}</button>`).join('')}</div>
+  const presets=['🦉','🦁','⚡','🎯','🚀','🧠','♟️','🌌','🔥','👑'];
+  const flairs=['🎯 Grinding','🧘 Deep Focus','📝 Mock Prep','🔥 Streak Mode','📚 Revision','☕ Taking Break'];
+  const exams=['JEE Mains','JEE Advanced','JEE Both','NEET','Boards','Coding / CS','UPSC / Govt','Other'];
+  const slots=['Early Bird (5–10 AM)','Daytime Scholar','Evening Grinder','Night Owl (10 PM+)','Flexible'];
+  const styles=['Self-Study','Coaching + Self','Online Batch','Mock Heavy'];
+  const subjs=['Physics','Chemistry','Maths','Biology','CS / Coding','English','Balanced'];
+  let curPreset=p.avatarPreset||'',curFlair=p.statusBadge||'',ex=p.exam||'',curSlot=p.studySlot||'',curStyle=p.studyStyle||'',curStrong=p.strongSubject||'',curWeak=p.weakSubject||'';
+  $('pfBody').innerHTML=`<div class='pfh'><button class='pfav' id='pfPic' style='${p.photo?`background-image:url(${p.photo})`:''}'>${p.photo?'':esc(curPreset||([...(S.name||'C')][0]||'C').toUpperCase())}<small>Choose photo</small></button>${p.photo?`<button class='chip' id='pfRm'>Remove photo</button>`:''}</div>
+<div class='tl' style='margin-top:0'>Or pick quick avatar icon</div><div class='row' id='pfPr'>${presets.map(x=>`<button type='button' class='chip ${!p.photo&&curPreset===x?'on':''}' data-v='${x}' style='font-size:16px;padding:6px 10px'>${x}</button>`).join('')}</div>
+<div class='tl'>Name</div><input class='ti' id='pfName' maxlength='24' value='${esc(S.name||'')}' placeholder='Your name'>
+<div class='tl'>Status flair</div><div class='row' id='pfFl'>${flairs.map(x=>`<button type='button' class='chip ${curFlair===x?'on':''}' data-v='${x}'>${x}</button>`).join('')}</div>
+<div class='tl'>Exam target</div><div class='row' id='pfEx'>${exams.map(x=>`<button type='button' class='chip ${ex===x?'on':''}' data-v='${x}'>${x}</button>`).join('')}</div>
 <div class='tl'>Target year</div><input class='ti' id='pfYr' type='number' inputmode='numeric' min='${new Date().getFullYear()}' max='${new Date().getFullYear()+9}' value='${p.year||''}' placeholder='e.g. 2027'>
 <div class='tl'>Exam date <span style='text-transform:none;letter-spacing:0'>(optional, else estimated)</span></div><input class='ti' id='pfDt' type='date' min='${dk()}' value='${p.date||''}'>
-<div class='tl'>Class / batch</div><input class='ti' id='pfBt' maxlength='30' value='${esc(p.batch||'')}' placeholder='e.g. Class 12 · Lakshya batch'>
-<div class='tl'>Goal / dream college</div><input class='ti' id='pfGl' maxlength='40' value='${esc(p.goal||'')}' placeholder='e.g. IIT Bombay CSE'>
-<div class='tl'>Motto</div><input class='ti' id='pfMt' maxlength='60' value='${esc(p.motto||'')}' placeholder='Your one-line motivation'>
+<div class='tl'>Class / batch</div><input class='ti' id='pfBt' maxlength='36' value='${esc(p.batch||'')}' placeholder='e.g. Class 12 · Lakshya batch'>
+<div class='tl'>Goal / dream college</div><input class='ti' id='pfGl' maxlength='48' value='${esc(p.goal||'')}' placeholder='e.g. IIT Bombay CSE'>
+<div class='tl'>Daily focus goal (mins / day)</div><input class='ti' id='pfDg' type='number' inputmode='numeric' min='15' max='720' value='${p.dailyGoalMin||''}' placeholder='e.g. 180'>
+<div class='tl'>Preferred study slot</div><div class='row' id='pfSl'>${slots.map(x=>`<button type='button' class='chip ${curSlot===x?'on':''}' data-v='${x}'>${x}</button>`).join('')}</div>
+<div class='tl'>Study style</div><div class='row' id='pfSy'>${styles.map(x=>`<button type='button' class='chip ${curStyle===x?'on':''}' data-v='${x}'>${x}</button>`).join('')}</div>
+<div class='tl'>Strongest subject</div><div class='row' id='pfSs'>${subjs.map(x=>`<button type='button' class='chip ${curStrong===x?'on':''}' data-v='${x}'>${x}</button>`).join('')}</div>
+<div class='tl'>Subject to improve</div><div class='row' id='pfWs'>${subjs.map(x=>`<button type='button' class='chip ${curWeak===x?'on':''}' data-v='${x}'>${x}</button>`).join('')}</div>
+<div class='tl'>Bio / Motto</div><input class='ti' id='pfMt' maxlength='100' value='${esc(p.motto||'')}' placeholder='Your study motto or ambition'>
 <div class='ihelp' id='pfMsg' style='color:var(--bad);margin-top:8px'></div><button class='main' id='pfSave' style='width:100%;margin-top:10px'>Save profile</button>`;
-  let ex=p.exam||'';
+  const wireChips=(id,getter,setter)=>{const el=$(id);if(!el)return;el.onclick=e=>{const b=e.target.closest('.chip');if(!b)return;const nxt=getter()===b.dataset.v?'':b.dataset.v;setter(nxt);el.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.v===nxt))}};
+  wireChips('pfEx',()=>ex,v=>ex=v);wireChips('pfFl',()=>curFlair,v=>curFlair=v);wireChips('pfSl',()=>curSlot,v=>curSlot=v);
+  wireChips('pfSy',()=>curStyle,v=>curStyle=v);wireChips('pfSs',()=>curStrong,v=>curStrong=v);wireChips('pfWs',()=>curWeak,v=>curWeak=v);
+  $('pfPr').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;curPreset=curPreset===b.dataset.v?'':b.dataset.v;if(curPreset)delete S.prof.photo;S.prof.avatarPreset=curPreset;save();dpApply();pfEdit()};
   $('pfPic').onclick=()=>$('pfFile').click();
-  if($('pfRm'))$('pfRm').onclick=()=>{delete S.prof.photo;save();dpApply();pfEdit()};
-  $('pfEx').onclick=e=>{const b=e.target.closest('.chip');if(!b)return;ex=ex===b.dataset.v?'':b.dataset.v;$('pfEx').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.v===ex))};
-  $('pfSave').onclick=()=>{const nm=$('pfName').value.trim().replace(/\s+/g,' ').slice(0,16);if(!nm){$('pfMsg').textContent='Name cannot be empty.';return}
+  if($('pfRm'))$('pfRm').onclick=()=>{delete S.prof.photo;save();dpApply();if(typeof window.LeaveItSyncProfileToArena==='function')window.LeaveItSyncProfileToArena();pfEdit()};
+  $('pfSave').onclick=()=>{const nm=$('pfName').value.trim().replace(/\s+/g,' ').slice(0,24);if(nm.length<2){$('pfMsg').textContent='Name must be at least 2 characters.';return}
     const cy=new Date().getFullYear(),dv=$('pfDt').value;let yr=$('pfYr').value.trim();if(yr&&(!/^\d{4}$/.test(yr)||+yr<cy||+yr>cy+9)){$('pfMsg').textContent='Target year should be between '+cy+' and '+(cy+9)+'.';return}if(dv&&dv<dk()&&dv!==(S.prof.date||'')){$('pfMsg').textContent='Exam date cannot be in the past.';return}if(dv)yr=dv.slice(0,4);
-    S.name=nm;Object.assign(S.prof,{exam:ex,year:yr,date:$('pfDt').value,batch:$('pfBt').value.trim(),goal:$('pfGl').value.trim(),motto:$('pfMt').value.trim()});save();applyName();fmRender();render();pfView();xpToast('✅ Profile saved')}}
-$('pfFile').onchange=e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;if(!/^image\//.test(f.type)){xpToast('Please choose an image');return}
-  const rd=new FileReader();rd.onerror=()=>xpToast('Could not read that image');rd.onload=()=>{const im=new Image();im.onerror=()=>xpToast('Could not open that image');im.onload=()=>{
-    const z=256,c=document.createElement('canvas');c.width=c.height=z;const x=c.getContext('2d'),s=Math.min(im.width,im.height),sx=(im.width-s)/2,sy=(im.height-s)/2;x.fillStyle='#000';x.fillRect(0,0,z,z);x.drawImage(im,sx,sy,s,s,0,0,z,z);
-    S.prof.photo=c.toDataURL('image/jpeg',.85);save();dpApply();if($('pfName')&&$('pfSave'))pfEdit();else pfView();xpToast('📸 Photo updated')};im.src=rd.result};rd.readAsDataURL(f)};
+    const dgRaw=parseInt($('pfDg').value||'0',10);const dg=Number.isFinite(dgRaw)&&dgRaw>0?Math.max(15,Math.min(720,dgRaw)):0;
+    S.name=nm.slice(0,16);S.displayName=nm;
+    Object.assign(S.prof,{avatarPreset:curPreset,statusBadge:curFlair,exam:ex,year:yr,date:$('pfDt').value,batch:$('pfBt').value.trim().slice(0,36),goal:$('pfGl').value.trim().slice(0,48),dailyGoalMin:dg,studySlot:curSlot,studyStyle:curStyle,strongSubject:curStrong,weakSubject:curWeak,motto:$('pfMt').value.trim().slice(0,100)});
+    save();applyName();fmRender();render();
+    if(typeof window.LeaveItSyncProfileToArena==='function')window.LeaveItSyncProfileToArena();
+    pfView();xpToast('✅ Profile saved')}}
+$('pfFile').onchange=async e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(!f)return;
+  try{const url=await pfCompressAvatar(f);S.prof.photo=url;S.prof.avatarPreset='';save();dpApply();
+    if(typeof window.LeaveItSyncProfileToArena==='function')window.LeaveItSyncProfileToArena();
+    if($('pfName')&&$('pfSave'))pfEdit();else pfView();xpToast('📸 Photo updated')}
+  catch(err){xpToast((err&&err.message)||'Could not update photo')}};
 $('dpBtn').onclick=()=>{pfView();$('pf').classList.add('on');$('dpBtn').classList.add('on')};
 /* ===== v52: level-coloured XP ring around the DP (nav bar + profile) ===== */
 const XRC=['#cd7f32','#38bdf8','#f97316','#22c55e','#facc15','#f43f5e'];
@@ -5666,6 +5708,316 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     background: var(--bt, var(--by, #f5c518)) !important;
     color: var(--btt, #000) !important;
   }
+
+  /* Detailed Profile, Image Upload, Podium & Expanded Leaderboard */
+  .rg-prof-av { overflow: hidden; }
+  .rg-prof-av img, .ar-av-img {
+    width: 100%; height: 100%; object-fit: cover; border-radius: 50%; display: block;
+  }
+  .ar-prof-box {
+    width: min(540px, 100%);
+    max-height: 90dvh;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .ar-prof-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border-radius: 99px;
+    background: color-mix(in srgb, var(--bg) 60%, var(--card));
+    border: 1px solid var(--track);
+    margin-bottom: 14px;
+  }
+  .ar-prof-tabs button {
+    border: 0;
+    border-radius: 99px;
+    padding: 8px 6px;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .ar-prof-tabs button.on {
+    background: var(--accent);
+    color: #06241a;
+  }
+  .ar-prof-hero {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 20px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, var(--card)), color-mix(in srgb, var(--track) 60%, var(--card)));
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--track));
+  }
+  .ar-av-upload-btn {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 2.5px solid var(--accent);
+    background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    font-size: 28px;
+    font-weight: 900;
+    overflow: hidden;
+    flex-shrink: 0;
+    cursor: pointer;
+    padding: 0;
+  }
+  .ar-av-upload-btn small {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,.62);
+    color: #fff;
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 3px 0;
+    text-align: center;
+  }
+  .ar-flair-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    background: color-mix(in srgb, var(--accent) 16%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  }
+  .ar-comp-bar {
+    margin-top: 12px;
+    padding: 10px 13px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--track) 52%, transparent);
+  }
+  .ar-comp-track {
+    height: 7px;
+    border-radius: 99px;
+    background: var(--bg);
+    overflow: hidden;
+    margin-top: 6px;
+  }
+  .ar-comp-track i {
+    display: block;
+    height: 100%;
+    border-radius: 99px;
+    background: linear-gradient(90deg, var(--accent), var(--ok));
+    transition: width .35s ease;
+  }
+  .ar-dna-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  @media (max-width: 440px) {
+    .ar-dna-grid { grid-template-columns: 1fr; }
+  }
+  .ar-dna-item {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--track) 46%, transparent);
+    border: 1px solid color-mix(in srgb, var(--track) 80%, transparent);
+  }
+  .ar-dna-item span {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+  }
+  .ar-dna-item b {
+    display: block;
+    margin-top: 3px;
+    font-size: 13px;
+    font-weight: 700;
+    overflow-wrap: anywhere;
+  }
+  .ar-prof-stats-6 {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .ar-prof-stats-6 > div {
+    padding: 10px 6px;
+    border-radius: 14px;
+    background: color-mix(in srgb, var(--track) 55%, transparent);
+    text-align: center;
+  }
+  .ar-prof-stats-6 b { display: block; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .ar-prof-stats-6 span { font-size: 10.5px; color: var(--muted); }
+  .ar-chip-pick {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+  }
+  .ar-chip-pick button {
+    border: 1.5px solid var(--track);
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+    color: var(--text);
+    border-radius: 99px;
+    padding: 6px 11px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .ar-chip-pick button.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #06241a;
+    font-weight: 800;
+  }
+  .ar-preset-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+  .ar-preset-row button {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--track);
+    background: var(--bg);
+    font-size: 18px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    padding: 0;
+  }
+  .ar-preset-row button.on {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 22%, var(--card));
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+  }
+  .ar-form-2col {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+  @media (max-width: 460px) {
+    .ar-form-2col { grid-template-columns: 1fr; }
+  }
+
+  /* Leaderboard My-Rank Banner, Podium, Card View & Player Inspector */
+  #arenaRoot .ar-myrank-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 12px 15px;
+    border-radius: 18px;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 16%, var(--card)), color-mix(in srgb, var(--track) 55%, var(--card)));
+    border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--track));
+  }
+  #arenaRoot .ar-podium {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 14px;
+    align-items: end;
+  }
+  @media (max-width: 620px) {
+    #arenaRoot .ar-podium {
+      grid-template-columns: 1fr;
+      align-items: stretch;
+    }
+  }
+  #arenaRoot .ar-pod-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 5px;
+    padding: 14px 10px;
+    border-radius: 20px;
+    background: color-mix(in srgb, var(--bg) 58%, var(--card));
+    border: 1.5px solid var(--track);
+    cursor: pointer;
+    transition: transform .15s, border-color .15s;
+  }
+  #arenaRoot .ar-pod-card:hover { transform: translateY(-2px); border-color: var(--accent); }
+  #arenaRoot .ar-pod-card.r1 {
+    border-color: #facc15;
+    background: linear-gradient(180deg, color-mix(in srgb, #facc15 14%, var(--card)), var(--card));
+    padding-top: 18px;
+  }
+  #arenaRoot .ar-pod-card.r2 { border-color: #cbd5e1; }
+  #arenaRoot .ar-pod-card.r3 { border-color: #d97706; }
+  #arenaRoot .ar-lb-av {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: color-mix(in srgb, var(--accent) 20%, transparent);
+    color: var(--accent);
+    font-weight: 800; font-size: 14px;
+    overflow: hidden; flex-shrink: 0;
+  }
+  #arenaRoot .ar-lb-av.lg { width: 50px; height: 50px; font-size: 20px; }
+  #arenaRoot .ar-lb-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(255px, 1fr));
+    gap: 10px;
+    margin-top: 12px;
+  }
+  #arenaRoot .ar-lb-card {
+    padding: 13px;
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+    border: 1px solid var(--track);
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    cursor: pointer;
+    transition: border-color .15s;
+  }
+  #arenaRoot .ar-lb-card.me {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 9%, var(--card));
+  }
+  #arenaRoot .ar-lb-card:hover { border-color: var(--accent); }
+  #arenaRoot table.ar-tbl tr.ar-click-row { cursor: pointer; }
+  #arenaRoot table.ar-tbl tr.ar-click-row:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+  #arPlayerModal {
+    position: fixed;
+    inset: 0;
+    z-index: 270;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(6, 8, 16, .74);
+    backdrop-filter: blur(8px);
+  }
+  #arPlayerModal.on { display: flex; }
+  .ar-sel {
+    padding: 8px 12px;
+    border-radius: 99px;
+    border: 1.5px solid var(--track);
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
 </style>
 <script id="v104-arena-js">
 (function(){
@@ -5724,6 +6076,116 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     return `<div class="ar-err"><span>${escHtml(msg)}</span><button type="button" data-ar-act="toggleDiag" class="ar-btn-ghost" style="padding:4px 10px;font-size:11px">Diagnostics</button></div>`;
   }
 
+  const AVATAR_PRESETS=['🦉','🦁','⚡','🎯','🚀','🧠','♟️','🌌','🔥','👑'];
+  const STATUS_FLAIRS=['🎯 Grinding','🧘 Deep Focus','📝 Mock Prep','🔥 Streak Mode','📚 Revision','☕ Taking Break'];
+  const EXAM_TARGETS=['JEE Mains','JEE Advanced','JEE Both','NEET','Boards','Coding / CS','UPSC / Govt','Other'];
+  const STUDY_SLOTS=['Early Bird (5–10 AM)','Daytime Scholar','Evening Grinder','Night Owl (10 PM+)','Flexible'];
+  const STUDY_STYLES=['Self-Study','Coaching + Self','Online Batch','Mock Heavy'];
+  const SUBJECT_OPTIONS=['Physics','Chemistry','Maths','Biology','CS / Coding','English','Balanced'];
+
+  function safeImgSrc(url){
+    if(typeof url!=='string')return '';
+    const trimmed=url.trim();
+    if(trimmed.length>28000)return '';
+    if(/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(trimmed))return trimmed;
+    return '';
+  }
+
+  function renderAvatarInner(avatarDataUrl,avatarPreset,displayName){
+    const safeUrl=safeImgSrc(avatarDataUrl);
+    if(safeUrl)return `<img class="ar-av-img" src="${escHtml(safeUrl)}" alt="Avatar">`;
+    if(avatarPreset)return escHtml(avatarPreset);
+    const ini=([...String(displayName||'C').trim()][0]||'C').toUpperCase();
+    return escHtml(ini);
+  }
+
+  function readLocalProf(){
+    const sp=(typeof S!=='undefined'&&S&&S.prof&&typeof S.prof==='object')?S.prof:{};
+    const u=ST.user;
+    return {
+      photo:safeImgSrc(sp.photo||(u&&u.avatarDataUrl)||''),
+      avatarPreset:String(sp.avatarPreset!==undefined?sp.avatarPreset:((u&&u.avatarPreset)||'')),
+      statusBadge:String(sp.statusBadge!==undefined?sp.statusBadge:((u&&u.statusBadge)||'')),
+      exam:String(sp.exam!==undefined?sp.exam:((u&&u.examTarget)||'')),
+      year:String(sp.year!==undefined?sp.year:((u&&u.targetYear)||'')),
+      date:String(sp.date||''),
+      batch:String(sp.batch!==undefined?sp.batch:((u&&u.batch)||'')),
+      goal:String(sp.goal!==undefined?sp.goal:((u&&u.goal)||'')),
+      dailyGoalMin:Number(sp.dailyGoalMin!==undefined?sp.dailyGoalMin:((u&&u.dailyGoalMin)||0))||0,
+      studySlot:String(sp.studySlot!==undefined?sp.studySlot:((u&&u.studySlot)||'')),
+      strongSubject:String(sp.strongSubject!==undefined?sp.strongSubject:((u&&u.strongSubject)||'')),
+      weakSubject:String(sp.weakSubject!==undefined?sp.weakSubject:((u&&u.weakSubject)||'')),
+      studyStyle:String(sp.studyStyle!==undefined?sp.studyStyle:((u&&u.studyStyle)||'')),
+      motto:String(sp.motto!==undefined?sp.motto:((u&&u.bio)||''))
+    };
+  }
+
+  function writeLocalProf(fields){
+    if(typeof S==='undefined'||!S)return;
+    S.prof=S.prof||{};
+    if(fields.displayName){
+      const dn=String(fields.displayName).trim().slice(0,24);
+      if(dn){S.displayName=dn;S.name=dn.slice(0,16)}
+    }
+    if(fields.photo!==undefined){
+      const safe=safeImgSrc(fields.photo);
+      if(safe)S.prof.photo=safe;
+      else delete S.prof.photo;
+    }
+    if(fields.avatarPreset!==undefined)S.prof.avatarPreset=String(fields.avatarPreset||'');
+    if(fields.statusBadge!==undefined)S.prof.statusBadge=String(fields.statusBadge||'');
+    if(fields.exam!==undefined)S.prof.exam=String(fields.exam||'');
+    if(fields.year!==undefined)S.prof.year=String(fields.year||'');
+    if(fields.date!==undefined)S.prof.date=String(fields.date||'');
+    if(fields.batch!==undefined)S.prof.batch=String(fields.batch||'');
+    if(fields.goal!==undefined)S.prof.goal=String(fields.goal||'');
+    if(fields.dailyGoalMin!==undefined)S.prof.dailyGoalMin=Math.max(0,Math.min(720,Number(fields.dailyGoalMin)||0));
+    if(fields.studySlot!==undefined)S.prof.studySlot=String(fields.studySlot||'');
+    if(fields.strongSubject!==undefined)S.prof.strongSubject=String(fields.strongSubject||'');
+    if(fields.weakSubject!==undefined)S.prof.weakSubject=String(fields.weakSubject||'');
+    if(fields.studyStyle!==undefined)S.prof.studyStyle=String(fields.studyStyle||'');
+    if(fields.motto!==undefined)S.prof.motto=String(fields.motto||'');
+    if(typeof save==='function')save();
+    if(typeof applyName==='function')applyName();
+    if(typeof dpApply==='function')dpApply();
+    if(typeof fmRender==='function')fmRender();
+    if(typeof render==='function')render();
+  }
+
+  function hydrateLocalFromCloudUser(u){
+    if(!u||typeof S==='undefined'||!S)return;
+    S.prof=S.prof||{};
+    let changed=false;
+    const fill=(lk,ck)=>{if(!S.prof[lk]&&u[ck]){S.prof[lk]=u[ck];changed=true}};
+    if(!S.prof.photo&&!S.prof.avatarPreset&&u.avatarDataUrl){const safe=safeImgSrc(u.avatarDataUrl);if(safe){S.prof.photo=safe;changed=true}}
+    if(!S.prof.photo&&!S.prof.avatarPreset&&u.avatarPreset){S.prof.avatarPreset=u.avatarPreset;changed=true}
+    fill('statusBadge','statusBadge');
+    fill('exam','examTarget');
+    fill('year','targetYear');
+    fill('batch','batch');
+    fill('goal','goal');
+    if(!S.prof.dailyGoalMin&&u.dailyGoalMin){S.prof.dailyGoalMin=u.dailyGoalMin;changed=true}
+    fill('studySlot','studySlot');
+    fill('strongSubject','strongSubject');
+    fill('weakSubject','weakSubject');
+    fill('studyStyle','studyStyle');
+    fill('motto','bio');
+    if(changed){
+      syncApplying=true;
+      try{
+        if(typeof save==='function')save();
+        if(typeof dpApply==='function')dpApply();
+      }finally{syncApplying=false}
+    }
+  }
+
+  function rankMetaForXp(xp){
+    const ranks=(typeof RK!=='undefined'&&Array.isArray(RK)&&RK.length)?RK:[['Rookie','🥉',0],['Learner','📘',150],['Fighter','⚔️',500],['Warrior','🛡️',1200],['Champion','👑',2500],['Topper','🚀',5000]];
+    let idx=0;
+    ranks.forEach((r,i)=>{if(Number(xp||0)>=r[2])idx=i});
+    return {idx,cur:ranks[idx],next:ranks[idx+1]||null,all:ranks};
+  }
+
   // ---- Arena State ----
   const ST={
     user:null,
@@ -5749,7 +6211,11 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     lbTime:'all',
     lbQ:'',
     lbOnlyFriends:false,
+    lbExam:'all',
+    lbActiveStreak:false,
+    lbView:'table', // table | cards
     lbLoading:false,
+    inspectedPlayer:null,
     err:'',
     busy:false,
     liveReady:false,
@@ -5765,6 +6231,38 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     vanishNoticeRoom:'',
     invitePickerOpen:false,
     targetDuelFriend:null
+  };
+
+  window.LeaveItSyncProfileToArena=async function(){
+    const fb=getFB();
+    if(!fb||!ST.user||!fb.updateProfile)return;
+    const lp=readLocalProf();
+    const dn=(typeof S!=='undefined'&&(S.displayName||S.name))||ST.user.displayName;
+    try{
+      const upd=await fb.updateProfile({
+        username:ST.user.username,
+        displayName:dn,
+        avatarDataUrl:lp.photo||'',
+        avatarPreset:lp.photo?'':(lp.avatarPreset||''),
+        statusBadge:lp.statusBadge||'',
+        bio:lp.motto||'',
+        examTarget:lp.exam||'',
+        targetYear:lp.year||'',
+        batch:lp.batch||'',
+        goal:lp.goal||'',
+        dailyGoalMin:lp.dailyGoalMin||0,
+        studySlot:lp.studySlot||'',
+        strongSubject:lp.strongSubject||'',
+        weakSubject:lp.weakSubject||'',
+        studyStyle:lp.studyStyle||''
+      });
+      if(upd){
+        ST.user=upd;
+        syncBridgeState();
+        refreshTopLeftProfile();
+        if(isArenaVisible())renderArenaSafe();
+      }
+    }catch(e){}
   };
 
   let unsubAuth=null,unsubRooms=null,unsubRoom=null,unsubLogs=null,unsubFriends=null,unsubInvites=null,unsubRoomMsgs=null,msgsRoomCode='',lastFriendProfSig='',claimedFinished=new Set(),seenMsgIds=new Set(),msgStreamSeeded=false,seenInvIds=new Set(),invStreamSeeded=false;
@@ -5952,7 +6450,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   function renderArenaSafe(){
     if(!isArenaVisible())return;
     const ae=document.activeElement;
-    if(ae&&arenaRoot.contains(ae)&&/^(INPUT|TEXTAREA)$/.test(ae.tagName)){
+    if(ae&&arenaRoot.contains(ae)&&/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)){
       if(ae.id==='arChatIn'){
         patchRoomChatFeed();
       }
@@ -6236,7 +6734,13 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     ST.lbLoading=true;
     if(isArenaVisible())renderArena();
     try{
-      ST.lb=await fb.fetchLeaderboard({sort:ST.lbSort,timeframe:ST.lbTime,search:ST.lbQ});
+      ST.lb=await fb.fetchLeaderboard({
+        sort:ST.lbSort,
+        timeframe:ST.lbTime,
+        search:ST.lbQ,
+        examFilter:ST.lbExam,
+        onlyActiveStreak:ST.lbActiveStreak
+      });
     }catch(e){
       ST.err=formatArenaError(e,'Could not load leaderboard.');
     }
@@ -6780,7 +7284,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         ST.authMsg='';
         ST.needsEmailConfirm=false;
         syncApplying=true;
-        try{syncSpaName(user.displayName)}catch(e){}
+        try{
+          syncSpaName(user.displayName);
+          hydrateLocalFromCloudUser(user);
+        }catch(e){}
         finally{syncApplying=false}
         startRoomsSub();
         startSocialSubs();
@@ -7019,6 +7526,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
   function renderLobby(){
     const u=ST.user;
+    const lp=readLocalProf();
     const sync=window.LeaveItArenaSync;
     const pf=sync?sync.getPrefillMatch():null;
     if(pf){
@@ -7029,10 +7537,24 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       ST.pendingTask=pf;
     }
     const pendingTasks=readTodayPlannerTasks().filter(t=>!t.d);
+    const avHtml=renderAvatarInner(lp.photo||u.avatarDataUrl,lp.avatarPreset||u.avatarPreset,u.displayName);
+    const flair=lp.statusBadge||u.statusBadge;
+    const examTag=lp.exam||u.examTarget;
     return `<div class="ar-card">
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
-        <div><p class="ar-sub" style="margin:0">Signed in as @${escHtml(u.username)}</p><h3 style="margin-top:2px">${escHtml(u.displayName)}</h3></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+        <div style="display:flex;align-items:center;gap:12px;min-width:0">
+          <button type="button" data-prof-open="1" class="rg-prof-av" style="width:48px;height:48px;font-size:19px;border:2px solid var(--accent);cursor:pointer;padding:0" title="Open Detailed Profile">${avHtml}</button>
+          <div style="min-width:0">
+            <p class="ar-sub" style="margin:0">@${escHtml(u.username)}${u.streakDays?' · 🔥 '+u.streakDays+'d streak':''}</p>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:2px">
+              <h3 style="margin:0">${escHtml(u.displayName)}</h3>
+              ${flair?`<span class="ar-flair-pill">${escHtml(flair)}</span>`:''}
+              ${examTag?`<span class="ar-badge-mini">${escHtml(examTag)}</span>`:''}
+            </div>
+          </div>
+        </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" data-prof-open="1" class="ar-btn-ghost" style="border-color:var(--accent);color:var(--accent)">👤 Detailed Profile &amp; Photo</button>
           <button type="button" data-ar-act="toggleEdit" class="ar-btn-ghost">${ST.editingProfile?'Close':'✏️ Edit Handle'}</button>
           <button type="button" data-ar-act="toTimer" class="ar-btn-ghost">Open Timer ▶</button>
         </div>
@@ -7171,11 +7693,12 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
           const prof=ST.friendProfiles&&ST.friendProfiles[f.uid];
           const disp=(prof&&prof.displayName)||f.displayName;
           const uname=(prof&&prof.username)||f.username;
-          const ini=([...disp.trim()][0]||'F').toUpperCase();
-          const statsLine=prof?`⚡ ${prof.xp.toLocaleString()} XP · ${prof.focusMinutes}m focus · 🔥${prof.streakDays}d · ${prof.duelWins}W`:`@${uname} · Connected friend`;
+          const avHtml=renderAvatarInner(prof&&prof.avatarDataUrl,prof&&prof.avatarPreset,disp);
+          const extraTag=prof&&(prof.statusBadge||prof.examTarget)?` · ${prof.statusBadge||prof.examTarget}`:'';
+          const statsLine=prof?`⚡ ${prof.xp.toLocaleString()} XP · ${prof.focusMinutes}m focus · 🔥${prof.streakDays}d · ${prof.duelWins}W${extraTag}`:`@${uname} · Connected friend`;
           return `<div class="ar-friend-row">
-            <div class="ar-friend-id">
-              <span class="ar-friend-av">${escHtml(ini)}</span>
+            <div class="ar-friend-id" data-ar-inspect-uid="${escHtml(f.uid)}" style="cursor:pointer" title="View friend profile">
+              <span class="ar-friend-av" style="overflow:hidden">${avHtml}</span>
               <div class="ar-friend-meta"><b>${escHtml(disp)} <span style="color:var(--muted);font-weight:500;font-size:12px">@${escHtml(uname)}</span></b><small>${escHtml(statsLine)}</small></div>
             </div>
             <div class="ar-friend-acts">
@@ -7218,33 +7741,161 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     </div>`;
   }
 
+  function lbMetricLabelAndVal(e,sort){
+    switch(sort){
+      case 'focus': return {lbl:'Focus',val:`${e.focusMinutes}m`,num:e.focusMinutes};
+      case 'questions': return {lbl:'Solved',val:`${e.questionsSolved} Qs`,num:e.questionsSolved};
+      case 'streak': return {lbl:'Streak',val:`🔥 ${e.streakDays}d`,num:e.streakDays};
+      case 'discipline': return {lbl:'Leave %',val:`${e.disciplineRatePct}%`,num:e.disciplineRatePct};
+      case 'tasks': return {lbl:'Tasks',val:`📋 ${e.tasksCompleted||0}`,num:e.tasksCompleted||0};
+      case 'mocks': return {lbl:'Mock Avg',val:e.mockTestsCount?`${e.mockAccuracyAvg}%`:'—',num:e.mockTestsCount?e.mockAccuracyAvg:0};
+      case 'duels': return {lbl:'1v1 Wins',val:`${e.duelWins}W/${e.duelPlayed}`,num:e.duelWins};
+      default: return {lbl:'XP',val:`⚡ ${e.xp.toLocaleString()}`,num:e.xp};
+    }
+  }
+
   function renderLeaderboard(){
     const fSet=acceptedFriendUids();
     const rows=ST.lbOnlyFriends?ST.lb.filter(e=>e.id===ST.user.id||fSet.has(e.id)):ST.lb;
+    const totalShown=rows.length;
+    const myIdx=rows.findIndex(e=>e.id===ST.user.id);
+    const myEntry=myIdx>=0?rows[myIdx]:ST.lb.find(e=>e.id===ST.user.id);
+    let myRankBar='';
+    if(!ST.lbLoading&&myEntry){
+      const dispRank=myIdx>=0?myIdx+1:myEntry.rank;
+      const denom=myIdx>=0?totalShown:ST.lb.length;
+      const pctTop=denom>1?Math.max(1,Math.round((dispRank/denom)*100)):1;
+      const myM=lbMetricLabelAndVal(myEntry,ST.lbSort);
+      let gapNote='👑 Leading this board!';
+      if(myIdx>0){
+        const above=rows[myIdx-1];
+        const aboveM=lbMetricLabelAndVal(above,ST.lbSort);
+        const diff=Math.max(0,Math.round((aboveM.num-myM.num)*10)/10);
+        gapNote=diff>0?`+${diff} ${myM.lbl} behind #${myIdx} (@${escHtml(above.username)})`:`Tied with #${myIdx} (@${escHtml(above.username)})`;
+      }else if(myIdx<0){
+        gapNote=`Global rank #${myEntry.rank}`;
+      }
+      myRankBar=`<div class="ar-myrank-bar" data-ar-inspect-uid="${escHtml(ST.user.id)}" style="cursor:pointer" title="Tap to inspect your Arena card">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <span class="ar-lb-av">${renderAvatarInner(myEntry.avatarDataUrl,myEntry.avatarPreset,myEntry.displayName)}</span>
+          <div style="min-width:0">
+            <b style="display:block;font-size:14px">Your Standing: #${dispRank} of ${denom} <span style="color:var(--accent);font-size:12px">· Top ${pctTop}%</span></b>
+            <small style="display:block;font-size:12px;color:var(--muted)">${gapNote}</small>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <b style="font-size:16px;color:var(--accent)">${escHtml(myM.val)}</b>
+          <span style="display:block;font-size:11px;color:var(--muted)">${escHtml(myM.lbl)}</span>
+        </div>
+      </div>`;
+    }
+
+    const showPodium=!ST.lbLoading&&rows.length>=2&&!ST.lbQ.trim();
+    const topThree=showPodium?rows.slice(0,3):[];
+    const podiumHtml=showPodium?`<div class="ar-podium">
+      ${topThree.map((e,idx)=>{
+        const medal=idx===0?'🥇':idx===1?'🥈':'🥉';
+        const rCls=idx===0?'r1':idx===1?'r2':'r3';
+        const m=lbMetricLabelAndVal(e,ST.lbSort);
+        return `<div class="ar-pod-card ${rCls}" data-ar-inspect-uid="${escHtml(e.id)}">
+          <span style="font-size:18px;line-height:1">${medal} #${idx+1}</span>
+          <span class="ar-lb-av lg">${renderAvatarInner(e.avatarDataUrl,e.avatarPreset,e.displayName)}</span>
+          <b style="font-size:14px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.displayName)}${e.id===ST.user.id?' (You)':''}</b>
+          <span style="font-size:11.5px;color:var(--muted)">@${escHtml(e.username)}</span>
+          ${(e.statusBadge||e.examTarget)?`<span class="ar-flair-pill" style="font-size:10px">${escHtml(e.statusBadge||e.examTarget)}</span>`:''}
+          <b style="font-size:16px;color:var(--accent);margin-top:2px">${escHtml(m.val)}</b>
+          <span style="font-size:11px;color:var(--muted)">${escHtml(m.lbl)} · 🔥${e.streakDays}d</span>
+        </div>`;
+      }).join('')}
+    </div>`:'';
+
+    const sorts=[
+      ['xp','⚡ XP'],['focus','⏱ Focus'],['questions','✅ Questions'],['streak','🔥 Streak'],
+      ['discipline','⏰ Leave %'],['tasks','📋 Tasks'],['mocks','📝 Mock Avg'],['duels','⚔️ 1v1']
+    ];
+    const examOpts=[['all','All Exams'],['JEE','JEE'],['NEET','NEET'],['Boards','Boards'],['Coding','Coding / CS'],['UPSC','UPSC / Govt']];
+
     return `<div class="ar-card">
       <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center">
-        <div><h3>Central Leaderboard</h3><p class="ar-sub" style="margin:2px 0 0">Live Firebase rankings across focus, questions, leave discipline &amp; 1v1 duels</p></div>
+        <div><h3>Central Leaderboard</h3><p class="ar-sub" style="margin:2px 0 0">8 ranking categories · tap any player to view full study profile</p></div>
         <div class="ar-ch">
           ${[['today','Today'],['7d','7 Days'],['all','All Time']].map(([k,l])=>`<button type="button" data-ar-tf="${k}" class="${ST.lbTime===k?'on':''}">${l}</button>`).join('')}
           <button type="button" data-ar-lbfriends="0" class="${!ST.lbOnlyFriends?'on':''}">All</button>
           <button type="button" data-ar-lbfriends="1" class="${ST.lbOnlyFriends?'on':''}">Friends (${fSet.size})</button>
-          <button type="button" data-ar-act="refreshLb" class="ar-btn-ghost">↻</button>
+          <button type="button" data-ar-act="refreshLb" class="ar-btn-ghost" title="Refresh leaderboard">↻</button>
         </div>
       </div>
-      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;margin-top:14px;align-items:center">
+
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:12px;align-items:center">
         <div class="ar-ch">
-          ${[['xp','Combined XP'],['focus','Focus & Streaks'],['questions','Questions & Mocks'],['duels','1v1 Duels']].map(([k,l])=>`<button type="button" data-ar-sort="${k}" class="${ST.lbSort===k?'on':''}">${l}</button>`).join('')}
+          ${sorts.map(([k,l])=>`<button type="button" data-ar-sort="${k}" class="${ST.lbSort===k?'on':''}">${l}</button>`).join('')}
         </div>
-        <input class="ar-in" id="arLbSearch" type="search" placeholder="Search handle or name…" value="${escHtml(ST.lbQ)}" style="max-width:240px;padding:9px 13px">
       </div>
+
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin-top:10px;align-items:center">
+        <div class="ar-ch" style="align-items:center">
+          <select id="arLbExam" class="ar-sel" aria-label="Filter by exam target">
+            ${examOpts.map(([k,l])=>`<option value="${k}" ${ST.lbExam===k?'selected':''}>${l}</option>`).join('')}
+          </select>
+          <button type="button" data-ar-streak-filter="1" class="${ST.lbActiveStreak?'on':''}">🔥 Streak &gt; 0</button>
+          <button type="button" data-ar-lbview="table" class="${ST.lbView==='table'?'on':''}">📋 Table</button>
+          <button type="button" data-ar-lbview="cards" class="${ST.lbView==='cards'?'on':''}">🪪 Cards</button>
+        </div>
+        <input class="ar-in" id="arLbSearch" type="search" placeholder="Search @handle, name, exam, goal…" value="${escHtml(ST.lbQ)}" style="max-width:250px;padding:9px 13px">
+      </div>
+
+      ${myRankBar}
+      ${podiumHtml}
       ${renderErrBox(ST.err)}
-      <div class="ar-table-wrap">
-        ${ST.lbLoading?'<p class="ar-sub" style="padding:20px 0">Loading rankings…</p>':
-          rows.length?`<table class="ar-tbl">
+
+      ${ST.lbLoading?'<p class="ar-sub" style="padding:20px 0">Loading rankings…</p>':
+        rows.length?(ST.lbView==='cards'?`<div class="ar-lb-cards">
+          ${rows.map((e,idx)=>{
+            const dispRank=ST.lbOnlyFriends?idx+1:e.rank;
+            const m=lbMetricLabelAndVal(e,ST.lbSort);
+            return `<div class="ar-lb-card ${e.id===ST.user.id?'me':''}" data-ar-inspect-uid="${escHtml(e.id)}">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <div style="display:flex;align-items:center;gap:9px;min-width:0">
+                  <span style="font-weight:900;font-size:14px;color:var(--muted)">#${dispRank}</span>
+                  <span class="ar-lb-av">${renderAvatarInner(e.avatarDataUrl,e.avatarPreset,e.displayName)}</span>
+                  <div style="min-width:0">
+                    <b style="display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(e.displayName)}${e.id===ST.user.id?' · You':''}</b>
+                    <small style="color:var(--muted);font-size:11.5px">@${escHtml(e.username)}</small>
+                  </div>
+                </div>
+                <b style="font-size:14px;color:var(--accent)">${escHtml(m.val)}</b>
+              </div>
+              ${(e.statusBadge||e.examTarget||e.goal)?`<div style="display:flex;flex-wrap:wrap;gap:5px">
+                ${e.statusBadge?`<span class="ar-flair-pill" style="font-size:10.5px">${escHtml(e.statusBadge)}</span>`:''}
+                ${e.examTarget?`<span class="ar-badge-mini">${escHtml(e.examTarget)}${e.targetYear?' · '+escHtml(e.targetYear):''}</span>`:''}
+                ${e.goal?`<span class="ar-badge-mini">🎯 ${escHtml(e.goal)}</span>`:''}
+              </div>`:''}
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:11.5px;text-align:center;padding:7px;border-radius:12px;background:color-mix(in srgb,var(--track) 48%,transparent)">
+                <div><b>${e.focusMinutes}m</b><div style="color:var(--muted);font-size:10px">Focus</div></div>
+                <div><b>🔥${e.streakDays}d</b><div style="color:var(--muted);font-size:10px">Streak</div></div>
+                <div><b>${e.disciplineRatePct}%</b><div style="color:var(--muted);font-size:10px">Leave</div></div>
+                <div><b>${e.duelWins}W</b><div style="color:var(--muted);font-size:10px">1v1</div></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+                <span style="font-size:11px;color:var(--muted)">${e.questionsSolved} Qs · 📋${e.tasksCompleted||0} · ${e.mockTestsCount?e.mockAccuracyAvg+'% mock':'no mocks'}</span>
+                ${renderFriendActionBtn(e.id)}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>`:`<div class="ar-table-wrap">
+          <table class="ar-tbl">
             <thead><tr><th>Rank</th><th>Player</th><th class="num">XP</th><th class="num">Focus</th><th class="num">Tasks</th><th class="num">Streak</th><th class="num">Solved · Leave %</th><th class="num">Mock Avg</th><th class="num">1v1</th><th>Friend</th></tr></thead>
-            <tbody>${rows.map(e=>`<tr class="${e.id===ST.user.id?'me':''}">
-              <td style="font-weight:800">#${e.rank}</td>
-              <td><b>${escHtml(e.displayName)}</b> <span style="color:var(--muted);font-size:12px">@${escHtml(e.username)}${e.id===ST.user.id?' · You':''}</span></td>
+            <tbody>${rows.map((e,idx)=>`<tr class="ar-click-row ${e.id===ST.user.id?'me':''}" data-ar-inspect-uid="${escHtml(e.id)}">
+              <td style="font-weight:800">#${ST.lbOnlyFriends?idx+1:e.rank}</td>
+              <td>
+                <div style="display:flex;align-items:center;gap:9px">
+                  <span class="ar-lb-av">${renderAvatarInner(e.avatarDataUrl,e.avatarPreset,e.displayName)}</span>
+                  <div style="min-width:0">
+                    <div><b>${escHtml(e.displayName)}</b> <span style="color:var(--muted);font-size:12px">@${escHtml(e.username)}${e.id===ST.user.id?' · You':''}</span></div>
+                    ${(e.statusBadge||e.examTarget)?`<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:2px">${e.statusBadge?`<span class="ar-flair-pill" style="font-size:10px;padding:1px 7px">${escHtml(e.statusBadge)}</span>`:''}${e.examTarget?`<span class="ar-badge-mini" style="font-size:10px">${escHtml(e.examTarget)}</span>`:''}</div>`:''}
+                  </div>
+                </div>
+              </td>
               <td class="num" style="color:var(--accent);font-weight:800">${e.xp.toLocaleString()}</td>
               <td class="num">${e.focusMinutes}m</td>
               <td class="num">${e.tasksCompleted||0}</td>
@@ -7254,8 +7905,8 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
               <td class="num">${e.duelWins}/${e.duelPlayed}</td>
               <td>${renderFriendActionBtn(e.id)}</td>
             </tr>`).join('')}</tbody>
-          </table>`:`<p class="ar-sub" style="padding:26px 0;text-align:center">${ST.lbOnlyFriends?'None of your friends appear in this ranking window yet.':'No ranked activity in this window yet.'}</p>`}
-      </div>
+          </table>
+        </div>`):`<div class="ar-table-wrap"><p class="ar-sub" style="padding:26px 0;text-align:center">${ST.lbOnlyFriends?'None of your friends match these filters yet.':(ST.lbExam!=='all'||ST.lbActiveStreak?'No players match the selected exam/streak filter yet.':'No ranked activity in this window yet.')}</p></div>`}
     </div>`;
   }
 
@@ -7315,6 +7966,12 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
 
     const lbFrBtn=e.target.closest('[data-ar-lbfriends]');
     if(lbFrBtn){ST.lbOnlyFriends=lbFrBtn.dataset.arLbfriends==='1';renderArena();return}
+
+    const streakFBtn=e.target.closest('[data-ar-streak-filter]');
+    if(streakFBtn){ST.lbActiveStreak=!ST.lbActiveStreak;loadLb();return}
+
+    const lbViewBtn=e.target.closest('[data-ar-lbview]');
+    if(lbViewBtn){ST.lbView=lbViewBtn.dataset.arLbview==='cards'?'cards':'table';renderArena();return}
 
     const sortBtn=e.target.closest('[data-ar-sort]');
     if(sortBtn){ST.lbSort=sortBtn.dataset.arSort;loadLb();return}
@@ -7473,6 +8130,12 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         startRoomSub(room.roomCode);
       }catch(err){ST.err=formatArenaError(err,'Could not join room.')}
       finally{ST.busy=false;renderArena()}
+      return;
+    }
+
+    const inspectEl=!e.target.closest('button,a,input,select')&&e.target.closest('[data-ar-inspect-uid]');
+    if(inspectEl){
+      openPlayerModal(inspectEl.dataset.arInspectUid);
       return;
     }
 
@@ -7669,30 +8332,227 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     }
   });
 
+  arenaRoot.addEventListener('change',e=>{
+    if(e.target.id==='arLbExam'){
+      ST.lbExam=e.target.value||'all';
+      loadLb();
+    }
+  });
+
   new MutationObserver(()=>{placeArenaRoot()}).observe(root,{attributes:true,attributeFilter:['data-ui']});
   placeArenaRoot();
   renderArena();
 
-  // ---- Top-Left Profile Pill, Settings Integration & Unified Profile Modal ----
+  // ---- Player Profile Inspector Modal (#arPlayerModal) ----
+  const playerModal=document.createElement('div');
+  playerModal.id='arPlayerModal';
+  playerModal.setAttribute('role','dialog');
+  playerModal.setAttribute('aria-modal','true');
+  playerModal.setAttribute('aria-label','Player Profile');
+  document.body.appendChild(playerModal);
+
+  let playerLoading=false;
+
+  function renderPlayerModal(){
+    const p=ST.inspectedPlayer;
+    if(!p){playerModal.innerHTML='';return}
+    const rm=rankMetaForXp(p.xp||0);
+    const leaves=(p.questionsLeftOnTime||0)+(p.questionsOvertime||0);
+    const disc=p.disciplineRatePct!==undefined?p.disciplineRatePct:(leaves?Math.round((p.questionsLeftOnTime||0)/leaves*100):100);
+    const solvePct=p.solveRatePct!==undefined?p.solveRatePct:(p.questionsSolved||leaves?Math.round((p.questionsSolved||0)/Math.max(1,(p.questionsSolved||0)+leaves)*100):0);
+    const mockAvg=p.mockAccuracyAvg!==undefined?p.mockAccuracyAvg:(p.mockTestsCount?Math.round(((p.mockAccuracySum||0)/p.mockTestsCount)*10)/10:0);
+    const isSelf=Boolean(ST.user&&p.id===ST.user.id);
+    const frInfo=friendInfoFor(p.id);
+    const dnaRows=[
+      ['Exam Target',p.examTarget],
+      ['Target Year',p.targetYear],
+      ['Class / Batch',p.batch],
+      ['Dream Goal',p.goal],
+      ['Daily Focus Goal',p.dailyGoalMin?p.dailyGoalMin+' min/day':''],
+      ['Preferred Slot',p.studySlot],
+      ['Study Mode',p.studyStyle],
+      ['Strongest Subject',p.strongSubject],
+      ['Subject to Improve',p.weakSubject]
+    ].filter(x=>x[1]);
+
+    playerModal.innerHTML=`<div class="ar-prof-box" onclick="event.stopPropagation()">
+      <div class="ar-prof-head">
+        <div class="ar-prof-id">
+          <span class="rg-prof-av" style="width:52px;height:52px;font-size:20px">${renderAvatarInner(p.avatarDataUrl,p.avatarPreset,p.displayName)}</span>
+          <div style="min-width:0">
+            <h3 style="margin:0;font-size:18px;font-weight:800;overflow:hidden;text-overflow:ellipsis">${escHtml(p.displayName||'Player')}${isSelf?' (You)':''}</h3>
+            <p class="ar-sub" style="margin:2px 0 0;font-size:12px">@${escHtml(p.username||'player')} · ${rm.cur[1]} ${rm.cur[0]}</p>
+          </div>
+        </div>
+        <button type="button" class="ar-prof-ghost" data-pl-act="close" aria-label="Close">✕</button>
+      </div>
+
+      ${(p.statusBadge||p.examTarget||p.bio)?`<div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+        <div style="display:flex;flex-wrap:wrap;gap:6px">
+          ${p.statusBadge?`<span class="ar-flair-pill">${escHtml(p.statusBadge)}</span>`:''}
+          ${p.examTarget?`<span class="ar-badge-mini">🎓 ${escHtml(p.examTarget)}${p.targetYear?' · '+escHtml(p.targetYear):''}</span>`:''}
+        </div>
+        ${p.bio?`<p class="ar-sub" style="margin:0;font-style:italic;color:var(--text);font-size:13px">“${escHtml(p.bio)}”</p>`:''}
+      </div>`:''}
+
+      <div class="ar-prof-stats-6">
+        <div><b style="color:var(--accent)">${Number(p.xp||0).toLocaleString()}</b><span>Arena XP</span></div>
+        <div><b>${p.focusMinutes||0}m</b><span>Focus Time</span></div>
+        <div><b style="color:var(--warn)">🔥 ${p.streakDays||0}d</b><span>Streak</span></div>
+        <div><b style="color:var(--ok)">${p.questionsSolved||0} · ${solvePct}%</b><span>Solved · Rate</span></div>
+        <div><b style="color:var(--ok)">${disc}%</b><span>Leave Discipline</span></div>
+        <div><b>${p.mockTestsCount?mockAvg+'%':'—'} · ${p.duelWins||0}W · 📋${p.tasksCompleted||0}</b><span>Mock · 1v1 · Tasks</span></div>
+      </div>
+
+      ${dnaRows.length?`<div class="ar-dna-grid">
+        ${dnaRows.map(([k,v])=>`<div class="ar-dna-item"><span>${escHtml(k)}</span><b>${escHtml(v)}</b></div>`).join('')}
+      </div>`:`<p class="ar-sub" style="margin-top:12px;font-size:12px;text-align:center">${playerLoading?'Loading full study profile…':'This player hasn’t added study DNA details yet.'}</p>`}
+
+      <div class="ar-prof-btns">
+        ${isSelf?`<button type="button" class="ar-prof-save" data-pl-act="editMe">✎ Edit My Profile &amp; Photo</button>`:`
+          ${frInfo.state==='friend'?`<button type="button" class="ar-prof-save" data-pl-act="duel" data-uid="${escHtml(p.id)}">⚔️ Challenge to 1v1</button>`:''}
+          ${frInfo.state==='none'?`<button type="button" class="ar-prof-save" data-pl-act="addFriend" data-uid="${escHtml(p.id)}">+ Add Friend</button>`:''}
+          ${frInfo.state==='incoming'?`<button type="button" class="ar-prof-save" data-pl-act="acceptFriend" data-pair="${escHtml(frInfo.pairId)}">✓ Accept Friend Request</button>`:''}
+          ${frInfo.state==='outgoing'?`<span class="ar-prof-ghost" style="flex:1;text-align:center;opacity:.7">Request Pending</span>`:''}
+        `}
+        <button type="button" class="ar-prof-ghost" data-pl-act="close">Close</button>
+      </div>
+    </div>`;
+  }
+
+  async function openPlayerModal(uid){
+    if(!uid)return;
+    const cached=(ST.user&&ST.user.id===uid&&ST.user)||ST.lb.find(e=>e.id===uid)||(ST.friendProfiles&&ST.friendProfiles[uid])||null;
+    ST.inspectedPlayer=cached||{id:uid,username:'player',displayName:'Loading…',xp:0,focusMinutes:0,streakDays:0,questionsSolved:0,questionsLeftOnTime:0,questionsOvertime:0,mockTestsCount:0,duelWins:0,duelPlayed:0,tasksCompleted:0};
+    playerLoading=true;
+    renderPlayerModal();
+    playerModal.classList.add('on');
+    const fb=getFB();
+    if(fb&&fb.fetchPlayerProfile){
+      const fresh=await fb.fetchPlayerProfile(uid).catch(()=>null);
+      playerLoading=false;
+      if(fresh&&ST.inspectedPlayer&&ST.inspectedPlayer.id===uid){
+        ST.inspectedPlayer=Object.assign({},ST.inspectedPlayer,fresh);
+      }
+      if(playerModal.classList.contains('on'))renderPlayerModal();
+    }else{
+      playerLoading=false;
+      renderPlayerModal();
+    }
+  }
+
+  function closePlayerModal(){
+    playerModal.classList.remove('on');
+  }
+
+  playerModal.addEventListener('click',async e=>{
+    if(e.target===playerModal){closePlayerModal();return}
+    const btn=e.target.closest('[data-pl-act]');
+    if(!btn)return;
+    const act=btn.dataset.plAct;
+    const fb=getFB();
+    if(act==='close'){closePlayerModal();return}
+    if(act==='editMe'){closePlayerModal();openProfileModal('edit');return}
+    if(act==='addFriend'&&fb&&fb.sendFriendRequest){
+      try{
+        const res=await fb.sendFriendRequest({uid:btn.dataset.uid});
+        showToast(res.status==='accepted'?'🤝 Now friends with @'+res.username:'📩 Friend request sent to @'+res.username);
+        renderPlayerModal();
+        if(isArenaVisible())renderArena();
+      }catch(err){showToast(formatArenaError(err,'Could not send request.'))}
+      return;
+    }
+    if(act==='acceptFriend'&&fb&&fb.acceptFriendRequest){
+      try{
+        await fb.acceptFriendRequest(btn.dataset.pair);
+        showToast('🤝 Friend request accepted');
+        renderPlayerModal();
+        if(isArenaVisible())renderArena();
+      }catch(err){showToast(formatArenaError(err,'Could not accept request.'))}
+      return;
+    }
+    if(act==='duel'){
+      const p=ST.inspectedPlayer;
+      closePlayerModal();
+      if(p){
+        ST.targetDuelFriend={uid:p.id,displayName:p.displayName,username:p.username};
+        ST.subTab='duel';
+        ST.createMode='sprint_1v1';
+        ST.createTitle=('1v1 vs '+p.displayName).slice(0,48);
+        if(root.dataset.ui==='regain')document.querySelector('#rgNav button[data-n="arena"]')?.click();
+        else document.querySelector('#nav button[data-t="arena"]')?.click();
+        renderArena();
+      }
+    }
+  });
+
+  // ---- Top-Left Profile Pill, Settings Integration & Detailed 3-Tab Profile Modal ----
   const profModal=document.createElement('div');
   profModal.id='arProfModal';
   profModal.setAttribute('role','dialog');
   profModal.setAttribute('aria-modal','true');
-  profModal.setAttribute('aria-label','Edit Profile');
+  profModal.setAttribute('aria-label','Profile and Account');
   document.body.appendChild(profModal);
 
-  let profBusy=false,profErr='';
+  if(!document.getElementById('arProfFile')){
+    const pfIn=document.createElement('input');
+    pfIn.type='file';
+    pfIn.id='arProfFile';
+    pfIn.accept='image/*';
+    pfIn.hidden=true;
+    document.body.appendChild(pfIn);
+  }
+
+  let profBusy=false,profErr='',profTab='overview',profDraft=null;
 
   function currentDisplayName(){
     if(ST.user&&ST.user.displayName)return ST.user.displayName;
+    if(typeof S!=='undefined'&&S.displayName&&S.displayName.trim())return S.displayName.trim();
     if(typeof S!=='undefined'&&S.name&&S.name.trim())return S.name.trim();
     return 'Champ';
   }
 
+  function initProfDraft(){
+    const u=ST.user;
+    const lp=readLocalProf();
+    profDraft={
+      displayName:currentDisplayName(),
+      username:u?u.username:'',
+      photo:lp.photo||'',
+      avatarPreset:lp.photo?'':(lp.avatarPreset||''),
+      statusBadge:lp.statusBadge||'',
+      exam:lp.exam||'',
+      year:lp.year||'',
+      date:lp.date||'',
+      batch:lp.batch||'',
+      goal:lp.goal||'',
+      dailyGoalMin:lp.dailyGoalMin||0,
+      studySlot:lp.studySlot||'',
+      studyStyle:lp.studyStyle||'',
+      strongSubject:lp.strongSubject||'',
+      weakSubject:lp.weakSubject||'',
+      motto:lp.motto||''
+    };
+  }
+
+  function syncDraftFromInputs(){
+    if(!profDraft)return;
+    const val=id=>{const el=document.getElementById(id);return el?el.value:null};
+    const dn=val('arProfDisp');if(dn!==null)profDraft.displayName=dn;
+    const un=val('arProfUser');if(un!==null)profDraft.username=un;
+    const yr=val('arProfYear');if(yr!==null)profDraft.year=yr;
+    const dt=val('arProfDate');if(dt!==null)profDraft.date=dt;
+    const bt=val('arProfBatch');if(bt!==null)profDraft.batch=bt;
+    const gl=val('arProfGoal');if(gl!==null)profDraft.goal=gl;
+    const dg=val('arProfDaily');if(dg!==null)profDraft.dailyGoalMin=parseInt(dg||'0',10)||0;
+    const bio=val('arProfBio');if(bio!==null)profDraft.motto=bio;
+  }
+
   function refreshTopLeftProfile(){
     const dn=currentDisplayName();
-    const iniChar=([...dn.trim()][0]||'C').toUpperCase();
-    const handle=ST.user?'@'+ST.user.username+' · ⚡ '+ST.user.xp.toLocaleString()+' XP':'Local profile · Sign in';
+    const lp=readLocalProf();
+    const avHtml=renderAvatarInner(lp.photo||(ST.user&&ST.user.avatarDataUrl),lp.avatarPreset||(ST.user&&ST.user.avatarPreset),dn);
+    const sub=(ST.user?'@'+ST.user.username+' · ⚡ '+ST.user.xp.toLocaleString()+' XP':'Local profile · Sign in')+(lp.statusBadge?' · '+lp.statusBadge:'');
 
     const rgMain=document.getElementById('rgMain');
     if(rgMain){
@@ -7702,9 +8562,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         row.className='rg-prof-row';
         rgMain.insertBefore(row,rgMain.firstChild);
       }
-      const nextHtml=`<button type="button" class="rg-prof-pill" data-prof-open="1" title="Edit profile">
-        <span class="rg-prof-av">${escHtml(iniChar)}</span>
-        <span class="rg-prof-meta"><b>${escHtml(dn)}</b><small>${escHtml(handle)}</small></span>
+      const nextHtml=`<button type="button" class="rg-prof-pill" data-prof-open="1" title="Open Detailed Profile">
+        <span class="rg-prof-av">${avHtml}</span>
+        <span class="rg-prof-meta"><b>${escHtml(dn)}</b><small>${escHtml(sub)}</small></span>
         <span class="rg-prof-ed">✎</span>
       </button>
       <span class="rg-hour-brand"><img src="/hour-logo.png" alt="Hour"><span>Hour</span></span>`;
@@ -7721,70 +8581,355 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     }
   }
 
-  function renderProfileModal(){
-    const u=ST.user;
-    const dn=currentDisplayName();
-    const iniChar=([...dn.trim()][0]||'C').toUpperCase();
-    profModal.innerHTML=`<div class="ar-prof-box" onclick="event.stopPropagation()">
-      <div class="ar-prof-head">
-        <div class="ar-prof-id">
-          <span class="rg-prof-av">${escHtml(iniChar)}</span>
-          <div style="min-width:0">
-            <h3 style="margin:0;font-size:18px;font-weight:800">Profile &amp; Account</h3>
-            <p class="ar-sub" style="margin:2px 0 0;font-size:12px">${u?'Firebase Verified · @'+escHtml(u.username):'Local study profile'}</p>
-          </div>
+  function renderProfileOverview(u,lp,dn){
+    const localStats=(typeof allT==='function')?allT():{q:0,s:0,l:0,k:0,sec:0};
+    const xpVal=u?u.xp:((typeof X!=='undefined'&&X&&X.xp)||0);
+    const rm=rankMetaForXp(xpVal);
+    const focusMin=u?u.focusMinutes:Math.round((localStats.sec||0)/60);
+    const streakVal=u?u.streakDays:((typeof streakN==='function')?streakN():0);
+    const qSolved=u?u.questionsSolved:(localStats.s||0);
+    const discPct=u?u.disciplineRatePct:((localStats.l+localStats.k)?Math.round(localStats.l/(localStats.l+localStats.k)*100):100);
+    const solvePct=u?u.solveRatePct:(localStats.q?Math.round((localStats.s||0)/localStats.q*100):0);
+    const mocksTxt=u?(u.mockTestsCount?u.mockAccuracyAvg+'%':'—')+' · '+u.duelWins+'W · 📋'+(u.tasksCompleted||0):((typeof MH!=='undefined'?MH.length:0)+' mocks');
+
+    const fields=[lp.photo||lp.avatarPreset,lp.statusBadge,lp.exam,lp.year,lp.batch,lp.goal,lp.dailyGoalMin,lp.studySlot,lp.strongSubject,lp.motto];
+    const compPct=Math.round(fields.filter(Boolean).length/fields.length*100);
+    const avHtml=renderAvatarInner(lp.photo,lp.avatarPreset,dn);
+
+    const dnaRows=[
+      ['Exam Target',lp.exam],
+      ['Target Year',lp.year],
+      ['Exam Date',lp.date],
+      ['Class / Batch',lp.batch],
+      ['Dream College / Goal',lp.goal],
+      ['Daily Focus Goal',lp.dailyGoalMin?lp.dailyGoalMin+' min/day':''],
+      ['Preferred Study Slot',lp.studySlot],
+      ['Study Mode',lp.studyStyle],
+      ['Strongest Subject',lp.strongSubject],
+      ['Focus Subject',lp.weakSubject]
+    ].filter(x=>x[1]);
+
+    return `<div class="ar-prof-hero">
+      <button type="button" class="ar-av-upload-btn" data-prof-act="pickPhoto" title="Upload profile photo">${avHtml}<small>📷 Edit</small></button>
+      <div style="min-width:0;flex:1">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <h3 style="margin:0;font-size:19px;font-weight:800;overflow:hidden;text-overflow:ellipsis">${escHtml(dn)}</h3>
+          ${lp.statusBadge?`<span class="ar-flair-pill">${escHtml(lp.statusBadge)}</span>`:''}
         </div>
-        <button type="button" class="ar-prof-ghost" data-prof-act="close" aria-label="Close">✕</button>
+        <p class="ar-sub" style="margin:3px 0 0;font-size:12px">${u?'@'+escHtml(u.username)+' · ':''}${rm.cur[1]} ${rm.cur[0]} · ${xpVal.toLocaleString()} XP</p>
+        ${lp.motto?`<p class="ar-sub" style="margin:5px 0 0;font-style:italic;color:var(--text);font-size:12.5px">“${escHtml(lp.motto)}”</p>`:''}
       </div>
-      ${u?`<div class="ar-prof-stats">
-        <div><b style="color:var(--accent)">${u.xp.toLocaleString()}</b><span>Arena XP</span></div>
-        <div><b>${u.focusMinutes}m</b><span>Focus</span></div>
-        <div><b style="color:var(--warn)">🔥 ${u.streakDays}d</b><span>Streak</span></div>
-      </div>`:''}
-      ${u?`<div style="margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);display:flex;align-items:center;justify-content:space-between;gap:10px">
-        <div style="min-width:0">
-          <b style="display:block;font-size:12px;color:var(--accent)">${syncStatus.state==='syncing'?'☁️ Syncing account data…':syncStatus.state==='error'?'⚠️ Sync paused':'☁️ Full Cloud Sync active'}</b>
-          <span style="display:block;font-size:11px;color:var(--muted)">${syncStatus.state==='error'?escHtml(syncStatus.note||'Will retry automatically'):syncStatus.lastSyncAt?'Last synced '+new Date(syncStatus.lastSyncAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'All history, mocks, planner & settings synced'}</span>
-        </div>
-        <button type="button" class="ar-prof-ghost" data-prof-act="syncNow" style="padding:7px 11px;font-size:12px;white-space:nowrap" ${syncInFlight?'disabled':''}>↻ Sync</button>
-      </div>`:''}
-      <form id="arProfForm">
-        <label for="arProfDisp">Display Name</label>
-        <input class="ar-in" id="arProfDisp" required minlength="2" maxlength="24" placeholder="Your name" value="${escHtml(dn)}" autocomplete="name">
-        ${u?`<label for="arProfUser">Arena Handle (@)</label>
-        <input class="ar-in" id="arProfUser" required minlength="3" maxlength="20" pattern="[a-z0-9_.]{3,20}" placeholder="e.g. atul_focus" value="${escHtml(u.username)}" autocomplete="username">
-        <p class="ar-sub" style="margin:6px 0 0;font-size:11px">3–20 lowercase letters, numbers, _ or .</p>`:`
-        <div style="margin-top:12px;padding:12px;border-radius:16px;background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent)">
-          <p class="ar-sub" style="margin:0 0 8px;font-size:12px;color:var(--text)">Guest progress is stored on this device. Sign in to save &amp; merge all history across devices.</p>
-          <button type="button" class="ar-prof-ghost" data-prof-act="goArena" style="border-color:var(--accent);color:var(--accent)">Sign in &amp; Link Progress ▶</button>
-        </div>`}
-        ${profErr?`<div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--bad,#ff4d6d) 14%,transparent);color:var(--bad,#ff4d6d);font-size:12.5px;font-weight:600">${escHtml(profErr)}</div>`:''}
-        <div class="ar-prof-btns">
-          <button type="submit" class="ar-prof-save" ${profBusy?'disabled':''}>${profBusy?'Saving…':'Save Profile'}</button>
-          ${u?`<button type="button" class="ar-prof-ghost" data-prof-act="logout">Sign out</button>`:''}
-        </div>
-      </form>
+    </div>
+
+    <div class="ar-comp-bar">
+      <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px">
+        <span style="font-weight:700">Profile Completeness</span>
+        <b style="color:var(--accent)">${compPct}%</b>
+      </div>
+      <div class="ar-comp-track"><i style="width:${compPct}%"></i></div>
+      ${compPct<100?`<p class="ar-sub" style="margin:6px 0 0;font-size:11px">Add your photo, study slot, daily goal &amp; dream target in <b>Edit &amp; Photo</b>.</p>`:''}
+    </div>
+
+    <div class="ar-prof-stats-6">
+      <div><b style="color:var(--accent)">${xpVal.toLocaleString()}</b><span>XP</span></div>
+      <div><b>${focusMin}m</b><span>Focus Time</span></div>
+      <div><b style="color:var(--warn)">🔥 ${streakVal}d</b><span>Streak</span></div>
+      <div><b style="color:var(--ok)">${qSolved} · ${solvePct}%</b><span>Solved · Rate</span></div>
+      <div><b style="color:var(--ok)">${discPct}%</b><span>Leave %</span></div>
+      <div><b>${escHtml(mocksTxt)}</b><span>${u?'Mock · 1v1 · Tasks':'Tests'}</span></div>
+    </div>
+
+    ${dnaRows.length?`<div class="ar-dna-grid">
+      ${dnaRows.map(([k,v])=>`<div class="ar-dna-item"><span>${escHtml(k)}</span><b>${escHtml(v)}</b></div>`).join('')}
+    </div>`:`<div style="margin-top:12px;padding:12px;border-radius:14px;background:color-mix(in srgb,var(--track) 45%,transparent);text-align:center"><p class="ar-sub" style="margin:0;font-size:12px">Your Study DNA is empty — switch to <b>Edit &amp; Photo</b> to answer quick study questions.</p></div>`}
+
+    ${u?`<div style="margin-top:12px;padding:10px 12px;border-radius:14px;background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 24%,transparent);display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <div style="min-width:0">
+        <b style="display:block;font-size:12px;color:var(--accent)">${syncStatus.state==='syncing'?'☁️ Syncing account data…':syncStatus.state==='error'?'⚠️ Sync paused':'☁️ Full Cloud Sync active'}</b>
+        <span style="display:block;font-size:11px;color:var(--muted)">${syncStatus.state==='error'?escHtml(syncStatus.note||'Will retry automatically'):syncStatus.lastSyncAt?'Last synced '+new Date(syncStatus.lastSyncAt).toLocaleTimeString([],{hour:'numeric',minute:'2-digit'}):'All history, mocks, planner & profile synced'}</span>
+      </div>
+      <button type="button" class="ar-prof-ghost" data-prof-act="syncNow" style="padding:7px 11px;font-size:12px;white-space:nowrap" ${syncInFlight?'disabled':''}>↻ Sync</button>
+    </div>`:`<div style="margin-top:12px;padding:12px;border-radius:16px;background:color-mix(in srgb,var(--accent) 10%,transparent);border:1px solid color-mix(in srgb,var(--accent) 28%,transparent)">
+      <p class="ar-sub" style="margin:0 0 8px;font-size:12px;color:var(--text)">Guest progress is saved on this device. Sign in to sync your profile, photo &amp; stats across devices.</p>
+      <button type="button" class="ar-prof-ghost" data-prof-act="goArena" style="border-color:var(--accent);color:var(--accent)">Sign in &amp; Link Progress ▶</button>
+    </div>`}
+
+    <div class="ar-prof-btns">
+      <button type="button" class="ar-prof-save" data-prof-tab="edit">✎ Edit Profile &amp; Photo</button>
+      ${typeof showShare==='function'?`<button type="button" class="ar-prof-ghost" data-prof-act="shareCard">📤 Share Card</button>`:''}
+      ${u?`<button type="button" class="ar-prof-ghost" data-prof-act="logout">Sign out</button>`:''}
     </div>`;
   }
 
-  function openProfileModal(){
+  function renderProfileEdit(u){
+    if(!profDraft)initProfDraft();
+    const d=profDraft;
+    const avHtml=renderAvatarInner(d.photo,d.avatarPreset,d.displayName);
+    const cy=new Date().getFullYear();
+    const todayStr=todayPlanKey();
+    const chipGroup=(field,opts,curVal)=>`<div class="ar-chip-pick">${opts.map(x=>`<button type="button" data-prof-pick="${field}" data-val="${escHtml(x)}" class="${curVal===x?'on':''}">${escHtml(x)}</button>`).join('')}</div>`;
+
+    return `<form id="arProfForm">
+      <div style="display:flex;align-items:center;gap:14px;padding:12px;border-radius:18px;background:color-mix(in srgb,var(--track) 50%,transparent)">
+        <button type="button" class="ar-av-upload-btn" data-prof-act="pickPhoto" title="Upload photo">${avHtml}<small>📷 Upload</small></button>
+        <div style="flex:1;min-width:0">
+          <b style="display:block;font-size:13.5px">Profile Photo &amp; Quick Icon</b>
+          <p class="ar-sub" style="margin:2px 0 8px;font-size:11.5px">Auto-cropped square &amp; compressed for instant cloud sync</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            <button type="button" class="ar-prof-ghost" data-prof-act="pickPhoto" style="padding:6px 11px;font-size:12px;border-color:var(--accent);color:var(--accent)">📷 Upload Photo</button>
+            ${d.photo?`<button type="button" class="ar-prof-ghost" data-prof-act="removePhoto" style="padding:6px 11px;font-size:12px">Remove Photo</button>`:''}
+          </div>
+        </div>
+      </div>
+
+      <div class="ar-preset-row">
+        ${AVATAR_PRESETS.map(ic=>`<button type="button" data-prof-preset="${escHtml(ic)}" class="${!d.photo&&d.avatarPreset===ic?'on':''}" title="Pick ${ic}">${ic}</button>`).join('')}
+      </div>
+
+      <div class="ar-form-2col">
+        <div>
+          <label for="arProfDisp">Display Name</label>
+          <input class="ar-in" id="arProfDisp" required minlength="2" maxlength="24" placeholder="Your name" value="${escHtml(d.displayName)}" autocomplete="name">
+        </div>
+        ${u?`<div>
+          <label for="arProfUser">Arena Handle (@)</label>
+          <input class="ar-in" id="arProfUser" required minlength="3" maxlength="20" pattern="[a-z0-9_.]{3,20}" placeholder="e.g. atul_focus" value="${escHtml(d.username)}" autocomplete="username">
+        </div>`:`<div>
+          <label for="arProfYear">Target Year</label>
+          <input class="ar-in" id="arProfYear" type="number" min="${cy}" max="${cy+9}" placeholder="e.g. ${cy+1}" value="${escHtml(d.year)}">
+        </div>`}
+      </div>
+
+      <label>Current Status Flair</label>
+      ${chipGroup('statusBadge',STATUS_FLAIRS,d.statusBadge)}
+
+      <label>Exam / Focus Target</label>
+      ${chipGroup('exam',EXAM_TARGETS,d.exam)}
+
+      <div class="ar-form-2col">
+        ${u?`<div>
+          <label for="arProfYear">Target Year</label>
+          <input class="ar-in" id="arProfYear" type="number" min="${cy}" max="${cy+9}" placeholder="e.g. ${cy+1}" value="${escHtml(d.year)}">
+        </div>`:''}
+        <div>
+          <label for="arProfDate">Exam Date (optional)</label>
+          <input class="ar-in" id="arProfDate" type="date" min="${todayStr}" value="${escHtml(d.date)}">
+        </div>
+      </div>
+
+      <div class="ar-form-2col">
+        <div>
+          <label for="arProfBatch">Class / Batch</label>
+          <input class="ar-in" id="arProfBatch" maxlength="36" placeholder="e.g. Class 12 · Dropper" value="${escHtml(d.batch)}">
+        </div>
+        <div>
+          <label for="arProfGoal">Dream College / Goal</label>
+          <input class="ar-in" id="arProfGoal" maxlength="48" placeholder="e.g. IIT Bombay CSE / AIIMS" value="${escHtml(d.goal)}">
+        </div>
+      </div>
+
+      <label for="arProfDaily">Daily Focus Goal (mins / day)</label>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input class="ar-in" id="arProfDaily" type="number" min="0" max="720" placeholder="e.g. 180" value="${d.dailyGoalMin||''}" style="max-width:120px">
+        <div class="ar-chip-pick" style="margin-top:0">
+          ${[60,120,180,240,360].map(m=>`<button type="button" data-prof-daily="${m}" class="${Number(d.dailyGoalMin)===m?'on':''}">${m}m</button>`).join('')}
+        </div>
+      </div>
+
+      <label>Preferred Study Slot</label>
+      ${chipGroup('studySlot',STUDY_SLOTS,d.studySlot)}
+
+      <label>Study Mode</label>
+      ${chipGroup('studyStyle',STUDY_STYLES,d.studyStyle)}
+
+      <label>Strongest Subject</label>
+      ${chipGroup('strongSubject',SUBJECT_OPTIONS,d.strongSubject)}
+
+      <label>Subject to Improve</label>
+      ${chipGroup('weakSubject',SUBJECT_OPTIONS,d.weakSubject)}
+
+      <label for="arProfBio">Bio / Study Motto</label>
+      <input class="ar-in" id="arProfBio" maxlength="100" placeholder="Your study motto or ambition (max 100 chars)" value="${escHtml(d.motto)}">
+
+      ${profErr?`<div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:color-mix(in srgb,var(--bad,#ff4d6d) 14%,transparent);color:var(--bad,#ff4d6d);font-size:12.5px;font-weight:600">${escHtml(profErr)}</div>`:''}
+      <div class="ar-prof-btns">
+        <button type="submit" class="ar-prof-save" ${profBusy?'disabled':''}>${profBusy?'Saving…':'Save Detailed Profile'}</button>
+        <button type="button" class="ar-prof-ghost" data-prof-tab="overview">Cancel</button>
+      </div>
+    </form>`;
+  }
+
+  function renderProfileBadges(u){
+    const xpVal=u?u.xp:((typeof X!=='undefined'&&X&&X.xp)||0);
+    const rm=rankMetaForXp(xpVal);
+    const pct=rm.next?Math.min(100,Math.max(0,Math.round(((xpVal-rm.cur[2])/Math.max(1,rm.next[2]-rm.cur[2]))*100))):100;
+    const badges=(typeof BG!=='undefined'&&Array.isArray(BG))?BG:[];
+    const unlockedMap=(typeof X!=='undefined'&&X&&X.b)?X.b:{};
+    const unlockedCount=badges.filter(b=>unlockedMap[b[0]]).length;
+
+    return `<div class="ar-prof-hero" style="flex-direction:column;align-items:stretch;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:32px;line-height:1">${rm.cur[1]}</span>
+          <div><b style="font-size:17px">${rm.cur[0]}</b><div class="ar-sub" style="margin:2px 0 0;font-size:12px">${xpVal.toLocaleString()} XP</div></div>
+        </div>
+        <span class="ar-flair-pill">${rm.next?(rm.next[2]-xpVal)+' XP to '+rm.next[1]+' '+rm.next[0]:'Top Rank Reached 🚀'}</span>
+      </div>
+      <div class="ar-comp-track"><i style="width:${pct}%"></i></div>
+    </div>
+
+    <div style="margin-top:12px">
+      <b style="display:block;font-size:12.5px;margin-bottom:8px">Rank Ladder</b>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+        ${rm.all.map(r=>`<div class="ar-dna-item" style="text-align:center;${xpVal>=r[2]?'border-color:var(--accent)':''}">
+          <span style="font-size:18px">${r[1]}</span>
+          <b>${r[0]}</b>
+          <span style="font-size:10px;text-transform:none">${r[2].toLocaleString()} XP</span>
+        </div>`).join('')}
+      </div>
+    </div>
+
+    ${badges.length?`<div style="margin-top:14px">
+      <b style="display:block;font-size:12.5px;margin-bottom:8px">Badges (${unlockedCount}/${badges.length})</b>
+      <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px">
+        ${badges.map(b=>{
+          const got=Boolean(unlockedMap[b[0]]);
+          return `<div class="ar-dna-item" style="text-align:center;opacity:${got?1:.48};${got?'border-color:var(--ok)':''}" title="${escHtml(b[3])}">
+            <span style="font-size:22px">${b[1]}</span>
+            <b style="font-size:11.5px">${escHtml(b[2])}</b>
+            <span style="font-size:9.5px;text-transform:none">${got?'Unlocked':'Locked'}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`:''}`;
+  }
+
+  function renderProfileModal(){
+    const u=ST.user;
+    const lp=readLocalProf();
+    const dn=currentDisplayName();
+    const body=profTab==='edit'?renderProfileEdit(u):profTab==='badges'?renderProfileBadges(u):renderProfileOverview(u,lp,dn);
+
+    profModal.innerHTML=`<div class="ar-prof-box" onclick="event.stopPropagation()">
+      <div class="ar-prof-head">
+        <div>
+          <h3 style="margin:0;font-size:18px;font-weight:800">Profile &amp; Study DNA</h3>
+          <p class="ar-sub" style="margin:2px 0 0;font-size:12px">${u?'Firebase Verified · @'+escHtml(u.username):'Local study profile'}</p>
+        </div>
+        <button type="button" class="ar-prof-ghost" data-prof-act="close" aria-label="Close">✕</button>
+      </div>
+      <div class="ar-prof-tabs">
+        <button type="button" data-prof-tab="overview" class="${profTab==='overview'?'on':''}">Overview</button>
+        <button type="button" data-prof-tab="edit" class="${profTab==='edit'?'on':''}">Edit &amp; Photo</button>
+        <button type="button" data-prof-tab="badges" class="${profTab==='badges'?'on':''}">Badges &amp; Rank</button>
+      </div>
+      ${body}
+    </div>`;
+  }
+
+  function openProfileModal(initialTab){
     profErr='';
     profBusy=false;
+    profTab=initialTab==='edit'||initialTab==='badges'?initialTab:'overview';
+    initProfDraft();
     renderProfileModal();
     profModal.classList.add('on');
-    setTimeout(()=>document.getElementById('arProfDisp')?.focus(),40);
   }
 
   function closeProfileModal(){
     profModal.classList.remove('on');
   }
 
+  document.getElementById('arProfFile')?.addEventListener('change',async e=>{
+    const f=e.target.files&&e.target.files[0];
+    e.target.value='';
+    if(!f)return;
+    const compress=window.LeaveItCompressAvatar;
+    if(typeof compress!=='function'){
+      showToast('Image processor not ready');
+      return;
+    }
+    try{
+      const dataUrl=await compress(f);
+      if(!profDraft)initProfDraft();
+      profDraft.photo=dataUrl;
+      profDraft.avatarPreset='';
+      if(profTab==='overview'){
+        writeLocalProf({photo:dataUrl,avatarPreset:''});
+        if(typeof window.LeaveItSyncProfileToArena==='function')await window.LeaveItSyncProfileToArena();
+        refreshTopLeftProfile();
+        renderProfileModal();
+        showToast('📸 Photo updated & synced');
+      }else{
+        syncDraftFromInputs();
+        renderProfileModal();
+        showToast('📸 Photo ready — tap Save Detailed Profile');
+      }
+    }catch(err){
+      showToast((err&&err.message)||'Could not load photo');
+    }
+  });
+
   profModal.addEventListener('click',async e=>{
     if(e.target===profModal){closeProfileModal();return}
+
+    const tabBtn=e.target.closest('[data-prof-tab]');
+    if(tabBtn){
+      if(profTab==='edit')syncDraftFromInputs();
+      profTab=tabBtn.dataset.profTab||'overview';
+      if(profTab==='edit'&&!profDraft)initProfDraft();
+      profErr='';
+      renderProfileModal();
+      return;
+    }
+
+    const pickBtn=e.target.closest('[data-prof-pick]');
+    if(pickBtn&&profDraft){
+      syncDraftFromInputs();
+      const field=pickBtn.dataset.profPick;
+      const val=pickBtn.dataset.val||'';
+      profDraft[field]=(profDraft[field]===val)?'':val;
+      renderProfileModal();
+      return;
+    }
+
+    const presetBtn=e.target.closest('[data-prof-preset]');
+    if(presetBtn&&profDraft){
+      syncDraftFromInputs();
+      const ic=presetBtn.dataset.profPreset||'';
+      profDraft.avatarPreset=(!profDraft.photo&&profDraft.avatarPreset===ic)?'':ic;
+      if(profDraft.avatarPreset)profDraft.photo='';
+      renderProfileModal();
+      return;
+    }
+
+    const dailyBtn=e.target.closest('[data-prof-daily]');
+    if(dailyBtn&&profDraft){
+      syncDraftFromInputs();
+      profDraft.dailyGoalMin=Number(dailyBtn.dataset.profDaily)||0;
+      renderProfileModal();
+      return;
+    }
+
     const actBtn=e.target.closest('[data-prof-act]');
     if(!actBtn)return;
     const act=actBtn.dataset.profAct;
     if(act==='close'){closeProfileModal();return}
+    if(act==='pickPhoto'){
+      document.getElementById('arProfFile')?.click();
+      return;
+    }
+    if(act==='removePhoto'&&profDraft){
+      syncDraftFromInputs();
+      profDraft.photo='';
+      renderProfileModal();
+      return;
+    }
+    if(act==='shareCard'&&typeof showShare==='function'){
+      closeProfileModal();
+      setTimeout(showShare,80);
+      return;
+    }
     if(act==='syncNow'){
       if(!ST.user)return;
       renderProfileModal();
@@ -7822,34 +8967,105 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     if(e.target.id!=='arProfForm')return;
     e.preventDefault();
     if(profBusy)return;
-    const disp=(document.getElementById('arProfDisp')?.value||'').trim().replace(/\s+/g,' ');
+    syncDraftFromInputs();
+    const d=profDraft||{};
+    const disp=String(d.displayName||'').trim().replace(/\s+/g,' ').slice(0,24);
     if(disp.length<2||disp.length>24){
       profErr='Display name must be 2–24 characters.';
       renderProfileModal();
       return;
     }
+    const cy=new Date().getFullYear();
+    const yr=String(d.year||'').trim();
+    if(yr&&(!/^\d{4}$/.test(yr)||Number(yr)<cy||Number(yr)>cy+9)){
+      profErr=`Target year should be between ${cy} and ${cy+9}.`;
+      renderProfileModal();
+      return;
+    }
+    const dt=String(d.date||'').trim();
+    const prevDate=(typeof S!=='undefined'&&S.prof&&S.prof.date)||'';
+    if(dt&&dt<todayPlanKey()&&dt!==prevDate){
+      profErr='Exam date cannot be in the past.';
+      renderProfileModal();
+      return;
+    }
+    const finalYear=dt?dt.slice(0,4):yr;
+    const dgRaw=Number(d.dailyGoalMin||0);
+    const dailyGoalMin=Number.isFinite(dgRaw)&&dgRaw>0?Math.max(15,Math.min(720,Math.round(dgRaw))):0;
+
     const fb=getFB();
     if(ST.user&&fb){
-      const uname=(document.getElementById('arProfUser')?.value||'').trim().toLowerCase();
+      const uname=String(d.username||ST.user.username).trim().toLowerCase();
       profErr='';profBusy=true;renderProfileModal();
       try{
-        const upd=await fb.updateProfile({username:uname,displayName:disp});
+        const upd=await fb.updateProfile({
+          username:uname,
+          displayName:disp,
+          avatarDataUrl:d.photo||'',
+          avatarPreset:d.photo?'':(d.avatarPreset||''),
+          statusBadge:d.statusBadge||'',
+          bio:String(d.motto||'').trim().slice(0,100),
+          examTarget:d.exam||'',
+          targetYear:finalYear,
+          batch:String(d.batch||'').trim().slice(0,36),
+          goal:String(d.goal||'').trim().slice(0,48),
+          dailyGoalMin,
+          studySlot:d.studySlot||'',
+          strongSubject:d.strongSubject||'',
+          weakSubject:d.weakSubject||'',
+          studyStyle:d.studyStyle||''
+        });
         ST.user=upd;
-        syncSpaName(upd.displayName);
-        closeProfileModal();
+        writeLocalProf({
+          displayName:upd.displayName,
+          photo:upd.avatarDataUrl||'',
+          avatarPreset:upd.avatarPreset||'',
+          statusBadge:upd.statusBadge||'',
+          exam:upd.examTarget||'',
+          year:upd.targetYear||'',
+          date:dt,
+          batch:upd.batch||'',
+          goal:upd.goal||'',
+          dailyGoalMin:upd.dailyGoalMin||0,
+          studySlot:upd.studySlot||'',
+          strongSubject:upd.strongSubject||'',
+          weakSubject:upd.weakSubject||'',
+          studyStyle:upd.studyStyle||'',
+          motto:upd.bio||''
+        });
+        profBusy=false;
+        profTab='overview';
+        renderProfileModal();
         refreshTopLeftProfile();
         if(isArenaVisible())renderArena();
-        showToast('Profile updated');
+        showToast('✅ Detailed profile saved & synced');
       }catch(err){
         profErr=(err&&err.message)||'Could not update profile.';
         profBusy=false;
         renderProfileModal();
       }
     }else{
-      syncSpaName(disp);
-      closeProfileModal();
+      writeLocalProf({
+        displayName:disp,
+        photo:d.photo||'',
+        avatarPreset:d.photo?'':(d.avatarPreset||''),
+        statusBadge:d.statusBadge||'',
+        exam:d.exam||'',
+        year:finalYear,
+        date:dt,
+        batch:String(d.batch||'').trim().slice(0,36),
+        goal:String(d.goal||'').trim().slice(0,48),
+        dailyGoalMin,
+        studySlot:d.studySlot||'',
+        strongSubject:d.strongSubject||'',
+        weakSubject:d.weakSubject||'',
+        studyStyle:d.studyStyle||'',
+        motto:String(d.motto||'').trim().slice(0,100)
+      });
+      profTab='overview';
+      renderProfileModal();
       refreshTopLeftProfile();
-      showToast('Name updated');
+      showToast('✅ Profile saved locally');
     }
   });
 
@@ -7863,9 +9079,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   });
 
   const brandEl=document.getElementById('brand');
-  if(brandEl)brandEl.onclick=openProfileModal;
+  if(brandEl)brandEl.onclick=()=>openProfileModal();
   const nameBtnEl=document.getElementById('nameBtn');
-  if(nameBtnEl)nameBtnEl.onclick=openProfileModal;
+  if(nameBtnEl)nameBtnEl.onclick=()=>openProfileModal();
   const settingsRow=nameBtnEl&&nameBtnEl.closest('.tog');
   if(settingsRow&&settingsRow.firstChild&&settingsRow.firstChild.nodeType===3){
     settingsRow.firstChild.textContent='Profile & Arena Handle';
@@ -7893,7 +9109,10 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
   },1000);
 
   document.addEventListener('keydown',e=>{
-    if(e.key==='Escape'&&profModal.classList.contains('on'))closeProfileModal();
+    if(e.key==='Escape'){
+      if(playerModal.classList.contains('on'))closePlayerModal();
+      else if(profModal.classList.contains('on'))closeProfileModal();
+    }
   });
 
   // Disable pinch zoom, gesture zoom, double-tap zoom & Ctrl/Cmd zoom across the SPA

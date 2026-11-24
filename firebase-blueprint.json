@@ -53,6 +53,57 @@
         "tasksCompleted": { "type": "number" },
         "todayTasksCompleted": { "type": "number" },
         "weekTasksCompleted": { "type": "number" },
+        "avatarDataUrl": {
+          "type": "string",
+          "maxLength": 28000,
+          "pattern": "^(|data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+)$"
+        },
+        "avatarPreset": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "statusBadge": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "bio": {
+          "type": "string",
+          "maxLength": 100
+        },
+        "examTarget": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "targetYear": {
+          "type": "string",
+          "maxLength": 4,
+          "pattern": "^(|20[2-3][0-9])$"
+        },
+        "batch": {
+          "type": "string",
+          "maxLength": 36
+        },
+        "goal": {
+          "type": "string",
+          "maxLength": 48
+        },
+        "dailyGoalMin": { "type": "number" },
+        "studySlot": {
+          "type": "string",
+          "maxLength": 28
+        },
+        "strongSubject": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "weakSubject": {
+          "type": "string",
+          "maxLength": 24
+        },
+        "studyStyle": {
+          "type": "string",
+          "maxLength": 24
+        },
         "createdAt": {
           "type": "string",
           "format": "date-time"

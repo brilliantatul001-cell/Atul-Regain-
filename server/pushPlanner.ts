@@ -27,7 +27,7 @@ import {
   type PlannedSlot,
   type PushSubscriptionData,
   type StudySnapshot,
-} from './pushCore';
+} from './pushCore.ts';
 
 export interface PresenceEntry {
   uid: string;

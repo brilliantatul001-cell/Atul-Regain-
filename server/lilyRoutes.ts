@@ -1,15 +1,38 @@
-import express, {type Express, type Request, type Response} from 'express';
+import express, {type Express, type NextFunction, type Request, type Response} from 'express';
 import {
   LILY_MODEL,
+  consumeLilyStream,
   formatGeminiHttpError,
-  isLilyConfigured,
-  sanitizeLilyRequest,
-  streamLilyReply,
   generateLilyReply,
-} from './lilyCore';
+  isLilyConfigured,
+  openLilyStream,
+  sanitizeLilyRequest,
+} from './lilyCore.ts';
 
 export function registerLilyRoutes(app: Express): void {
-  const jsonParser = express.json({limit: '256kb'});
+  const jsonParser = express.json({limit: '1mb'});
+
+  const parseJsonBodySafe = (req: Request, res: Response, next: NextFunction) => {
+    jsonParser(req, res, (err) => {
+      if (err) {
+        const status =
+          typeof (err as {status?: unknown}).status === 'number'
+            ? (err as {status: number}).status
+            : 400;
+        res.setHeader('Cache-Control', 'no-store');
+        res.status(status >= 400 && status < 500 ? status : 400).json({
+          ok: false,
+          code: status === 413 ? 'PAYLOAD_TOO_LARGE' : 'INVALID_JSON',
+          error:
+            status === 413
+              ? 'Study context payload is too large for a single request.'
+              : 'Invalid JSON request body.',
+        });
+        return;
+      }
+      next();
+    });
+  };
 
   app.get('/api/lily/status', (_req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-store');
@@ -20,7 +43,7 @@ export function registerLilyRoutes(app: Express): void {
     });
   });
 
-  app.post('/api/lily/chat', jsonParser, async (req: Request, res: Response) => {
+  app.post('/api/lily/chat', parseJsonBodySafe, async (req: Request, res: Response) => {
     res.setHeader('Cache-Control', 'no-store');
     const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, unknown>;
 
@@ -52,6 +75,19 @@ export function registerLilyRoutes(app: Express): void {
       return;
     }
 
+    let stream;
+    try {
+      stream = await openLilyStream(parsed);
+    } catch (err) {
+      const formatted = formatGeminiHttpError(err);
+      res.status(formatted.status).json({
+        ok: false,
+        code: formatted.code,
+        error: formatted.message,
+      });
+      return;
+    }
+
     const abortController = new AbortController();
     res.on('close', () => {
       if (!res.writableEnded) {
@@ -69,8 +105,8 @@ export function registerLilyRoutes(app: Express): void {
     }
 
     try {
-      await streamLilyReply(
-        parsed,
+      await consumeLilyStream(
+        stream,
         (delta) => {
           if (!res.writableEnded) {
             res.write(`data: ${JSON.stringify({delta})}\n\n`);

@@ -3,7 +3,7 @@ import {
   getTrendingTracks,
   sanitizeGenre,
   searchMusicTracks,
-} from './musicCore';
+} from './musicCore.ts';
 
 export function registerMusicRoutes(app: Express): void {
   app.get('/api/music/trending', async (req: Request, res: Response) => {

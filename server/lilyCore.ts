@@ -26,12 +26,17 @@ export class LilyApiError extends Error {
   }
 }
 
+function getLilyApiKey(): string {
+  const raw = typeof process.env.GEMINI_API_KEY === 'string' ? process.env.GEMINI_API_KEY.trim() : '';
+  return raw.replace(/^['"]|['"]$/g, '').trim();
+}
+
 export function isLilyConfigured(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim());
+  return Boolean(getLilyApiKey());
 }
 
 function createLilyAiClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.trim() : '';
+  const apiKey = getLilyApiKey();
   if (!apiKey) {
     throw new LilyApiError(
       503,
@@ -326,14 +331,10 @@ export async function generateLilyReply(reqData: SanitizedLilyRequest): Promise<
   return res.text || '';
 }
 
-export async function streamLilyReply(
-  reqData: SanitizedLilyRequest,
-  onChunk: (delta: string) => void,
-  signal?: AbortSignal,
-): Promise<string> {
+export async function openLilyStream(reqData: SanitizedLilyRequest) {
   const ai = createLilyAiClient();
   const thinkingLevel = reqData.mode === 'quick' ? ThinkingLevel.LOW : ThinkingLevel.HIGH;
-  const stream = await ai.models.generateContentStream({
+  return ai.models.generateContentStream({
     model: LILY_MODEL,
     contents: buildGeminiContents(reqData.messages),
     config: {
@@ -341,11 +342,17 @@ export async function streamLilyReply(
       thinkingConfig: {thinkingLevel},
     },
   });
+}
 
+export async function consumeLilyStream(
+  stream: AsyncIterable<{text?: string}>,
+  onChunk: (delta: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
   let fullText = '';
   for await (const chunk of stream) {
     if (signal?.aborted) break;
-    const text = typeof chunk.text === 'string' ? chunk.text : '';
+    const text = typeof chunk?.text === 'string' ? chunk.text : '';
     if (text) {
       fullText += text;
       onChunk(text);
@@ -354,17 +361,64 @@ export async function streamLilyReply(
   return fullText;
 }
 
+export async function streamLilyReply(
+  reqData: SanitizedLilyRequest,
+  onChunk: (delta: string) => void,
+  signal?: AbortSignal,
+): Promise<string> {
+  const stream = await openLilyStream(reqData);
+  return consumeLilyStream(stream, onChunk, signal);
+}
+
+function extractReadableErrorMessage(err: unknown): {raw: string; httpStatus?: number} {
+  let raw = err instanceof Error ? err.message : typeof err === 'string' ? err : 'Unable to reach Gemini right now.';
+  let httpStatus: number | undefined;
+  const maybeStatus = (err as {status?: unknown} | null)?.status;
+  if (typeof maybeStatus === 'number' && Number.isFinite(maybeStatus)) {
+    httpStatus = maybeStatus;
+  }
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+    try {
+      const parsed = JSON.parse(trimmed) as {error?: {message?: string; code?: number; status?: string}; message?: string};
+      const innerMsg = parsed?.error?.message || parsed?.message;
+      if (typeof innerMsg === 'string' && innerMsg.trim()) {
+        raw = innerMsg.trim();
+      }
+      if (!httpStatus && typeof parsed?.error?.code === 'number') {
+        httpStatus = parsed.error.code;
+      }
+    } catch {
+      // keep raw message
+    }
+  }
+  return {raw: raw || 'Unable to reach Gemini right now.', httpStatus};
+}
+
 export function formatGeminiHttpError(err: unknown): {status: number; code: string; message: string} {
   if (err instanceof LilyApiError) {
     return {status: err.status, code: err.code, message: err.message};
   }
-  const msg = err instanceof Error ? err.message : 'Unable to reach Gemini right now.';
-  const lower = msg.toLowerCase();
-  if (lower.includes('api key') || lower.includes('permission') || lower.includes('unauthenticated')) {
-    return {status: 403, code: 'GEMINI_AUTH_ERROR', message: msg};
+  const {raw, httpStatus} = extractReadableErrorMessage(err);
+  const lower = raw.toLowerCase();
+  if (
+    httpStatus === 401 ||
+    httpStatus === 403 ||
+    lower.includes('api key') ||
+    lower.includes('api_key_invalid') ||
+    lower.includes('permission') ||
+    lower.includes('unauthenticated')
+  ) {
+    return {status: 403, code: 'GEMINI_AUTH_ERROR', message: raw};
   }
-  if (lower.includes('quota') || lower.includes('rate limit') || lower.includes('429')) {
-    return {status: 429, code: 'GEMINI_RATE_LIMIT', message: msg};
+  if (httpStatus === 429 || lower.includes('quota') || lower.includes('resource_exhausted') || lower.includes('rate limit')) {
+    return {status: 429, code: 'GEMINI_RATE_LIMIT', message: raw};
   }
-  return {status: 502, code: 'GEMINI_UPSTREAM_ERROR', message: msg};
+  if (httpStatus === 404 || lower.includes('not_found') || lower.includes('not found')) {
+    return {status: 404, code: 'GEMINI_MODEL_NOT_FOUND', message: raw};
+  }
+  if (httpStatus === 400 || lower.includes('invalid_argument')) {
+    return {status: 400, code: 'GEMINI_BAD_REQUEST', message: raw};
+  }
+  return {status: 502, code: 'GEMINI_UPSTREAM_ERROR', message: raw};
 }

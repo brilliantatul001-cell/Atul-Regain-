@@ -19501,7 +19501,11 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   function readJson(key, fallback) {
     try {
       const raw = localStorage.getItem(key);
-      return raw ? JSON.parse(raw) : fallback;
+      if (!raw) return fallback;
+      const parsed = JSON.parse(raw);
+      if (parsed === null || parsed === undefined) return fallback;
+      if (Array.isArray(fallback)) return Array.isArray(parsed) ? parsed : fallback;
+      return typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : fallback;
     } catch (e) {
       return fallback;
     }
@@ -20255,25 +20259,44 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     };
 
     try {
-      const resp = await fetch('/api/lily/chat', {
+      const requestBody = {
+        messages: payloadMessages,
+        mode: STATE.mode,
+        studyContext: collectLilySnapshot(),
+        stream: true,
+      };
+
+      let resp = await fetch('/api/lily/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          messages: payloadMessages,
-          mode: STATE.mode,
-          studyContext: collectLilySnapshot(),
-          stream: true,
-        }),
+        body: JSON.stringify(requestBody),
         signal: STATE.abortCtrl.signal,
       });
+
+      if (!resp.ok && resp.status >= 500) {
+        resp = await fetch('/api/lily/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ...requestBody, stream: false }),
+          signal: STATE.abortCtrl.signal,
+        });
+      }
 
       const contentType = (resp.headers.get('content-type') || '').toLowerCase();
 
       if (!resp.ok) {
         let errText = `Server error (${resp.status})`;
         try {
-          const j = await resp.json();
-          if (j && j.error) errText = j.error;
+          const rawErr = await resp.text();
+          if (rawErr) {
+            try {
+              const j = JSON.parse(rawErr);
+              if (j && j.error) errText = String(j.error);
+            } catch (parseErr) {
+              const plain = rawErr.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+              if (plain && plain.length <= 240) errText = plain;
+            }
+          }
         } catch (e) {}
         throw new Error(errText);
       }

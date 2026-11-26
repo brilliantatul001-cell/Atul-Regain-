@@ -14848,11 +14848,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     background: #070a14;
     box-shadow: 0 18px 42px rgba(0,0,0,.46);
     border: 1px solid rgba(255,255,255,.16);
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 18px;
     text-align: center;
   }
   .st-stage-img {
@@ -14870,25 +14865,58 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     pointer-events: none;
   }
   .st-stage-body {
-    position: relative;
+    position: absolute;
+    inset: 0;
     z-index: 2;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .st-ov-item {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 86%;
+    width: max-content;
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    width: 100%;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+  }
+  .st-stage-preview .st-ov-item {
+    pointer-events: auto;
+    touch-action: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    border-radius: 14px;
+    transition: box-shadow .12s;
+  }
+  .st-stage-preview .st-ov-item:active,
+  .st-stage-preview .st-ov-item.dragging {
+    cursor: grabbing;
+    outline: 1.5px dashed rgba(255,255,255,.78);
+    outline-offset: 4px;
+    background: rgba(255,255,255,.06);
+  }
+  .st-drag-hint {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    text-align: center;
+    margin-top: -4px;
   }
   .st-sticker-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 13px;
+    padding: 5px 12px;
     border-radius: 99px;
     background: rgba(15, 18, 32, .68);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255,255,255,.24);
     color: #fff;
-    font-size: 12px;
+    font-size: 11.5px;
     font-weight: 800;
     letter-spacing: .2px;
     box-shadow: 0 6px 18px rgba(0,0,0,.28);
@@ -14908,17 +14936,17 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   .st-music-sticker {
     position: relative;
     z-index: 2;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    gap: 9px;
-    padding: 7px 11px 7px 7px;
-    border-radius: 14px;
-    background: rgba(12, 15, 28, .78);
+    gap: 7px;
+    padding: 5px 10px 5px 5px;
+    border-radius: 99px;
+    background: rgba(10, 13, 24, .68);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255,255,255,.22);
     color: #fff;
-    max-width: 92%;
-    box-shadow: 0 8px 22px rgba(0,0,0,.35);
+    max-width: 225px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.32);
     text-align: left;
   }
   .st-music-art {
@@ -14938,6 +14966,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     place-items: center;
     font-size: 16px;
     flex-shrink: 0;
+  }
+  .st-music-sticker .st-music-art,
+  .st-music-sticker .st-music-art-fallback {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-size: 13px;
   }
   @keyframes stEqBounce {
     0%, 100% { transform: scaleY(.35); }
@@ -15135,11 +15170,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     position: absolute;
     inset: 0;
     z-index: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 84px 24px 104px;
+    overflow: hidden;
     text-align: center;
   }
   .st-vw-media img.st-vw-photo {
@@ -15427,11 +15458,18 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     imageFit:'cover',
     bgTheme:'sunset',
     caption:'',
+    captionX:50,
+    captionY:70,
     textColor:'#ffffff',
     fontStyle:'sans',
     stickerKind:'focus',
     stickerLabel:'',
+    stickerX:50,
+    stickerY:17,
     selectedSong:null,
+    showSongSticker:true,
+    songX:50,
+    songY:81,
     clipStartSec:0,
     musicOpen:false,
     musicGenre:'all',
@@ -15993,14 +16031,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     renderCreatorMusicOnly();
   }
 
+  function clampOvCoord(val,min,max,fb){
+    const n=Number(val);
+    return Number.isFinite(n)?Math.round(Math.min(max,Math.max(min,n))*10)/10:fb;
+  }
+
   function renderMusicTrackSticker(song,paused){
     if(!song)return '';
-    const art=song.coverUrl?`<img class="st-music-art ${paused?'':'st-spin'}" src="${esc(song.coverUrl)}" alt="" referrerpolicy="no-referrer">`:`<span class="st-music-art-fallback">🎵</span>`;
+    const art=song.coverUrl?`<img class="st-music-art st-spin ${paused?'paused':''}" src="${esc(song.coverUrl)}" alt="" referrerpolicy="no-referrer">`:`<span class="st-music-art-fallback st-spin ${paused?'paused':''}">🎵</span>`;
     return `<div class="st-music-sticker">
       ${art}
       <div style="min-width:0;flex:1">
-        <div style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(song.title)}</div>
-        <div style="font-size:10.5px;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(song.artist)}</div>
+        <div style="font-size:11.5px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(song.title)}</div>
+        <div style="font-size:10px;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(song.artist)}</div>
       </div>
       <span class="st-eq ${paused?'paused':''}"><i></i><i></i><i></i></span>
     </div>`;
@@ -16060,6 +16103,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const stickerTxt=ST_STATE.stickerKind==='none'?'':(ST_STATE.stickerLabel||currentFocusSummarySticker(ST_STATE.stickerKind));
     const hasPhoto=ST_STATE.mediaType==='image'&&safePhotoUrl(ST_STATE.imageDataUrl);
     const previewCls=hasPhoto?'':'st-bg-'+esc(ST_STATE.bgTheme);
+    const showSong=Boolean(ST_STATE.selectedSong&&ST_STATE.showSongSticker);
+    const hasCustomPos=ST_STATE.captionX!==50||ST_STATE.captionY!==70||ST_STATE.stickerX!==50||ST_STATE.stickerY!==17||ST_STATE.songX!==50||ST_STATE.songY!==81;
 
     creatorModal.innerHTML=`<div class="st-cr-box">
       <div class="st-cr-top">
@@ -16071,17 +16116,20 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           ${hasPhoto?`<img class="st-stage-img" src="${esc(ST_STATE.imageDataUrl)}" alt="Story photo">`:''}
           <div class="st-stage-scrim"></div>
           <div class="st-stage-body">
-            ${stickerTxt?`<div class="st-sticker-pill">${esc(stickerTxt)}</div>`:''}
-            ${ST_STATE.caption?`<div class="st-caption-text f-${esc(ST_STATE.fontStyle)}" style="color:${esc(ST_STATE.textColor)}">${esc(ST_STATE.caption)}</div>`:`<div class="st-caption-text f-sans" style="color:rgba(255,255,255,.55);font-size:14px">Add caption, photo or song…</div>`}
-            ${ST_STATE.selectedSong?renderMusicTrackSticker(ST_STATE.selectedSong,!ST_STATE.previewPlayingId):''}
+            ${stickerTxt?`<div class="st-ov-item" data-st-drag="sticker" style="left:${ST_STATE.stickerX}%;top:${ST_STATE.stickerY}%"><div class="st-sticker-pill">${esc(stickerTxt)}</div></div>`:''}
+            <div class="st-ov-item" data-st-drag="caption" style="left:${ST_STATE.captionX}%;top:${ST_STATE.captionY}%">${ST_STATE.caption?`<div class="st-caption-text f-${esc(ST_STATE.fontStyle)}" style="color:${esc(ST_STATE.textColor)}">${esc(ST_STATE.caption)}</div>`:`<div class="st-caption-text f-sans" style="color:rgba(255,255,255,.58);font-size:13.5px">Drag & drop caption anywhere…</div>`}</div>
+            ${showSong?`<div class="st-ov-item" data-st-drag="song" style="left:${ST_STATE.songX}%;top:${ST_STATE.songY}%">${renderMusicTrackSticker(ST_STATE.selectedSong,!ST_STATE.previewPlayingId)}</div>`:''}
           </div>
         </div>
+        <div class="st-drag-hint">✋ Drag caption, sticker${showSong?', or song player':''} anywhere on the story</div>
 
         <div class="st-chip-row">
           <button type="button" class="st-chip" data-st-cr="pickPhoto">📷 ${hasPhoto?'Change Photo':'Upload Photo'}</button>
           ${(hasPhoto&&ST_STATE.rawPhotoImg)?`<button type="button" class="st-chip" data-st-cr="toggleFit">${ST_STATE.imageFit==='contain'?'⛶ Fill 9:16':'⬜ Fit Whole'}</button>`:''}
           ${hasPhoto?`<button type="button" class="st-chip" data-st-cr="clearPhoto">🎨 Card</button>`:''}
           <button type="button" class="st-chip ${ST_STATE.musicOpen||ST_STATE.selectedSong?'on':''}" data-st-cr="toggleMusic">🎵 ${ST_STATE.selectedSong?(ST_STATE.musicOpen?'Hide Songs':'Change Song'):(ST_STATE.musicOpen?'Hide Songs':'Add Trending Song')}</button>
+          ${ST_STATE.selectedSong?`<button type="button" class="st-chip ${ST_STATE.showSongSticker?'on':''}" data-st-cr="toggleSongSticker">${ST_STATE.showSongSticker?'💿 Player On':'💿 Player Off'}</button>`:''}
+          ${hasCustomPos?`<button type="button" class="st-chip" data-st-cr="resetLayout">↺ Reset Pos</button>`:''}
         </div>
 
         ${!hasPhoto?`<div class="st-swatch-row">
@@ -16132,13 +16180,65 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     creatorModal.innerHTML='';
   }
 
+  let stDrag=null;
+  let stIgnoreBackdropUntil=0;
+  creatorModal.addEventListener('pointerdown',e=>{
+    const ov=e.target.closest('.st-stage-preview [data-st-drag]');
+    if(!ov)return;
+    const stage=ov.closest('.st-stage-preview');
+    if(!stage)return;
+    const rect=stage.getBoundingClientRect();
+    if(!rect.width||!rect.height)return;
+    const kind=ov.dataset.stDrag;
+    e.preventDefault();
+    ov.classList.add('dragging');
+    try{ov.setPointerCapture(e.pointerId)}catch(err){}
+    const startX=kind==='caption'?ST_STATE.captionX:(kind==='sticker'?ST_STATE.stickerX:ST_STATE.songX);
+    const startY=kind==='caption'?ST_STATE.captionY:(kind==='sticker'?ST_STATE.stickerY:ST_STATE.songY);
+    stDrag={
+      pointerId:e.pointerId,
+      ov,
+      kind,
+      rect,
+      startClientX:e.clientX,
+      startClientY:e.clientY,
+      startX,
+      startY
+    };
+  });
+  creatorModal.addEventListener('pointermove',e=>{
+    if(!stDrag||e.pointerId!==stDrag.pointerId)return;
+    e.preventDefault();
+    const dxPct=((e.clientX-stDrag.startClientX)/stDrag.rect.width)*100;
+    const dyPct=((e.clientY-stDrag.startClientY)/stDrag.rect.height)*100;
+    const nx=clampOvCoord(stDrag.startX+dxPct,12,88,stDrag.startX);
+    const ny=clampOvCoord(stDrag.startY+dyPct,14,82,stDrag.startY);
+    stDrag.ov.style.left=nx+'%';
+    stDrag.ov.style.top=ny+'%';
+    if(stDrag.kind==='caption'){ST_STATE.captionX=nx;ST_STATE.captionY=ny}
+    else if(stDrag.kind==='sticker'){ST_STATE.stickerX=nx;ST_STATE.stickerY=ny}
+    else{ST_STATE.songX=nx;ST_STATE.songY=ny}
+  });
+  function endCreatorDrag(e){
+    if(!stDrag)return;
+    if(e&&typeof e.pointerId==='number'&&e.pointerId!==stDrag.pointerId)return;
+    stDrag.ov.classList.remove('dragging');
+    try{if(e)stDrag.ov.releasePointerCapture(e.pointerId)}catch(err){}
+    stIgnoreBackdropUntil=Date.now()+220;
+    stDrag=null;
+  }
+  creatorModal.addEventListener('pointerup',endCreatorDrag);
+  creatorModal.addEventListener('pointercancel',endCreatorDrag);
+
   creatorModal.addEventListener('input',e=>{
     if(e.target.id==='stCaptionIn'){
       ST_STATE.caption=e.target.value||'';
       const capEl=creatorModal.querySelector('.st-caption-text');
       if(capEl){
-        capEl.textContent=ST_STATE.caption||'Add caption, photo or song…';
-        capEl.style.color=ST_STATE.caption?ST_STATE.textColor:'rgba(255,255,255,.55)';
+        capEl.textContent=ST_STATE.caption||'Drag & drop caption anywhere…';
+        capEl.style.color=ST_STATE.caption?ST_STATE.textColor:'rgba(255,255,255,.58)';
+        capEl.style.fontSize=ST_STATE.caption?'':'13.5px';
+        capEl.className='st-caption-text f-'+(ST_STATE.caption?ST_STATE.fontStyle:'sans');
       }
     }else if(e.target.id==='stMusicSearch'){
       ST_STATE.musicQuery=e.target.value||'';
@@ -16155,7 +16255,11 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   });
 
   creatorModal.addEventListener('click',async e=>{
-    if(e.target===creatorModal){closeCreator();return}
+    if(e.target===creatorModal){
+      if(Date.now()<stIgnoreBackdropUntil)return;
+      closeCreator();
+      return;
+    }
     const bgBtn=e.target.closest('[data-st-bg]');
     if(bgBtn){ST_STATE.bgTheme=bgBtn.dataset.stBg||'sunset';renderCreator();return}
     const colBtn=e.target.closest('[data-st-color]');
@@ -16183,6 +16287,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       const t=(ST_STATE.musicTracks||[]).find(x=>x.id===pickBtn.dataset.stPickId);
       if(t){
         ST_STATE.selectedSong=t;
+        ST_STATE.showSongSticker=true;
         ST_STATE.clipStartSec=0;
         toggleTrackPreview(t,0);
         renderCreator();
@@ -16212,6 +16317,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       return;
     }
     if(act==='clearPhoto'){ST_STATE.mediaType='card';ST_STATE.imageDataUrl='';ST_STATE.rawPhotoImg=null;renderCreator();return}
+    if(act==='toggleSongSticker'){
+      ST_STATE.showSongSticker=!ST_STATE.showSongSticker;
+      renderCreator();
+      return;
+    }
+    if(act==='resetLayout'){
+      ST_STATE.captionX=50;ST_STATE.captionY=70;
+      ST_STATE.stickerX=50;ST_STATE.stickerY=17;
+      ST_STATE.songX=50;ST_STATE.songY=81;
+      renderCreator();
+      toast('Overlay positions reset');
+      return;
+    }
     if(act==='toggleMusic'){
       ST_STATE.musicOpen=!ST_STATE.musicOpen;
       renderCreator();
@@ -16240,10 +16358,17 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           imageDataUrl:ST_STATE.mediaType==='image'?ST_STATE.imageDataUrl:'',
           bgTheme:ST_STATE.bgTheme,
           caption:ST_STATE.caption.trim(),
+          captionX:ST_STATE.captionX,
+          captionY:ST_STATE.captionY,
           textColor:ST_STATE.textColor,
           fontStyle:ST_STATE.fontStyle,
           stickerKind:ST_STATE.stickerKind,
           stickerLabel,
+          stickerX:ST_STATE.stickerX,
+          stickerY:ST_STATE.stickerY,
+          showSongSticker:ST_STATE.showSongSticker,
+          songX:ST_STATE.songX,
+          songY:ST_STATE.songY,
           song:ST_STATE.selectedSong?{
             id:ST_STATE.selectedSong.id,
             title:ST_STATE.selectedSong.title,
@@ -16255,6 +16380,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           friendUids
         });
         ST_STATE.caption='';
+        ST_STATE.captionX=50;ST_STATE.captionY=70;
+        ST_STATE.stickerX=50;ST_STATE.stickerY=17;
+        ST_STATE.songX=50;ST_STATE.songY=81;
+        ST_STATE.showSongSticker=true;
         ST_STATE.imageDataUrl='';
         ST_STATE.rawPhotoImg=null;
         ST_STATE.mediaType='card';
@@ -16511,20 +16640,27 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const vc=ST_STATE.viewsList.length;
     const rc=ST_STATE.reactionsList.length;
 
-    const songSticker=s.hasSong?renderMusicTrackSticker({
+    const showSongCard=Boolean(s.hasSong&&s.showSongSticker!==false);
+    const songSticker=showSongCard?renderMusicTrackSticker({
       title:s.songTitle,
       artist:s.songArtist,
       coverUrl:s.songCoverUrl
     },ST_STATE.paused||ST_STATE.muted||ST_STATE.autoplayBlocked):'';
+    const capX=clampOvCoord(s.captionX,12,88,50);
+    const capY=clampOvCoord(s.captionY,14,82,70);
+    const stkX=clampOvCoord(s.stickerX,12,88,50);
+    const stkY=clampOvCoord(s.stickerY,14,82,17);
+    const sngX=clampOvCoord(s.songX,12,88,50);
+    const sngY=clampOvCoord(s.songY,14,82,81);
 
     viewerModal.innerHTML=`<div class="st-vw-frame ${bgCls}">
       <div class="st-vw-media ${bgCls}">
         ${hasPhoto?`<img class="st-vw-photo" src="${esc(s.imageDataUrl)}" alt="Story">`:''}
         <div class="st-stage-scrim"></div>
         <div class="st-stage-body">
-          ${s.stickerLabel?`<div class="st-sticker-pill">${esc(s.stickerLabel)}</div>`:''}
-          ${s.caption?`<div class="st-caption-text f-${esc(s.fontStyle||'sans')}" style="color:${esc(s.textColor||'#ffffff')}">${esc(s.caption)}</div>`:''}
-          ${songSticker}
+          ${s.stickerLabel?`<div class="st-ov-item" style="left:${stkX}%;top:${stkY}%"><div class="st-sticker-pill">${esc(s.stickerLabel)}</div></div>`:''}
+          ${s.caption?`<div class="st-ov-item" style="left:${capX}%;top:${capY}%"><div class="st-caption-text f-${esc(s.fontStyle||'sans')}" style="color:${esc(s.textColor||'#ffffff')}">${esc(s.caption)}</div></div>`:''}
+          ${songSticker?`<div class="st-ov-item" style="left:${sngX}%;top:${sngY}%">${songSticker}</div>`:''}
         </div>
       </div>
 

@@ -298,10 +298,11 @@ service cloud.firestore {
       data.keys().hasOnly([
         'id', 'authorUid', 'authorUsername', 'authorDisplayName',
         'authorAvatarDataUrl', 'authorAvatarPreset', 'viewerUids',
-        'mediaType', 'imageDataUrl', 'bgTheme', 'caption', 'textColor',
-        'fontStyle', 'stickerKind', 'stickerLabel', 'hasSong', 'songId',
-        'songTitle', 'songArtist', 'songCoverUrl', 'songPreviewUrl',
-        'songClipStartSec', 'createdAtMs', 'expiresAtMs', 'createdAt'
+        'mediaType', 'imageDataUrl', 'bgTheme', 'caption', 'captionX', 'captionY',
+        'textColor', 'fontStyle', 'stickerKind', 'stickerLabel', 'stickerX', 'stickerY',
+        'hasSong', 'showSongSticker', 'songId', 'songTitle', 'songArtist',
+        'songCoverUrl', 'songPreviewUrl', 'songClipStartSec', 'songX', 'songY',
+        'createdAtMs', 'expiresAtMs', 'createdAt'
       ]) &&
       isValidId(data.id) &&
       isValidId(data.authorUid) &&
@@ -314,17 +315,24 @@ service cloud.firestore {
       data.imageDataUrl is string && data.imageDataUrl.size() <= 240000 && (data.imageDataUrl == '' || data.imageDataUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')) &&
       data.bgTheme is string && data.bgTheme.size() >= 1 && data.bgTheme.size() <= 32 &&
       data.caption is string && data.caption.size() <= 180 &&
+      (!('captionX' in data) || (data.captionX is number && data.captionX >= 5 && data.captionX <= 95)) &&
+      (!('captionY' in data) || (data.captionY is number && data.captionY >= 5 && data.captionY <= 95)) &&
       data.textColor is string && data.textColor.size() >= 1 && data.textColor.size() <= 16 &&
       data.fontStyle in ['sans', 'serif', 'mono', 'bold'] &&
       data.stickerKind in ['none', 'focus', 'streak', 'xp', 'exam'] &&
       data.stickerLabel is string && data.stickerLabel.size() <= 64 &&
+      (!('stickerX' in data) || (data.stickerX is number && data.stickerX >= 5 && data.stickerX <= 95)) &&
+      (!('stickerY' in data) || (data.stickerY is number && data.stickerY >= 5 && data.stickerY <= 95)) &&
       data.hasSong is bool &&
+      (!('showSongSticker' in data) || data.showSongSticker is bool) &&
       data.songId is string && data.songId.size() <= 64 &&
       data.songTitle is string && data.songTitle.size() <= 80 &&
       data.songArtist is string && data.songArtist.size() <= 64 &&
       data.songCoverUrl is string && data.songCoverUrl.size() <= 512 && (data.songCoverUrl == '' || data.songCoverUrl.matches('^https://.*$')) &&
       data.songPreviewUrl is string && data.songPreviewUrl.size() <= 512 && (data.songPreviewUrl == '' || data.songPreviewUrl.matches('^https://.*$')) &&
       data.songClipStartSec is number && data.songClipStartSec >= 0 && data.songClipStartSec <= 25 &&
+      (!('songX' in data) || (data.songX is number && data.songX >= 5 && data.songX <= 95)) &&
+      (!('songY' in data) || (data.songY is number && data.songY >= 5 && data.songY <= 95)) &&
       data.createdAtMs is number && data.createdAtMs >= 0 &&
       data.expiresAtMs is number && data.expiresAtMs > data.createdAtMs && data.expiresAtMs <= data.createdAtMs + 86460000 &&
       data.createdAt is timestamp;

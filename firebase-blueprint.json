@@ -668,6 +668,8 @@
           "type": "string",
           "maxLength": 180
         },
+        "captionX": { "type": "number" },
+        "captionY": { "type": "number" },
         "textColor": {
           "type": "string",
           "minLength": 1,
@@ -685,13 +687,18 @@
           "type": "string",
           "maxLength": 64
         },
+        "stickerX": { "type": "number" },
+        "stickerY": { "type": "number" },
         "hasSong": { "type": "boolean" },
+        "showSongSticker": { "type": "boolean" },
         "songId": { "type": "string", "maxLength": 64 },
         "songTitle": { "type": "string", "maxLength": 80 },
         "songArtist": { "type": "string", "maxLength": 64 },
         "songCoverUrl": { "type": "string", "maxLength": 512 },
         "songPreviewUrl": { "type": "string", "maxLength": 512 },
         "songClipStartSec": { "type": "number" },
+        "songX": { "type": "number" },
+        "songY": { "type": "number" },
         "createdAtMs": { "type": "number" },
         "expiresAtMs": { "type": "number" },
         "createdAt": {

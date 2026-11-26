@@ -220,5 +220,6 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('data.dailyGoalMin <= 720'), 'Must bound dailyGoalMin');
   assert.ok(rulesText.includes("'isOnline'") && rulesText.includes("'lastSeenAtMs'"), 'Must support bounded presence fields');
   assert.ok(rulesText.includes('match /stories/{storyId}'), 'Must secure stories collection and subcollections');
+  assert.ok(rulesText.includes('data.captionX >= 5 && data.captionX <= 95'), 'Must bound story overlay coordinates');
 }
 

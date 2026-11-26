@@ -121,17 +121,24 @@ export interface PlayerStoryView {
   imageDataUrl: string;
   bgTheme: string;
   caption: string;
+  captionX: number;
+  captionY: number;
   textColor: string;
   fontStyle: StoryFontStyle;
   stickerKind: StoryStickerKind;
   stickerLabel: string;
+  stickerX: number;
+  stickerY: number;
   hasSong: boolean;
+  showSongSticker: boolean;
   songId: string;
   songTitle: string;
   songArtist: string;
   songCoverUrl: string;
   songPreviewUrl: string;
   songClipStartSec: number;
+  songX: number;
+  songY: number;
   createdAtMs: number;
   expiresAtMs: number;
 }
@@ -2700,6 +2707,12 @@ function sanitizeHttpsUrl(raw: unknown, maxLen = 512): string {
   return /^https:\/\/.+/.test(s) ? s : '';
 }
 
+function clampOverlayCoord(raw: unknown, fallback: number): number {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.max(8, Math.min(92, Math.round(n * 10) / 10));
+}
+
 function mapStoryDoc(id: string, r: Record<string, unknown>): PlayerStoryView {
   const mediaType: StoryMediaType = r.mediaType === 'image' ? 'image' : 'card';
   const fontStyle: StoryFontStyle =
@@ -2727,17 +2740,24 @@ function mapStoryDoc(id: string, r: Record<string, unknown>): PlayerStoryView {
     imageDataUrl: sanitizeStoryImageDataUrl(r.imageDataUrl),
     bgTheme: String(r.bgTheme || 'sunset').slice(0, 32),
     caption: String(r.caption || '').slice(0, 180),
+    captionX: clampOverlayCoord(r.captionX, 50),
+    captionY: clampOverlayCoord(r.captionY, 70),
     textColor: String(r.textColor || '#ffffff').slice(0, 16),
     fontStyle,
     stickerKind,
     stickerLabel: String(r.stickerLabel || '').slice(0, 64),
+    stickerX: clampOverlayCoord(r.stickerX, 50),
+    stickerY: clampOverlayCoord(r.stickerY, 17),
     hasSong: Boolean(r.hasSong),
+    showSongSticker: r.showSongSticker !== false,
     songId: String(r.songId || '').slice(0, 64),
     songTitle: String(r.songTitle || '').slice(0, 80),
     songArtist: String(r.songArtist || '').slice(0, 64),
     songCoverUrl: sanitizeHttpsUrl(r.songCoverUrl, 512),
     songPreviewUrl: sanitizeHttpsUrl(r.songPreviewUrl, 512),
     songClipStartSec: Math.max(0, Math.min(25, Number(r.songClipStartSec) || 0)),
+    songX: clampOverlayCoord(r.songX, 50),
+    songY: clampOverlayCoord(r.songY, 80),
     createdAtMs: Number(r.createdAtMs || 0),
     expiresAtMs: Number(r.expiresAtMs || 0),
   };
@@ -2748,11 +2768,18 @@ export async function publishStory(params: {
   imageDataUrl?: string;
   bgTheme?: string;
   caption?: string;
+  captionX?: number;
+  captionY?: number;
   textColor?: string;
   fontStyle?: StoryFontStyle;
   stickerKind?: StoryStickerKind;
   stickerLabel?: string;
+  stickerX?: number;
+  stickerY?: number;
+  showSongSticker?: boolean;
   song?: StorySongAttachment | null;
+  songX?: number;
+  songY?: number;
   friendUids?: string[];
 }): Promise<PlayerStoryView> {
   const fbUser = auth.currentUser;
@@ -2835,11 +2862,16 @@ export async function publishStory(params: {
     imageDataUrl: mediaType === 'image' ? imageDataUrl : '',
     bgTheme,
     caption,
+    captionX: clampOverlayCoord(params.captionX, 50),
+    captionY: clampOverlayCoord(params.captionY, 70),
     textColor,
     fontStyle,
     stickerKind,
     stickerLabel,
+    stickerX: clampOverlayCoord(params.stickerX, 50),
+    stickerY: clampOverlayCoord(params.stickerY, 17),
     hasSong,
+    showSongSticker: params.showSongSticker !== false,
     songId: hasSong ? String(params.song?.id || '').slice(0, 64) : '',
     songTitle: hasSong ? String(params.song?.title || '').trim().slice(0, 80) : '',
     songArtist: hasSong ? String(params.song?.artist || '').trim().slice(0, 64) : '',
@@ -2848,6 +2880,8 @@ export async function publishStory(params: {
     songClipStartSec: hasSong
       ? Math.max(0, Math.min(25, Math.round(Number(params.song?.clipStartSec) || 0)))
       : 0,
+    songX: clampOverlayCoord(params.songX, 50),
+    songY: clampOverlayCoord(params.songY, 80),
     createdAtMs: nowMs,
     expiresAtMs,
     createdAt: serverTimestamp(),

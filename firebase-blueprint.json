@@ -104,6 +104,8 @@
           "type": "string",
           "maxLength": 24
         },
+        "isOnline": { "type": "boolean" },
+        "lastSeenAtMs": { "type": "number" },
         "createdAt": {
           "type": "string",
           "format": "date-time"

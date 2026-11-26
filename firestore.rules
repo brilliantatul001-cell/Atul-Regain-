@@ -53,6 +53,7 @@ service cloud.firestore {
         'avatarDataUrl', 'avatarPreset', 'statusBadge', 'bio',
         'examTarget', 'targetYear', 'batch', 'goal', 'dailyGoalMin',
         'studySlot', 'strongSubject', 'weakSubject', 'studyStyle',
+        'isOnline', 'lastSeenAtMs',
         'createdAt', 'updatedAt'
       ]) &&
       isValidId(data.uid) &&
@@ -93,6 +94,8 @@ service cloud.firestore {
       (!('strongSubject' in data) || (data.strongSubject is string && data.strongSubject.size() <= 24)) &&
       (!('weakSubject' in data) || (data.weakSubject is string && data.weakSubject.size() <= 24)) &&
       (!('studyStyle' in data) || (data.studyStyle is string && data.studyStyle.size() <= 24)) &&
+      (!('isOnline' in data) || data.isOnline is bool) &&
+      (!('lastSeenAtMs' in data) || (data.lastSeenAtMs is number && data.lastSeenAtMs >= 0 && data.lastSeenAtMs <= 9999999999999)) &&
       data.createdAt is timestamp &&
       data.updatedAt is timestamp;
     }
@@ -310,6 +313,10 @@ service cloud.firestore {
             'username', 'displayName', 'avatarDataUrl', 'avatarPreset', 'statusBadge', 'bio',
             'examTarget', 'targetYear', 'batch', 'goal', 'dailyGoalMin',
             'studySlot', 'strongSubject', 'weakSubject', 'studyStyle', 'updatedAt'
+          ])) ||
+          // Action: Update live presence and last-seen timestamp
+          (incoming().diff(existing()).affectedKeys().hasOnly([
+            'isOnline', 'lastSeenAtMs', 'updatedAt'
           ])) ||
           // Action: Sync verified study / duel stats (bounded delta)
           (

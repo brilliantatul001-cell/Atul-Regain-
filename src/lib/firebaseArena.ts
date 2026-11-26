@@ -137,6 +137,8 @@ export interface ArenaUser {
   strongSubject: string;
   weakSubject: string;
   studyStyle: string;
+  isOnline: boolean;
+  lastSeenAtMs: number;
 }
 
 export interface RoomParticipantView {
@@ -220,6 +222,8 @@ export interface LeaderboardEntry {
   strongSubject: string;
   weakSubject: string;
   studyStyle: string;
+  isOnline: boolean;
+  lastSeenAtMs: number;
 }
 
 function todayStr(offsetDays = 0): string {
@@ -295,6 +299,10 @@ function toArenaUser(d: Record<string, unknown>): ArenaUser {
   const mockSum = Number(d.mockAccuracySum || 0);
   const tKey = todayStr(0);
   const wKey = weekStartStr();
+  const updatedTs = (d.updatedAt as {toMillis?: () => number} | undefined)?.toMillis?.() || 0;
+  const lastSeenAtMs = Math.max(0, Number(d.lastSeenAtMs || 0)) || updatedTs;
+  const isOnline =
+    Boolean(d.isOnline) && lastSeenAtMs > 0 && Date.now() - lastSeenAtMs < 120_000;
   return {
     id: String(d.uid || ''),
     username: String(d.username || 'player'),
@@ -338,6 +346,8 @@ function toArenaUser(d: Record<string, unknown>): ArenaUser {
     strongSubject: typeof d.strongSubject === 'string' ? d.strongSubject.slice(0, 24) : '',
     weakSubject: typeof d.weakSubject === 'string' ? d.weakSubject.slice(0, 24) : '',
     studyStyle: typeof d.studyStyle === 'string' ? d.studyStyle.slice(0, 24) : '',
+    isOnline,
+    lastSeenAtMs,
   };
 }
 
@@ -1838,6 +1848,8 @@ export async function fetchLeaderboard(opts: {
       strongSubject: u.strongSubject,
       weakSubject: u.weakSubject,
       studyStyle: u.studyStyle,
+      isOnline: u.isOnline,
+      lastSeenAtMs: u.lastSeenAtMs,
     }));
   } catch (error) {
     handleFirestoreError(error, OperationType.LIST, 'players');
@@ -2290,6 +2302,67 @@ export async function fetchFriendProfiles(uids: string[]): Promise<ArenaUser[]> 
     .map((s) => toArenaUser(s.data() as Record<string, unknown>));
 }
 
+export function subscribeFriendProfiles(
+  uids: string[],
+  cb: (profiles: ArenaUser[]) => void,
+): Unsubscribe {
+  const fbUser = auth.currentUser;
+  if (!fbUser || !Array.isArray(uids) || uids.length === 0) {
+    cb([]);
+    return () => {};
+  }
+  const uniq = Array.from(new Set(uids.filter(Boolean))).slice(0, 40);
+  const profileMap = new Map<string, ArenaUser>();
+  let disposed = false;
+  const emit = () => {
+    if (!disposed) cb(Array.from(profileMap.values()));
+  };
+  const unsubs = uniq.map((uid) =>
+    onSnapshot(
+      doc(db, 'players', uid),
+      (snap) => {
+        if (snap.exists()) {
+          profileMap.set(uid, toArenaUser(snap.data() as Record<string, unknown>));
+        } else {
+          profileMap.delete(uid);
+        }
+        emit();
+      },
+      () => {
+        // Ignore transient per-friend read error
+      },
+    ),
+  );
+  return () => {
+    disposed = true;
+    unsubs.forEach((u) => {
+      try {
+        u();
+      } catch {
+        // Ignore unsub error
+      }
+    });
+  };
+}
+
+let firestorePresenceAllowed = true;
+export async function updatePresenceHeartbeat(isOnline: boolean): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser || !fbUser.emailVerified || !firestorePresenceAllowed) return;
+  try {
+    await updateDoc(doc(db, 'players', fbUser.uid), {
+      isOnline: Boolean(isOnline),
+      lastSeenAtMs: Date.now(),
+      updatedAt: serverTimestamp(),
+    });
+  } catch (err) {
+    const raw = err instanceof Error ? err.message.toLowerCase() : '';
+    if (raw.includes('permission')) {
+      firestorePresenceAllowed = false;
+    }
+  }
+}
+
 export async function sendRoomInvite(params: {
   friendUid: string;
   roomCode: string;
@@ -2575,6 +2648,8 @@ export const firebaseArenaBridge = {
   removeFriendship,
   subscribeFriends,
   fetchFriendProfiles,
+  subscribeFriendProfiles,
+  updatePresenceHeartbeat,
   sendRoomInvite,
   dismissRoomInvite,
   subscribeRoomInvites,

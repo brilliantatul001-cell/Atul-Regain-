@@ -19,6 +19,7 @@ export default defineConfig(() => {
           'pwa-192x192.png',
           'pwa-512x512.png',
           'pwa-maskable-512x512.png',
+          'sw-notify.js',
           'assets/aistudio/Leave_It_v101_Laptop_Fixed_d7f9ca8a.html',
         ],
         manifest: {
@@ -55,6 +56,7 @@ export default defineConfig(() => {
           ],
         },
         workbox: {
+          importScripts: ['/sw-notify.js'],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
           globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
           navigateFallback: '/index.html',

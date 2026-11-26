@@ -71,37 +71,245 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const postInstallState = () => {
-      const target = iframeRef.current?.contentWindow;
-      if (!target) return;
-      target.postMessage(
-        {
-          type: isInstalled
-            ? 'leaveit-pwa-installed'
-            : 'leaveit-pwa-install-available',
-          canInstall,
-        },
-        window.location.origin,
-      );
+    const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = window.atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+      }
+      return outputArray;
     };
+
+    const getSwReg = async (): Promise<ServiceWorkerRegistration | null> => {
+      if (!('serviceWorker' in navigator)) return null;
+      try {
+        const existing = await navigator.serviceWorker.getRegistration('/');
+        if (existing) return existing;
+      } catch {
+        // ignore
+      }
+      try {
+        return await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500)),
+        ]);
+      } catch {
+        return null;
+      }
+    };
+
+    const getNotifyStatus = async () => {
+      const supported = typeof window !== 'undefined' && 'Notification' in window;
+      const permission = supported ? Notification.permission : 'unsupported';
+      const reg = await getSwReg();
+      const pushSupported = Boolean(reg && 'pushManager' in reg);
+      let subscribed = false;
+      if (reg && 'pushManager' in reg) {
+        try {
+          const sub = await reg.pushManager.getSubscription();
+          subscribed = Boolean(sub);
+        } catch {
+          subscribed = false;
+        }
+      }
+      return {supported, permission, pushSupported, subscribed, swReady: Boolean(reg)};
+    };
+
+    const postToIframe = (payload: Record<string, unknown>) => {
+      const target = iframeRef.current?.contentWindow;
+      if (target) {
+        target.postMessage(payload, window.location.origin);
+      }
+    };
+
+    const postInstallState = () => {
+      postToIframe({
+        type: isInstalled
+          ? 'leaveit-pwa-installed'
+          : 'leaveit-pwa-install-available',
+        canInstall,
+      });
+    };
+
+    const initialOpen = new URLSearchParams(window.location.search).get('open');
+    if (initialOpen) {
+      window.history.replaceState({}, '', window.location.pathname);
+    }
 
     postInstallState();
 
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'leaveit-notif-open' && event.data.target) {
+        postToIframe({
+          type: 'leaveit-open-target',
+          target: String(event.data.target),
+        });
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    }
+
     const handleMessage = async (event: MessageEvent) => {
       if (event.origin !== window.location.origin || !event.data) return;
-      if (event.data.type === 'leaveit-iframe-ready') {
+      const msg = event.data as Record<string, unknown>;
+      if (msg.type === 'leaveit-iframe-ready') {
         postInstallState();
-      } else if (event.data.type === 'leaveit-trigger-install') {
+        postToIframe({
+          type: 'leaveit-notify-status',
+          ...(await getNotifyStatus()),
+        });
+        if (initialOpen) {
+          postToIframe({type: 'leaveit-open-target', target: initialOpen});
+        }
+      } else if (msg.type === 'leaveit-trigger-install') {
         if (canInstall) {
           await promptInstall();
         } else if (isIOS) {
           setShowIOSGuide(true);
         }
+      } else if (msg.type === 'leaveit-notify-query-status') {
+        postToIframe({
+          type: 'leaveit-notify-status',
+          requestId: msg.requestId,
+          ...(await getNotifyStatus()),
+        });
+      } else if (msg.type === 'leaveit-notify-enable') {
+        const supported = 'Notification' in window;
+        let permission: NotificationPermission | 'unsupported' = supported
+          ? Notification.permission
+          : 'unsupported';
+        if (supported && permission === 'default') {
+          try {
+            permission = await Notification.requestPermission();
+          } catch {
+            permission = Notification.permission;
+          }
+        }
+        const reg = await getSwReg();
+        let subscription: PushSubscriptionJSON | null = null;
+        if (permission === 'granted' && reg && 'pushManager' in reg) {
+          try {
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+              const keyRes = await fetch('/api/push/vapid-public-key');
+              if (keyRes.ok) {
+                const {publicKey} = (await keyRes.json()) as {publicKey?: string};
+                if (publicKey) {
+                  sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
+                  });
+                }
+              }
+            }
+            subscription = sub ? sub.toJSON() : null;
+          } catch {
+            subscription = null;
+          }
+          try {
+            const pSync = (reg as ServiceWorkerRegistration & {
+              periodicSync?: {register: (tag: string, opts: {minInterval: number}) => Promise<void>};
+            }).periodicSync;
+            if (pSync) {
+              const intervalMin = Math.max(15, Number(msg.intervalMin) || 45);
+              await pSync.register('hour-auto-notify', {
+                minInterval: intervalMin * 60_000,
+              });
+            }
+          } catch {
+            // periodicSync optional on non-installed/unsupported browsers
+          }
+        }
+        postToIframe({
+          type: 'leaveit-notify-enabled-result',
+          requestId: msg.requestId,
+          permission,
+          subscription,
+          swReady: Boolean(reg),
+          pushSupported: Boolean(reg && 'pushManager' in reg),
+          subscribed: Boolean(subscription),
+        });
+      } else if (msg.type === 'leaveit-notify-disable') {
+        const reg = await getSwReg();
+        if (reg && 'pushManager' in reg) {
+          try {
+            const sub = await reg.pushManager.getSubscription();
+            if (sub) await sub.unsubscribe();
+          } catch {
+            // ignore
+          }
+        }
+        postToIframe({
+          type: 'leaveit-notify-status',
+          requestId: msg.requestId,
+          ...(await getNotifyStatus()),
+        });
+      } else if (msg.type === 'leaveit-notify-show-local' && msg.payload) {
+        const payload = msg.payload as {
+          title?: string;
+          body?: string;
+          tag?: string;
+          target?: string;
+          category?: string;
+          actions?: Array<{action: string; title: string}>;
+        };
+        if ('Notification' in window && Notification.permission === 'granted') {
+          const reg = await getSwReg();
+          if (reg) {
+            try {
+              const target = payload.target || 'home';
+              const category = payload.category || 'reminder';
+              await reg.showNotification(payload.title || 'Hour', {
+                body: payload.body || '',
+                icon: '/pwa-192x192.png',
+                badge: '/pwa-192x192.png',
+                tag: payload.tag || 'hour-' + category,
+                data: {url: '/?open=' + encodeURIComponent(target), target, category},
+                actions: payload.actions,
+              } as NotificationOptions);
+            } catch {
+              // ignore
+            }
+          } else {
+            try {
+              const n = new Notification(payload.title || 'Hour', {
+                body: payload.body || '',
+                icon: '/pwa-192x192.png',
+                tag: payload.tag || 'hour-local',
+              });
+              n.onclick = () => {
+                window.focus();
+                postToIframe({
+                  type: 'leaveit-open-target',
+                  target: payload.target || 'home',
+                });
+                n.close();
+              };
+            } catch {
+              // ignore
+            }
+          }
+        }
+      } else if (msg.type === 'leaveit-notify-sync-sw' && msg.snapshot) {
+        const reg = await getSwReg();
+        const sw = reg?.active || navigator.serviceWorker?.controller;
+        if (sw) {
+          sw.postMessage({type: 'hour-notify-cache', snapshot: msg.snapshot});
+        }
       }
     };
 
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+      }
+    };
   }, [canInstall, isInstalled, isIOS, promptInstall]);
 
   const showFloatingInstall =

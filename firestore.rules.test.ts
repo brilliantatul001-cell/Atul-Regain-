@@ -160,6 +160,22 @@ export const DIRTY_DOZEN_CASES: RuleAssertionCase[] = [
     expected: 'PERMISSION_DENIED',
     reason: 'incoming().senderUid == request.auth.uid prevents sender impersonation',
   },
+  {
+    id: 19,
+    name: 'Cross-User Presence Spoofing',
+    path: '/players/victim_uid',
+    operation: 'update',
+    expected: 'PERMISSION_DENIED',
+    reason: 'isOwner(userId) blocks modifying another player isOnline or lastSeenAtMs',
+  },
+  {
+    id: 20,
+    name: 'Bundled XP Forgery During Presence Heartbeat',
+    path: '/players/attacker_uid',
+    operation: 'update',
+    expected: 'PERMISSION_DENIED',
+    reason: 'presence update action restricts affectedKeys to isOnline, lastSeenAtMs, updatedAt',
+  },
 ];
 
 // Static structural verification when running without local Firestore emulator
@@ -183,5 +199,7 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes("data.kind in ['chat', 'rivalry', 'cheer']"), 'Must restrict room message kinds');
   assert.ok(rulesText.includes('data.avatarDataUrl.size() <= 28000'), 'Must bound avatarDataUrl size');
   assert.ok(rulesText.includes('data.dailyGoalMin <= 720'), 'Must bound dailyGoalMin');
+  assert.ok(rulesText.includes("'isOnline'") && rulesText.includes("'lastSeenAtMs'"), 'Must support bounded presence fields');
 }
+
 

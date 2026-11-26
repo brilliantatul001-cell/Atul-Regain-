@@ -4289,10 +4289,10 @@ function ui(){document.querySelectorAll('#rgSeg button').forEach(b=>b.classList.
  g('rgPs').style.display=(fin||sbStrict)?'none':'';g('rgPs').textContent=run?'Pause':'Resume';g('rgEnd').textContent=fin?'Done':'End';armed=false;
  document.title=live&&run?(ph==='f'?'🍅 ':'☕ ')+fmt(l/1000)+' · '+base:base}
 function begin(){const s=syncObj(),rm=s?s.getRoom():null;if(rm&&rm.status!=='finished')roomSynced=rm.roomCode;else roomSynced=null;userPausedRoom=false;if(UM==='q'){A();live=true;fin=false;run=false;lock(true);if(F.snd)play(F.snd);if(!rm||rm.status!=='countdown')QB.start();showS();if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStart({durationSec:F.dur*60,endsAtMs:Date.now()+F.dur*60000,strictMode:!!F.strict,taskTitle:rgTask?rgTask.task:''});if(s)s.notifyStateChange(true);return}beginF()}
-function beginF(){A();live=true;fin=false;ph='f';const rm=activeSyncRoom();if(rm&&rm.status==='countdown'){left=dur();end=Date.now()+left;run=false}else if(rm&&rm.status==='active'&&rm.endsAt){end=rm.endsAt;left=Math.max(0,end-Date.now());run=left>0}else{left=dur();run=true;end=Date.now()+left}lock(run);if(run&&F.snd)play(F.snd);try{if('Notification'in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}showS();if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStart({durationSec:Math.max(60,Math.round((dur()||1500000)/1000)),endsAtMs:end,strictMode:!!F.strict,taskTitle:rgTask?rgTask.task:''});if(syncObj())syncObj().notifyStateChange(true)}
+function beginF(){A();live=true;fin=false;ph='f';const rm=activeSyncRoom();if(rm&&rm.status==='countdown'){left=dur();end=Date.now()+left;run=false}else if(rm&&rm.status==='active'&&rm.endsAt){end=rm.endsAt;left=Math.max(0,end-Date.now());run=left>0}else{left=dur();run=true;end=Date.now()+left}lock(run);if(run&&F.snd)play(F.snd);try{if(window.LeaveItAutoNotify&&typeof window.LeaveItAutoNotify.requestPermissionIfDefault==='function')window.LeaveItAutoNotify.requestPermissionIfDefault();else if('Notification'in window&&Notification.permission==='default')Notification.requestPermission()}catch(e){}showS();if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStart({durationSec:Math.max(60,Math.round((dur()||1500000)/1000)),endsAtMs:end,strictMode:!!F.strict,taskTitle:rgTask?rgTask.task:''});if(syncObj())syncObj().notifyStateChange(true)}
 function credit(m){if(m<1)return;const d=day();d.m+=m;d.s++;F.log.push({t:new Date().toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}),m});F.log=F.log.slice(-30);if(d.m>=F.goal&&d.m-m<F.goal)setTimeout(()=>toast('🎯 Daily goal reached!'),500);sv()}
 function stop(forceCompleted){if(!forceCompleted&&window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked()){toast('🔒 Strict Mode locked — finish your session first');return}const rm=activeSyncRoom();if(rm&&(rm.status==='active'||rm.status==='finished'))creditRoomFocusOnce(rm);if(UM==='q'&&live)QB.pause();live=false;run=false;fin=false;roomSynced=null;userPausedRoom=false;if(rgTask){rgTask=null;if(syncObj())syncObj().setLinkedTask(null)}lock(false);stopS();g('rgS').classList.remove('on','rg-strict-locked');if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStop(!!forceCompleted);ui();render();if(syncObj())syncObj().notifyStateChange(true)}
-function done(){beep();try{if(document.hidden&&Notification.permission==='granted')new Notification(ph==='f'?'Focus complete':'Break over')}catch(e){}
+function done(){beep();try{if(document.hidden){if(window.LeaveItAutoNotify&&typeof window.LeaveItAutoNotify.notifyNow==='function'){window.LeaveItAutoNotify.notifyNow({title:ph==='f'?'Focus complete 🎉':'Break over ⚡',body:ph==='f'?'Great focus session! Tap to return to Hour.':'Break finished — ready for your next block?',target:'focus',category:'reminder',tag:'hour-focus-done'})}else if('Notification'in window&&Notification.permission==='granted'){new Notification(ph==='f'?'Focus complete':'Break over')}}}catch(e){}
  if(window.LeaveItStrictBlocker)window.LeaveItStrictBlocker.onRegainStop(true);
  const rm=activeSyncRoom();
  if(rm){creditRoomFocusOnce(rm);if(rgTask)completeRgTask(true);run=false;fin=true;left=0;lock(false);stopS();ui();if(syncObj())syncObj().notifyStateChange(true);return}
@@ -12713,6 +12713,116 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   font-size: 11.5px;
   line-height: 1.45;
 }
+.an-env-alert {
+  margin: 8px 0 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.13);
+  border: 1px solid rgba(245, 158, 11, 0.34);
+  color: #fde68a;
+  font-size: 11.5px;
+  line-height: 1.45;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.an-env-alert a {
+  flex: none;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(245, 158, 11, 0.24);
+  color: #fef3c7;
+  font-weight: 700;
+  font-size: 11px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+#anInAppBanner {
+  position: fixed;
+  top: max(12px, env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%) translateY(-16px);
+  width: min(420px, calc(100vw - 24px));
+  z-index: 99999;
+  background: linear-gradient(145deg, #1a1f36, #121526);
+  color: #f8fafc;
+  border: 1px solid rgba(110, 168, 254, 0.35);
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.52);
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+#anInAppBanner.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+}
+.an-bn-ic {
+  width: 34px;
+  height: 34px;
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  background: rgba(110, 168, 254, 0.18);
+  font-size: 17px;
+  flex: none;
+}
+.an-bn-body {
+  flex: 1;
+  min-width: 0;
+}
+.an-bn-tag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #8bb9fe;
+  margin-bottom: 2px;
+}
+.an-bn-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.3;
+}
+.an-bn-text {
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.38;
+  margin-top: 2px;
+}
+.an-bn-btns {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+.an-bn-open {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(61, 220, 151, 0.2);
+  color: #5eead4;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.an-bn-close {
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  font-size: 13px;
+  width: 26px;
+  height: 26px;
+  cursor: pointer;
+}
 </style>
 
 <script id="v109-auto-notify-js">
@@ -12791,8 +12901,66 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     pushSupported: false,
     subscribed: false,
     swReady: false,
+    inOuterIframe: false,
+    outerBlocked: false,
     lastSyncError: '',
   };
+
+  function getNotifyHost() {
+    try {
+      if (window.parent && window.parent !== window && window.parent.LeaveItNotifyHost) {
+        return window.parent.LeaveItNotifyHost;
+      }
+    } catch (e) {}
+    return null;
+  }
+
+  function applyStatusUpdate(d) {
+    if (!d || typeof d !== 'object') return;
+    if (typeof d.supported === 'boolean') envStatus.supported = d.supported;
+    if (d.permission) envStatus.permission = d.permission;
+    if (typeof d.pushSupported === 'boolean') envStatus.pushSupported = d.pushSupported;
+    if (typeof d.subscribed === 'boolean') envStatus.subscribed = d.subscribed;
+    if (typeof d.swReady === 'boolean') envStatus.swReady = d.swReady;
+    if (typeof d.inOuterIframe === 'boolean') envStatus.inOuterIframe = d.inOuterIframe;
+    if (envStatus.permission === 'granted') envStatus.outerBlocked = false;
+  }
+
+  async function refreshNotifyStatus() {
+    const host = getNotifyHost();
+    if (host && typeof host.getStatus === 'function') {
+      try {
+        const st = await host.getStatus();
+        applyStatusUpdate(st);
+        renderUi();
+        return st;
+      } catch (e) {}
+    }
+    if (isEmbedded()) {
+      postParent({ type: 'leaveit-notify-query-status', requestId: 'poll-' + Date.now() });
+      return envStatus;
+    }
+    envStatus.supported = typeof window !== 'undefined' && 'Notification' in window;
+    envStatus.permission = envStatus.supported ? Notification.permission : 'unsupported';
+    try {
+      envStatus.inOuterIframe = window.top !== window.self;
+    } catch (e) {
+      envStatus.inOuterIframe = true;
+    }
+    if ('serviceWorker' in navigator) {
+      try {
+        const reg = await navigator.serviceWorker.getRegistration('/');
+        envStatus.swReady = Boolean(reg);
+        envStatus.pushSupported = Boolean(reg && 'pushManager' in reg);
+        if (reg && 'pushManager' in reg) {
+          const sub = await reg.pushManager.getSubscription();
+          envStatus.subscribed = Boolean(sub);
+        }
+      } catch (e) {}
+    }
+    renderUi();
+    return envStatus;
+  }
 
   function saveState() {
     try {
@@ -13189,6 +13357,46 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     }
   }
 
+  const pendingEnableResolvers = new Map();
+  const pendingShowResolvers = new Map();
+  let bannerTimer = null;
+
+  function showInAppBanner(payload, deliveredSystem) {
+    if (!payload) return;
+    let el = document.getElementById('anInAppBanner');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = 'anInAppBanner';
+      el.setAttribute('role', 'status');
+      document.body.appendChild(el);
+    }
+    const meta = CAT_META.find((c) => c.id === payload.category) || { icon: '🔔', label: 'Notification' };
+    const statusLabel = deliveredSystem
+      ? `${meta.label} · System notification sent`
+      : `${meta.label} · In-app alert`;
+    el.innerHTML = `
+      <div class="an-bn-ic">${meta.icon}</div>
+      <div class="an-bn-body">
+        <div class="an-bn-tag">${escHtml(statusLabel)}</div>
+        <div class="an-bn-title">${escHtml(payload.title || 'Hour')}</div>
+        <div class="an-bn-text">${escHtml(payload.body || '')}</div>
+      </div>
+      <div class="an-bn-btns">
+        <button type="button" class="an-bn-open">Open</button>
+        <button type="button" class="an-bn-close" aria-label="Dismiss notification">×</button>
+      </div>
+    `;
+    const hideBanner = () => el.classList.remove('show');
+    el.querySelector('.an-bn-open').onclick = () => {
+      hideBanner();
+      openTarget(payload.target || 'home');
+    };
+    el.querySelector('.an-bn-close').onclick = hideBanner;
+    requestAnimationFrame(() => el.classList.add('show'));
+    if (bannerTimer) clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(hideBanner, 7000);
+  }
+
   async function syncWithServerAndSw(replan) {
     const snap = collectSnapshot();
     const config = {
@@ -13205,7 +13413,12 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       deviceId: state.deviceId,
       enabled: Boolean(state.enabled),
     });
-    if (!postParent({ type: 'leaveit-notify-sync-sw', snapshot: swSnap })) {
+    const host = getNotifyHost();
+    if (host && typeof host.syncSwSnapshot === 'function') {
+      try {
+        await host.syncSwSnapshot(swSnap);
+      } catch (e) {}
+    } else if (!postParent({ type: 'leaveit-notify-sync-sw', snapshot: swSnap })) {
       try {
         if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({
@@ -13252,13 +13465,44 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
 
   async function dispatchLocalNotification(payload) {
-    if (!payload) return;
-    const sent = postParent({ type: 'leaveit-notify-show-local', payload });
-    if (!sent) {
+    if (!payload) return { ok: false, method: 'blocked' };
+
+    const host = getNotifyHost();
+    if (host && typeof host.showLocalNotification === 'function') {
       try {
-        if ('serviceWorker' in navigator) {
-          const reg = await navigator.serviceWorker.ready;
-          if (reg && typeof reg.showNotification === 'function') {
+        return await host.showLocalNotification(payload);
+      } catch (e) {}
+    }
+
+    if (isEmbedded()) {
+      const reqId = 'show-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      const viaParent = await new Promise((resolve) => {
+        const t = setTimeout(() => {
+          pendingShowResolvers.delete(reqId);
+          resolve(null);
+        }, 1800);
+        pendingShowResolvers.set(reqId, (res) => {
+          clearTimeout(t);
+          resolve(res);
+        });
+        const posted = postParent({ type: 'leaveit-notify-show-local', requestId: reqId, payload });
+        if (!posted) {
+          clearTimeout(t);
+          pendingShowResolvers.delete(reqId);
+          resolve(null);
+        }
+      });
+      if (viaParent) return viaParent;
+    }
+
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await Promise.race([
+          navigator.serviceWorker.ready,
+          new Promise((r) => setTimeout(() => r(null), 1500)),
+        ]);
+        if (reg && typeof reg.showNotification === 'function') {
+          try {
             await reg.showNotification(payload.title || 'Hour', {
               body: payload.body || '',
               icon: '/pwa-192x192.png',
@@ -13266,35 +13510,74 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
               tag: payload.tag || 'hour-' + payload.category,
               data: { target: payload.target || 'home', url: '/?open=' + (payload.target || 'home') },
             });
-            return;
-          }
+            return { ok: true, method: 'sw' };
+          } catch (e) {}
         }
-      } catch (e) {}
-      try {
-        if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-          const n = new Notification(payload.title || 'Hour', {
-            body: payload.body || '',
-            icon: '/pwa-192x192.png',
-            tag: payload.tag || 'hour-local',
-          });
-          n.onclick = () => {
-            window.focus();
-            openTarget(payload.target || 'home');
-            n.close();
-          };
-        }
-      } catch (e) {}
-    }
+      }
+    } catch (e) {}
+
+    try {
+      if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+        const n = new Notification(payload.title || 'Hour', {
+          body: payload.body || '',
+          icon: '/pwa-192x192.png',
+          tag: payload.tag || 'hour-local',
+        });
+        n.onclick = () => {
+          window.focus();
+          openTarget(payload.target || 'home');
+          n.close();
+        };
+        return { ok: true, method: 'window' };
+      }
+    } catch (e) {}
+
+    return { ok: false, method: 'blocked' };
   }
 
-  async function requestEnableFlow() {
+  // IMPORTANT: Keep initial permission request SYNCHRONOUS inside click/change handler call stack!
+  function requestEnableFlow() {
+    const host = getNotifyHost();
+    if (host && typeof host.requestPermissionSync === 'function') {
+      const startedAt = Date.now();
+      const permPromise = host.requestPermissionSync();
+      return Promise.resolve(permPromise)
+        .then(async (perm) => {
+          const elapsedMs = Date.now() - startedAt;
+          const res = await host.completeEnableAfterPermission(state.intervalMin, perm);
+          envStatus.inOuterIframe = Boolean(res.inOuterIframe);
+          envStatus.outerBlocked = Boolean(res.inOuterIframe && perm !== 'granted' && elapsedMs < 200);
+          await handleEnableResult(res);
+          return res;
+        })
+        .catch(async () => {
+          const st = await refreshNotifyStatus();
+          const fallback = Object.assign({ subscription: null }, st);
+          await handleEnableResult(fallback);
+          return fallback;
+        });
+    }
+
     if (isEmbedded()) {
-      postParent({
-        type: 'leaveit-notify-enable',
-        requestId: 'an-' + Date.now(),
-        intervalMin: state.intervalMin,
+      const reqId = 'an-' + Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+      return new Promise((resolve) => {
+        const timer = setTimeout(async () => {
+          pendingEnableResolvers.delete(reqId);
+          const res = { permission: envStatus.permission || 'default', subscribed: false };
+          await handleEnableResult(res);
+          resolve(res);
+        }, 6000);
+        pendingEnableResolvers.set(reqId, async (res) => {
+          clearTimeout(timer);
+          await handleEnableResult(res);
+          resolve(res);
+        });
+        postParent({
+          type: 'leaveit-notify-enable',
+          requestId: reqId,
+          intervalMin: state.intervalMin,
+        });
       });
-      return;
     }
 
     if (!('Notification' in window)) {
@@ -13302,63 +13585,117 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       state.enabled = false;
       saveState();
       renderUi();
-      return;
+      return Promise.resolve({ supported: false, permission: 'unsupported', subscribed: false });
     }
 
+    const startedAt = Date.now();
     let perm = Notification.permission;
+    let permPromise;
     if (perm === 'default') {
       try {
-        perm = await Notification.requestPermission();
-      } catch (e) {}
+        let cbVal = null;
+        const maybeP = Notification.requestPermission((p) => { cbVal = p; });
+        permPromise = maybeP && typeof maybeP.then === 'function'
+          ? maybeP.catch(() => Notification.permission)
+          : Promise.resolve(cbVal || Notification.permission);
+      } catch (e) {
+        permPromise = Promise.resolve(Notification.permission);
+      }
+    } else {
+      permPromise = Promise.resolve(perm);
     }
-    envStatus.permission = perm;
-    let subscription = null;
-    if (perm === 'granted' && 'serviceWorker' in navigator) {
+
+    return permPromise.then(async (resolvedPerm) => {
+      perm = resolvedPerm;
+      const elapsedMs = Date.now() - startedAt;
       try {
-        const reg = await navigator.serviceWorker.ready;
-        envStatus.swReady = Boolean(reg);
-        envStatus.pushSupported = Boolean(reg && 'pushManager' in reg);
-        if (reg && 'pushManager' in reg) {
-          let sub = await reg.pushManager.getSubscription();
-          if (!sub) {
-            const kr = await fetch('/api/push/vapid-public-key');
-            if (kr.ok) {
-              const { publicKey } = await kr.json();
-              if (publicKey) {
-                const pad = '='.repeat((4 - (publicKey.length % 4)) % 4);
-                const b64 = (publicKey + pad).replace(/-/g, '+').replace(/_/g, '/');
-                const raw = atob(b64);
-                const arr = new Uint8Array(raw.length);
-                for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
-                sub = await reg.pushManager.subscribe({
-                  userVisibleOnly: true,
-                  applicationServerKey: arr,
-                });
+        envStatus.inOuterIframe = window.top !== window.self;
+      } catch (e) {
+        envStatus.inOuterIframe = true;
+      }
+      envStatus.outerBlocked = Boolean(envStatus.inOuterIframe && perm !== 'granted' && elapsedMs < 200);
+      envStatus.permission = perm;
+      let subscription = null;
+      if (perm === 'granted' && 'serviceWorker' in navigator) {
+        try {
+          const reg = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise((r) => setTimeout(() => r(null), 2000)),
+          ]);
+          envStatus.swReady = Boolean(reg);
+          envStatus.pushSupported = Boolean(reg && 'pushManager' in reg);
+          if (reg && 'pushManager' in reg) {
+            let sub = await reg.pushManager.getSubscription();
+            if (!sub) {
+              const kr = await fetch('/api/push/vapid-public-key');
+              if (kr.ok) {
+                const { publicKey } = await kr.json();
+                if (publicKey) {
+                  const pad = '='.repeat((4 - (publicKey.length % 4)) % 4);
+                  const b64 = (publicKey + pad).replace(/-/g, '+').replace(/_/g, '/');
+                  const raw = atob(b64);
+                  const arr = new Uint8Array(raw.length);
+                  for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i);
+                  sub = await reg.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: arr,
+                  });
+                }
               }
             }
+            subscription = sub ? sub.toJSON() : null;
           }
-          subscription = sub ? sub.toJSON() : null;
-        }
+        } catch (e) {}
+      }
+      const res = {
+        supported: true,
+        permission: perm,
+        subscription,
+        subscribed: Boolean(subscription),
+        swReady: envStatus.swReady,
+        pushSupported: envStatus.pushSupported,
+        inOuterIframe: envStatus.inOuterIframe,
+      };
+      await handleEnableResult(res);
+      return res;
+    });
+  }
+
+  function requestPermissionIfDefault() {
+    const host = getNotifyHost();
+    if (host && typeof host.requestPermissionSync === 'function') {
+      return Promise.resolve(host.requestPermissionSync()).then((perm) => {
+        envStatus.permission = perm;
+        renderUi();
+        return perm;
+      });
+    }
+    if ('Notification' in window && Notification.permission === 'default') {
+      try {
+        return Promise.resolve(Notification.requestPermission()).then((perm) => {
+          envStatus.permission = perm;
+          renderUi();
+          return perm;
+        });
       } catch (e) {}
     }
-    await handleEnableResult({ permission: perm, subscription, subscribed: Boolean(subscription), swReady: envStatus.swReady, pushSupported: envStatus.pushSupported });
+    return Promise.resolve(envStatus.permission);
   }
 
   async function handleEnableResult(res) {
-    if (res.permission) envStatus.permission = res.permission;
-    if (typeof res.swReady === 'boolean') envStatus.swReady = res.swReady;
-    if (typeof res.pushSupported === 'boolean') envStatus.pushSupported = res.pushSupported;
-    if (typeof res.subscribed === 'boolean') envStatus.subscribed = res.subscribed;
+    applyStatusUpdate(res);
 
     if (res.permission !== 'granted') {
       state.enabled = false;
       saveState();
       renderUi();
-      showToast(
-        res.permission === 'denied'
-          ? 'Notifications blocked in browser settings — allow notifications to enable'
-          : 'Allow notifications permission to activate automatic reminders'
-      );
+      if (envStatus.outerBlocked || (envStatus.inOuterIframe && res.permission !== 'granted')) {
+        showToast('Preview iframe blocks OS permission — open in a full tab or installed app');
+      } else if (res.permission === 'denied') {
+        showToast('Notifications blocked in browser settings — allow notifications to enable');
+      } else {
+        showToast('Allow browser notifications permission to activate system alerts');
+      }
       return;
     }
 
@@ -13405,8 +13742,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     renderUi();
     showToast(
       envStatus.subscribed
-        ? '📲 Android Auto Notifications planned & push-synced!'
-        : '🔔 Auto Notifications planned on this device!'
+        ? '📲 Auto Notifications planned & push-synced!'
+        : '🔔 Auto Notifications active on this device!'
     );
   }
 
@@ -13414,7 +13751,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     state.enabled = false;
     saveState();
     renderUi();
-    if (isEmbedded()) {
+    const host = getNotifyHost();
+    if (host && typeof host.disablePush === 'function') {
+      try {
+        const st = await host.disablePush();
+        applyStatusUpdate(st);
+      } catch (e) {}
+    } else if (isEmbedded()) {
       postParent({ type: 'leaveit-notify-disable', requestId: 'dis-' + Date.now() });
     } else if ('serviceWorker' in navigator) {
       try {
@@ -13435,65 +13778,120 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     showToast('Automatic notifications paused');
   }
 
-  async function sendRandomNow(forcedCat) {
-    if (envStatus.permission !== 'granted') {
-      await requestEnableFlow();
-      if (envStatus.permission !== 'granted') return;
+  function sendRandomNow(forcedCat) {
+    const sendBtn = document.getElementById('anSendNowBtn');
+    if (sendBtn && sendBtn.disabled) return Promise.resolve();
+    if (sendBtn) {
+      sendBtn.disabled = true;
+      sendBtn.textContent = '⏳ Sending...';
     }
 
-    const snap = collectSnapshot();
-    let payload = null;
-    let pushedByServer = false;
-
+    let currentPerm = envStatus.permission;
     try {
-      const r = await fetch('/api/push/test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          deviceId: state.deviceId,
-          category: forcedCat,
-          config: {
-            enabled: state.enabled,
-            intervalMin: state.intervalMin,
-            categories: state.categories,
-            quietEnabled: state.quietEnabled,
-            quietStart: Number.isFinite(Number(state.quietStart)) ? Number(state.quietStart) : 23,
-            quietEnd: Number.isFinite(Number(state.quietEnd)) ? Number(state.quietEnd) : 7,
-            tzOffsetMin: new Date().getTimezoneOffset(),
-          },
-          snapshot: snap,
-        }),
-      });
-      if (r.ok) {
-        const data = await r.json();
-        payload = data.payload;
-        pushedByServer = Boolean(data.pushed);
+      const h = getNotifyHost();
+      if (h && window.parent && window.parent.Notification) {
+        currentPerm = window.parent.Notification.permission;
+      } else if ('Notification' in window) {
+        currentPerm = Notification.permission;
       }
     } catch (e) {}
+    envStatus.permission = currentPerm;
 
-    if (!payload) {
-      payload = buildLocalNotification(forcedCat);
+    // Start permission request synchronously before any await!
+    const prepPromise = currentPerm !== 'granted'
+      ? requestEnableFlow()
+      : Promise.resolve({ permission: 'granted' });
+
+    return Promise.resolve(prepPromise).then(async () => {
+      try {
+        const snap = collectSnapshot();
+        let payload = null;
+        let pushedByServer = false;
+
+        try {
+          const r = await fetch('/api/push/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              deviceId: state.deviceId,
+              category: forcedCat,
+              config: {
+                enabled: state.enabled,
+                intervalMin: state.intervalMin,
+                categories: state.categories,
+                quietEnabled: state.quietEnabled,
+                quietStart: Number.isFinite(Number(state.quietStart)) ? Number(state.quietStart) : 23,
+                quietEnd: Number.isFinite(Number(state.quietEnd)) ? Number(state.quietEnd) : 7,
+                tzOffsetMin: new Date().getTimezoneOffset(),
+              },
+              snapshot: snap,
+            }),
+          });
+          if (r.ok) {
+            const data = await r.json();
+            payload = data.payload;
+            pushedByServer = Boolean(data.pushed);
+          }
+        } catch (e) {}
+
+        if (!payload) {
+          payload = buildLocalNotification(forcedCat);
+        }
+
+        let localRes = { ok: false, method: 'blocked' };
+        if (!pushedByServer && envStatus.permission === 'granted') {
+          localRes = await dispatchLocalNotification(payload);
+        }
+
+        const deliveredSystem = pushedByServer || Boolean(localRes && localRes.ok);
+        state.lastSentAt = Date.now();
+        state.lastCategory = payload.category;
+        state.history = [
+          {
+            at: state.lastSentAt,
+            category: payload.category,
+            title: payload.title,
+            body: payload.body,
+          },
+          ...state.history,
+        ].slice(0, 12);
+        buildQueue(Date.now(), 4);
+        saveState();
+        renderUi();
+
+        showInAppBanner(payload, deliveredSystem);
+
+        if (pushedByServer) {
+          showToast('📲 Sent via Push: ' + payload.title);
+        } else if (deliveredSystem) {
+          showToast('🔔 Notification sent: ' + payload.title);
+        } else if (envStatus.permission === 'denied') {
+          showToast('🔔 Sent in-app (allow browser notifications for OS alerts)');
+        } else if (envStatus.outerBlocked || envStatus.inOuterIframe) {
+          showToast('🔔 Sent in-app (preview frame blocks OS notification popups)');
+        } else {
+          showToast('🔔 Notification shown in-app');
+        }
+      } finally {
+        const btnAfter = document.getElementById('anSendNowBtn');
+        if (btnAfter) {
+          btnAfter.disabled = false;
+          btnAfter.textContent = '🔔 Send Random Now';
+        }
+      }
+    });
+  }
+
+  async function notifyNow(payload) {
+    if (!payload) return;
+    let res = { ok: false, method: 'blocked' };
+    if (envStatus.permission === 'granted') {
+      res = await dispatchLocalNotification(payload);
     }
-
-    if (!pushedByServer) {
-      await dispatchLocalNotification(payload);
+    if (!document.hidden || !res.ok) {
+      showInAppBanner(payload, Boolean(res && res.ok));
     }
-
-    state.lastSentAt = Date.now();
-    state.lastCategory = payload.category;
-    state.history = [
-      {
-        at: state.lastSentAt,
-        category: payload.category,
-        title: payload.title,
-        body: payload.body,
-      },
-      ...state.history,
-    ].slice(0, 12);
-    buildQueue(Date.now(), 4);
-    saveState();
-    renderUi();
-    showToast((pushedByServer ? '📲 Sent via Android Push: ' : '🔔 Sent: ') + payload.title);
+    return res;
   }
 
   async function checkLocalScheduleTick() {
@@ -13520,7 +13918,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     }
 
     const payload = buildLocalNotification(nextSlot.category, now);
-    await dispatchLocalNotification(payload);
+    const localRes = await dispatchLocalNotification(payload);
+    if (!document.hidden) showInAppBanner(payload, Boolean(localRes && localRes.ok));
     state.lastSentAt = now;
     state.lastCategory = payload.category;
     state.history = [
@@ -13615,12 +14014,30 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
 
   function getBadgeInfo() {
-    if (!envStatus.supported) return { state: 'warn', text: 'Unsupported browser' };
+    if (!envStatus.supported) return { state: 'warn', text: 'In-app only' };
     if (envStatus.permission === 'denied') return { state: 'blocked', text: 'Blocked in browser' };
-    if (!state.enabled) return { state: 'off', text: 'Off' };
+    if (envStatus.outerBlocked) return { state: 'warn', text: 'Preview blocked · Open Tab' };
+    if (!state.enabled) {
+      return envStatus.permission === 'granted'
+        ? { state: 'off', text: 'Allowed · Off' }
+        : { state: 'off', text: 'Off' };
+    }
     if (envStatus.permission !== 'granted') return { state: 'warn', text: 'Permission needed' };
-    if (envStatus.subscribed) return { state: 'push', text: 'Android Push + SW Active' };
-    return { state: 'local', text: 'Device SW Active' };
+    if (envStatus.subscribed) return { state: 'push', text: 'Push + SW Active' };
+    return { state: 'local', text: 'Device Notifications Active' };
+  }
+
+  function renderEnvAlert() {
+    if (!envStatus.supported) {
+      return `<div class="an-env-alert"><span>System notifications aren’t supported in this browser; alerts will show in-app.</span></div>`;
+    }
+    if (envStatus.permission === 'denied') {
+      return `<div class="an-env-alert"><span>Notifications are blocked for this site. Tap the 🔒 icon in your browser address bar → Allow Notifications, or open in a full tab.</span><a href="/" target="_blank" rel="noopener noreferrer">Open Tab ↗</a></div>`;
+    }
+    if (envStatus.outerBlocked || (envStatus.inOuterIframe && envStatus.permission !== 'granted')) {
+      return `<div class="an-env-alert"><span>Browsers hide permission popups inside embedded previews. Open Hour in its own tab or install it to get native OS notifications.</span><a href="/" target="_blank" rel="noopener noreferrer">Open Tab ↗</a></div>`;
+    }
+    return '';
   }
 
   function renderUi() {
@@ -13645,9 +14062,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
       box.innerHTML = `
         <div class="an-head">
-          <span style="font-weight:700;font-size:15px">📲 Android Auto Notifications</span>
+          <span style="font-weight:700;font-size:15px">📲 Auto Notifications</span>
           <span class="an-badge" data-state="${badge.state}">${badge.text}</span>
         </div>
+        ${renderEnvAlert()}
         <div class="tog">
           <span>Automatic random notifications<small style="display:block;color:var(--muted);font-size:11px;font-weight:500">Plans &amp; sends random greetings, stats, pending tasks, and study reminders</small></span>
           <input type="checkbox" class="sw" id="anEnableSw" ${state.enabled ? 'checked' : ''}>
@@ -13682,7 +14100,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           <button type="button" class="ctl" id="anReplanBtn">↻ Re-plan Queue</button>
         </div>
         <div class="an-note">
-          Android tip: Install <b>Hour</b> to your Android Home Screen (Chrome menu → Add to Home Screen) and allow notifications so random stats, greetings, and daily tasks arrive reliably even when closed.
+          Tip: Install <b>Hour</b> to your Home Screen (Browser menu → Add to Home Screen) and allow notifications so random stats, greetings, and daily tasks arrive reliably even when closed.
         </div>
       `;
 
@@ -13756,7 +14174,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       const next = state.queue[0];
       rgSub.textContent = state.enabled && next
         ? `${badge.text} · Next ${fmtRelTime(next.fireAt)}`
-        : 'Random stats, greetings & tasks on Android';
+        : 'Random stats, greetings & tasks';
     }
   }
 
@@ -13786,7 +14204,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     btn.type = 'button';
     btn.className = 'it';
     btn.id = 'rgAutoNotifyBtn';
-    btn.innerHTML = `<span class="l"><span class="ic">🔔</span><span>Android Auto Notifications<small id="rgAutoNotifySub">Random stats, greetings &amp; tasks on Android</small></span></span><span>›</span>`;
+    btn.innerHTML = `<span class="l"><span class="ic">🔔</span><span>Auto Notifications<small id="rgAutoNotifySub">Random stats, greetings &amp; tasks</small></span></span><span>›</span>`;
     btn.onclick = () => openTarget('settings');
     lastIt.insertAdjacentElement('afterend', btn);
     renderUi();
@@ -13800,7 +14218,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'ln an-more-btn';
-      btn.innerHTML = '<span>🔔</span>Android Auto Notifications';
+      btn.innerHTML = '<span>🔔</span>Auto Notifications';
       btn.onclick = () => {
         const sh = document.getElementById('rgSh');
         if (sh) sh.classList.remove('on');
@@ -13814,17 +14232,25 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     if (event.origin !== window.location.origin || !event.data) return;
     const d = event.data;
     if (d.type === 'leaveit-notify-status') {
-      envStatus.supported = Boolean(d.supported);
-      envStatus.permission = d.permission || envStatus.permission;
-      envStatus.pushSupported = Boolean(d.pushSupported);
-      envStatus.subscribed = Boolean(d.subscribed);
-      envStatus.swReady = Boolean(d.swReady);
+      applyStatusUpdate(d);
       if (state.enabled && envStatus.permission === 'granted') {
         syncWithServerAndSw(false);
       }
       renderUi();
     } else if (d.type === 'leaveit-notify-enabled-result') {
-      handleEnableResult(d);
+      if (d.requestId && pendingEnableResolvers.has(d.requestId)) {
+        const resolver = pendingEnableResolvers.get(d.requestId);
+        pendingEnableResolvers.delete(d.requestId);
+        resolver(d);
+      } else {
+        handleEnableResult(d);
+      }
+    } else if (d.type === 'leaveit-notify-show-result') {
+      if (d.requestId && pendingShowResolvers.has(d.requestId)) {
+        const resolver = pendingShowResolvers.get(d.requestId);
+        pendingShowResolvers.delete(d.requestId);
+        resolver(d);
+      }
     } else if (d.type === 'leaveit-open-target' && d.target) {
       openTarget(d.target);
     }
@@ -13848,6 +14274,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   });
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
+      refreshNotifyStatus();
       checkLocalScheduleTick();
       if (state.enabled) syncWithServerAndSw(false);
     }
@@ -13855,12 +14282,21 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
   mountSettingsBox();
   mountRegainHomeButton();
+  refreshNotifyStatus();
+
+  try {
+    if (navigator.permissions && typeof navigator.permissions.query === 'function') {
+      navigator.permissions.query({ name: 'notifications' }).then((status) => {
+        status.onchange = () => {
+          refreshNotifyStatus();
+        };
+      }).catch(() => {});
+    }
+  } catch (e) {}
 
   if (!isEmbedded()) {
     const qOpen = new URLSearchParams(window.location.search).get('open');
     if (qOpen) setTimeout(() => openTarget(qOpen), 250);
-  } else {
-    postParent({ type: 'leaveit-notify-query-status', requestId: 'init' });
   }
 
   if (!state.queue.length) buildQueue(Date.now(), 4);
@@ -13876,7 +14312,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
   async function notifyFriendOnline(payload) {
     if (!payload) return;
-    if (envStatus.permission !== 'granted') return;
     if (state.categories && state.categories.compete === false) return;
     const key = payload.fromUid || payload.tag || payload.title;
     const now = Date.now();
@@ -13889,7 +14324,12 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       target: payload.target || 'arena-friends',
       tag: payload.tag || ('hour-friend-online-' + key),
     };
-    await dispatchLocalNotification(notePayload);
+    const res = envStatus.permission === 'granted'
+      ? await dispatchLocalNotification(notePayload)
+      : { ok: false, method: 'blocked' };
+    if (!document.hidden || !res.ok) {
+      showInAppBanner(notePayload, Boolean(res && res.ok));
+    }
     state.history = [
       { at: now, category: 'compete', title: notePayload.title, body: notePayload.body },
       ...state.history,
@@ -13900,8 +14340,11 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   window.LeaveItAutoNotify = {
     enable: requestEnableFlow,
     disable: disableFlow,
+    requestPermissionIfDefault,
     sendRandomNow,
+    notifyNow,
     notifyFriendOnline,
+    refreshStatus: refreshNotifyStatus,
     syncFriends: () => {
       if (state.enabled) syncWithServerAndSw(false);
     },

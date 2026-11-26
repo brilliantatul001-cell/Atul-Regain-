@@ -13,13 +13,119 @@ import {
 
 const SPA_ASSET_PATH = '/assets/aistudio/Leave_It_v101_Laptop_Fixed_d7f9ca8a.html';
 
+export interface NotifyStatusResult {
+  supported: boolean;
+  permission: NotificationPermission | 'unsupported';
+  pushSupported: boolean;
+  subscribed: boolean;
+  swReady: boolean;
+  inOuterIframe: boolean;
+}
+
+export interface NotifyEnableResult extends NotifyStatusResult {
+  subscription: PushSubscriptionJSON | null;
+}
+
+export interface NotifyLocalPayload {
+  title?: string;
+  body?: string;
+  tag?: string;
+  target?: string;
+  category?: string;
+  actions?: Array<{action: string; title: string}>;
+}
+
+export interface NotifyShowResult {
+  ok: boolean;
+  method: 'sw' | 'window' | 'blocked';
+  error?: string;
+}
+
+export interface NotifyHostBridge {
+  requestPermissionSync: () => Promise<NotificationPermission | 'unsupported'>;
+  getStatus: () => Promise<NotifyStatusResult>;
+  completeEnableAfterPermission: (
+    intervalMin?: number,
+    permOverride?: NotificationPermission | 'unsupported',
+  ) => Promise<NotifyEnableResult>;
+  disablePush: () => Promise<NotifyStatusResult>;
+  showLocalNotification: (payload: NotifyLocalPayload) => Promise<NotifyShowResult>;
+  syncSwSnapshot: (snapshot: unknown) => Promise<void>;
+}
+
 declare global {
   interface Window {
     LeaveItFirebase?: FirebaseArenaBridge;
+    LeaveItNotifyHost?: NotifyHostBridge;
   }
 }
 
 window.LeaveItFirebase = firebaseArenaBridge;
+
+const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+};
+
+const isInOuterIframe = (): boolean => {
+  try {
+    return window.top !== window.self;
+  } catch {
+    return true;
+  }
+};
+
+const getSwRegistration = async (): Promise<ServiceWorkerRegistration | null> => {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    const existing = await navigator.serviceWorker.getRegistration('/');
+    if (existing) return existing;
+  } catch {
+    // ignore
+  }
+  try {
+    const readyReg = await Promise.race([
+      navigator.serviceWorker.ready,
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 2000)),
+    ]);
+    if (readyReg) return readyReg;
+  } catch {
+    // ignore
+  }
+  try {
+    return await navigator.serviceWorker.register('/sw-notify.js', {scope: '/'});
+  } catch {
+    return null;
+  }
+};
+
+const requestPermissionSyncHost = (): Promise<NotificationPermission | 'unsupported'> => {
+  if (typeof window === 'undefined' || !('Notification' in window)) {
+    return Promise.resolve('unsupported');
+  }
+  const current = Notification.permission;
+  if (current !== 'default') {
+    return Promise.resolve(current);
+  }
+  try {
+    let cbResult: NotificationPermission | null = null;
+    const maybePromise = Notification.requestPermission((perm) => {
+      cbResult = perm;
+    });
+    if (maybePromise && typeof maybePromise.then === 'function') {
+      return maybePromise.catch(() => Notification.permission);
+    }
+    return Promise.resolve(cbResult || Notification.permission);
+  } catch {
+    return Promise.resolve(Notification.permission);
+  }
+};
 
 export default function App() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
@@ -71,39 +177,19 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
-      const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
-      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-      const rawData = window.atob(base64);
-      const outputArray = new Uint8Array(rawData.length);
-      for (let i = 0; i < rawData.length; ++i) {
-        outputArray[i] = rawData.charCodeAt(i);
-      }
-      return outputArray;
-    };
-
-    const getSwReg = async (): Promise<ServiceWorkerRegistration | null> => {
-      if (!('serviceWorker' in navigator)) return null;
-      try {
-        const existing = await navigator.serviceWorker.getRegistration('/');
-        if (existing) return existing;
-      } catch {
-        // ignore
-      }
-      try {
-        return await Promise.race([
-          navigator.serviceWorker.ready,
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 3500)),
-        ]);
-      } catch {
-        return null;
+    const postToIframe = (payload: Record<string, unknown>) => {
+      const target = iframeRef.current?.contentWindow;
+      if (target) {
+        target.postMessage(payload, window.location.origin);
       }
     };
 
-    const getNotifyStatus = async () => {
+    const getNotifyStatus = async (): Promise<NotifyStatusResult> => {
       const supported = typeof window !== 'undefined' && 'Notification' in window;
-      const permission = supported ? Notification.permission : 'unsupported';
-      const reg = await getSwReg();
+      const permission: NotificationPermission | 'unsupported' = supported
+        ? Notification.permission
+        : 'unsupported';
+      const reg = await getSwRegistration();
       const pushSupported = Boolean(reg && 'pushManager' in reg);
       let subscribed = false;
       if (reg && 'pushManager' in reg) {
@@ -114,14 +200,161 @@ export default function App() {
           subscribed = false;
         }
       }
-      return {supported, permission, pushSupported, subscribed, swReady: Boolean(reg)};
+      return {
+        supported,
+        permission,
+        pushSupported,
+        subscribed,
+        swReady: Boolean(reg),
+        inOuterIframe: isInOuterIframe(),
+      };
     };
 
-    const postToIframe = (payload: Record<string, unknown>) => {
-      const target = iframeRef.current?.contentWindow;
-      if (target) {
-        target.postMessage(payload, window.location.origin);
+    const completeEnableAfterPermission = async (
+      intervalMin?: number,
+      permOverride?: NotificationPermission | 'unsupported',
+    ): Promise<NotifyEnableResult> => {
+      const supported = typeof window !== 'undefined' && 'Notification' in window;
+      const permission: NotificationPermission | 'unsupported' = supported
+        ? permOverride && permOverride !== 'unsupported'
+          ? permOverride
+          : Notification.permission
+        : 'unsupported';
+      const reg = await getSwRegistration();
+      const pushSupported = Boolean(reg && 'pushManager' in reg);
+      let subscription: PushSubscriptionJSON | null = null;
+      if (permission === 'granted' && reg && 'pushManager' in reg) {
+        try {
+          let sub = await reg.pushManager.getSubscription();
+          if (!sub) {
+            const keyRes = await fetch('/api/push/vapid-public-key');
+            if (keyRes.ok) {
+              const {publicKey} = (await keyRes.json()) as {publicKey?: string};
+              if (publicKey) {
+                sub = await reg.pushManager.subscribe({
+                  userVisibleOnly: true,
+                  applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
+                });
+              }
+            }
+          }
+          subscription = sub ? sub.toJSON() : null;
+        } catch {
+          subscription = null;
+        }
+        try {
+          const pSync = (reg as ServiceWorkerRegistration & {
+            periodicSync?: {register: (tag: string, opts: {minInterval: number}) => Promise<void>};
+          }).periodicSync;
+          if (pSync) {
+            const mins = Math.max(15, Number(intervalMin) || 45);
+            await pSync.register('hour-auto-notify', {
+              minInterval: mins * 60_000,
+            });
+          }
+        } catch {
+          // periodicSync optional on non-installed/unsupported browsers
+        }
       }
+      return {
+        supported,
+        permission,
+        subscription,
+        swReady: Boolean(reg),
+        pushSupported,
+        subscribed: Boolean(subscription),
+        inOuterIframe: isInOuterIframe(),
+      };
+    };
+
+    const disablePush = async (): Promise<NotifyStatusResult> => {
+      const reg = await getSwRegistration();
+      if (reg && 'pushManager' in reg) {
+        try {
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) await sub.unsubscribe();
+        } catch {
+          // ignore
+        }
+      }
+      return getNotifyStatus();
+    };
+
+    const showLocalNotification = async (
+      payload: NotifyLocalPayload,
+    ): Promise<NotifyShowResult> => {
+      if (typeof window === 'undefined' || !('Notification' in window)) {
+        return {ok: false, method: 'blocked', error: 'Notifications unsupported'};
+      }
+      if (Notification.permission !== 'granted') {
+        return {ok: false, method: 'blocked', error: 'Permission ' + Notification.permission};
+      }
+      const title = payload.title || 'Hour';
+      const target = payload.target || 'home';
+      const category = payload.category || 'reminder';
+      const reg = await getSwRegistration();
+      if (reg && typeof reg.showNotification === 'function') {
+        try {
+          await reg.showNotification(title, {
+            body: payload.body || '',
+            icon: '/pwa-192x192.png',
+            badge: '/pwa-192x192.png',
+            tag: payload.tag || 'hour-' + category,
+            renotify: true,
+            data: {url: '/?open=' + encodeURIComponent(target), target, category},
+            actions: Array.isArray(payload.actions) ? payload.actions.slice(0, 2) : undefined,
+          } as NotificationOptions);
+          return {ok: true, method: 'sw'};
+        } catch {
+          try {
+            await reg.showNotification(title, {
+              body: payload.body || '',
+              icon: '/pwa-192x192.png',
+              tag: payload.tag || 'hour-' + category,
+              data: {url: '/?open=' + encodeURIComponent(target), target, category},
+            });
+            return {ok: true, method: 'sw'};
+          } catch {
+            // Fall through to window.Notification
+          }
+        }
+      }
+      try {
+        const n = new Notification(title, {
+          body: payload.body || '',
+          icon: '/pwa-192x192.png',
+          tag: payload.tag || 'hour-' + category,
+        });
+        n.onclick = () => {
+          window.focus();
+          postToIframe({type: 'leaveit-open-target', target});
+          n.close();
+        };
+        return {ok: true, method: 'window'};
+      } catch (err) {
+        return {
+          ok: false,
+          method: 'blocked',
+          error: err instanceof Error ? err.message : 'Notification blocked',
+        };
+      }
+    };
+
+    const syncSwSnapshot = async (snapshot: unknown): Promise<void> => {
+      const reg = await getSwRegistration();
+      const sw = reg?.active || reg?.waiting || reg?.installing || navigator.serviceWorker?.controller;
+      if (sw) {
+        sw.postMessage({type: 'hour-notify-cache', snapshot});
+      }
+    };
+
+    window.LeaveItNotifyHost = {
+      requestPermissionSync: requestPermissionSyncHost,
+      getStatus: getNotifyStatus,
+      completeEnableAfterPermission,
+      disablePush,
+      showLocalNotification,
+      syncSwSnapshot,
     };
 
     const postInstallState = () => {
@@ -178,128 +411,29 @@ export default function App() {
           ...(await getNotifyStatus()),
         });
       } else if (msg.type === 'leaveit-notify-enable') {
-        const supported = 'Notification' in window;
-        let permission: NotificationPermission | 'unsupported' = supported
-          ? Notification.permission
-          : 'unsupported';
-        if (supported && permission === 'default') {
-          try {
-            permission = await Notification.requestPermission();
-          } catch {
-            permission = Notification.permission;
-          }
-        }
-        const reg = await getSwReg();
-        let subscription: PushSubscriptionJSON | null = null;
-        if (permission === 'granted' && reg && 'pushManager' in reg) {
-          try {
-            let sub = await reg.pushManager.getSubscription();
-            if (!sub) {
-              const keyRes = await fetch('/api/push/vapid-public-key');
-              if (keyRes.ok) {
-                const {publicKey} = (await keyRes.json()) as {publicKey?: string};
-                if (publicKey) {
-                  sub = await reg.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(publicKey) as unknown as BufferSource,
-                  });
-                }
-              }
-            }
-            subscription = sub ? sub.toJSON() : null;
-          } catch {
-            subscription = null;
-          }
-          try {
-            const pSync = (reg as ServiceWorkerRegistration & {
-              periodicSync?: {register: (tag: string, opts: {minInterval: number}) => Promise<void>};
-            }).periodicSync;
-            if (pSync) {
-              const intervalMin = Math.max(15, Number(msg.intervalMin) || 45);
-              await pSync.register('hour-auto-notify', {
-                minInterval: intervalMin * 60_000,
-              });
-            }
-          } catch {
-            // periodicSync optional on non-installed/unsupported browsers
-          }
-        }
+        const perm = await requestPermissionSyncHost();
+        const result = await completeEnableAfterPermission(Number(msg.intervalMin) || 45, perm);
         postToIframe({
           type: 'leaveit-notify-enabled-result',
           requestId: msg.requestId,
-          permission,
-          subscription,
-          swReady: Boolean(reg),
-          pushSupported: Boolean(reg && 'pushManager' in reg),
-          subscribed: Boolean(subscription),
+          ...result,
         });
       } else if (msg.type === 'leaveit-notify-disable') {
-        const reg = await getSwReg();
-        if (reg && 'pushManager' in reg) {
-          try {
-            const sub = await reg.pushManager.getSubscription();
-            if (sub) await sub.unsubscribe();
-          } catch {
-            // ignore
-          }
-        }
+        const status = await disablePush();
         postToIframe({
           type: 'leaveit-notify-status',
           requestId: msg.requestId,
-          ...(await getNotifyStatus()),
+          ...status,
         });
       } else if (msg.type === 'leaveit-notify-show-local' && msg.payload) {
-        const payload = msg.payload as {
-          title?: string;
-          body?: string;
-          tag?: string;
-          target?: string;
-          category?: string;
-          actions?: Array<{action: string; title: string}>;
-        };
-        if ('Notification' in window && Notification.permission === 'granted') {
-          const reg = await getSwReg();
-          if (reg) {
-            try {
-              const target = payload.target || 'home';
-              const category = payload.category || 'reminder';
-              await reg.showNotification(payload.title || 'Hour', {
-                body: payload.body || '',
-                icon: '/pwa-192x192.png',
-                badge: '/pwa-192x192.png',
-                tag: payload.tag || 'hour-' + category,
-                data: {url: '/?open=' + encodeURIComponent(target), target, category},
-                actions: payload.actions,
-              } as NotificationOptions);
-            } catch {
-              // ignore
-            }
-          } else {
-            try {
-              const n = new Notification(payload.title || 'Hour', {
-                body: payload.body || '',
-                icon: '/pwa-192x192.png',
-                tag: payload.tag || 'hour-local',
-              });
-              n.onclick = () => {
-                window.focus();
-                postToIframe({
-                  type: 'leaveit-open-target',
-                  target: payload.target || 'home',
-                });
-                n.close();
-              };
-            } catch {
-              // ignore
-            }
-          }
-        }
+        const result = await showLocalNotification(msg.payload as NotifyLocalPayload);
+        postToIframe({
+          type: 'leaveit-notify-show-result',
+          requestId: msg.requestId,
+          ...result,
+        });
       } else if (msg.type === 'leaveit-notify-sync-sw' && msg.snapshot) {
-        const reg = await getSwReg();
-        const sw = reg?.active || navigator.serviceWorker?.controller;
-        if (sw) {
-          sw.postMessage({type: 'hour-notify-cache', snapshot: msg.snapshot});
-        }
+        await syncSwSnapshot(msg.snapshot);
       }
     };
 

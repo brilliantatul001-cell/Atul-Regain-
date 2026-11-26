@@ -70,18 +70,22 @@ function dedupeTracks(list: MusicTrack[], limit = 30): MusicTrack[] {
 }
 
 async function fetchJsonWithTimeout<T>(url: string): Promise<T | null> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
   try {
     const res = await fetch(url, {
       headers: {
         Accept: 'application/json',
         'User-Agent': 'HourStudyTimer/1.0',
       },
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      signal: ctrl.signal,
     });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 

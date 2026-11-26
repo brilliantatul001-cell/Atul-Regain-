@@ -40,6 +40,8 @@ function parseQueryParam(req: ApiRequest, key: string): string {
 }
 
 export default async function handler(req: ApiRequest, res: ApiResponse): Promise<void> {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   if (req.method === 'OPTIONS') {
     res.status(204).end();
     return;

@@ -96,6 +96,71 @@ export interface RoomMessageView {
   createdAtMs: number;
 }
 
+export type StoryMediaType = 'image' | 'card';
+export type StoryFontStyle = 'sans' | 'serif' | 'mono' | 'bold';
+export type StoryStickerKind = 'none' | 'focus' | 'streak' | 'xp' | 'exam';
+
+export interface StorySongAttachment {
+  id: string;
+  title: string;
+  artist: string;
+  coverUrl: string;
+  previewUrl: string;
+  clipStartSec?: number;
+}
+
+export interface PlayerStoryView {
+  id: string;
+  authorUid: string;
+  authorUsername: string;
+  authorDisplayName: string;
+  authorAvatarDataUrl: string;
+  authorAvatarPreset: string;
+  viewerUids: string[];
+  mediaType: StoryMediaType;
+  imageDataUrl: string;
+  bgTheme: string;
+  caption: string;
+  textColor: string;
+  fontStyle: StoryFontStyle;
+  stickerKind: StoryStickerKind;
+  stickerLabel: string;
+  hasSong: boolean;
+  songId: string;
+  songTitle: string;
+  songArtist: string;
+  songCoverUrl: string;
+  songPreviewUrl: string;
+  songClipStartSec: number;
+  createdAtMs: number;
+  expiresAtMs: number;
+}
+
+export interface StoryViewerReceipt {
+  storyId: string;
+  storyAuthorUid: string;
+  viewerUid: string;
+  viewerUsername: string;
+  viewerDisplayName: string;
+  viewerAvatarDataUrl: string;
+  viewerAvatarPreset: string;
+  viewedAtMs: number;
+}
+
+export interface StoryReactionEntry {
+  id: string;
+  storyId: string;
+  storyAuthorUid: string;
+  senderUid: string;
+  senderUsername: string;
+  senderDisplayName: string;
+  senderAvatarDataUrl: string;
+  senderAvatarPreset: string;
+  emoji: string;
+  replyText: string;
+  createdAtMs: number;
+}
+
 export interface ArenaUser {
   id: string;
   username: string;
@@ -2618,6 +2683,412 @@ export function subscribeRoomMessages(
   );
 }
 
+function sanitizeAvatarDataUrl(raw: unknown): string {
+  const s = typeof raw === 'string' ? raw.trim() : '';
+  if (!s || s.length > 28000) return '';
+  return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s) ? s : '';
+}
+
+function sanitizeStoryImageDataUrl(raw: unknown): string {
+  const s = typeof raw === 'string' ? raw.trim() : '';
+  if (!s || s.length > 240000) return '';
+  return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(s) ? s : '';
+}
+
+function sanitizeHttpsUrl(raw: unknown, maxLen = 512): string {
+  const s = typeof raw === 'string' ? raw.trim().slice(0, maxLen) : '';
+  return /^https:\/\/.+/.test(s) ? s : '';
+}
+
+function mapStoryDoc(id: string, r: Record<string, unknown>): PlayerStoryView {
+  const mediaType: StoryMediaType = r.mediaType === 'image' ? 'image' : 'card';
+  const fontStyle: StoryFontStyle =
+    r.fontStyle === 'serif' || r.fontStyle === 'mono' || r.fontStyle === 'bold'
+      ? r.fontStyle
+      : 'sans';
+  const stickerKind: StoryStickerKind =
+    r.stickerKind === 'focus' ||
+    r.stickerKind === 'streak' ||
+    r.stickerKind === 'xp' ||
+    r.stickerKind === 'exam'
+      ? r.stickerKind
+      : 'none';
+  return {
+    id: String(r.id || id),
+    authorUid: String(r.authorUid || ''),
+    authorUsername: String(r.authorUsername || 'player'),
+    authorDisplayName: String(r.authorDisplayName || 'Focus Player'),
+    authorAvatarDataUrl: sanitizeAvatarDataUrl(r.authorAvatarDataUrl),
+    authorAvatarPreset: String(r.authorAvatarPreset || '').slice(0, 16),
+    viewerUids: Array.isArray(r.viewerUids)
+      ? (r.viewerUids as unknown[]).filter((x): x is string => typeof x === 'string')
+      : [],
+    mediaType,
+    imageDataUrl: sanitizeStoryImageDataUrl(r.imageDataUrl),
+    bgTheme: String(r.bgTheme || 'sunset').slice(0, 32),
+    caption: String(r.caption || '').slice(0, 180),
+    textColor: String(r.textColor || '#ffffff').slice(0, 16),
+    fontStyle,
+    stickerKind,
+    stickerLabel: String(r.stickerLabel || '').slice(0, 64),
+    hasSong: Boolean(r.hasSong),
+    songId: String(r.songId || '').slice(0, 64),
+    songTitle: String(r.songTitle || '').slice(0, 80),
+    songArtist: String(r.songArtist || '').slice(0, 64),
+    songCoverUrl: sanitizeHttpsUrl(r.songCoverUrl, 512),
+    songPreviewUrl: sanitizeHttpsUrl(r.songPreviewUrl, 512),
+    songClipStartSec: Math.max(0, Math.min(25, Number(r.songClipStartSec) || 0)),
+    createdAtMs: Number(r.createdAtMs || 0),
+    expiresAtMs: Number(r.expiresAtMs || 0),
+  };
+}
+
+export async function publishStory(params: {
+  mediaType?: StoryMediaType;
+  imageDataUrl?: string;
+  bgTheme?: string;
+  caption?: string;
+  textColor?: string;
+  fontStyle?: StoryFontStyle;
+  stickerKind?: StoryStickerKind;
+  stickerLabel?: string;
+  song?: StorySongAttachment | null;
+  friendUids?: string[];
+}): Promise<PlayerStoryView> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required to share a story.');
+  const myProfile = await ensurePlayerProfile(fbUser);
+
+  const imageDataUrl = sanitizeStoryImageDataUrl(params.imageDataUrl);
+  const mediaType: StoryMediaType =
+    params.mediaType === 'image' && imageDataUrl ? 'image' : 'card';
+  const caption = String(params.caption || '').trim().slice(0, 180);
+  const songPreviewUrl = params.song ? sanitizeHttpsUrl(params.song.previewUrl, 512) : '';
+  const hasSong = Boolean(params.song && songPreviewUrl);
+
+  if (mediaType === 'card' && !caption && !hasSong) {
+    throw new Error('Add a caption, photo, or song to share your story.');
+  }
+
+  // Merge provided friend UIDs with live accepted friendships so every friend sees the story
+  const viewerSet = new Set<string>([fbUser.uid]);
+  if (Array.isArray(params.friendUids)) {
+    params.friendUids.forEach((uid) => {
+      if (typeof uid === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(uid.trim())) {
+        viewerSet.add(uid.trim());
+      }
+    });
+  }
+  try {
+    const fSnap = await getDocs(
+      query(
+        collection(db, 'friendships'),
+        where('users', 'array-contains', fbUser.uid),
+        limit(100),
+      ),
+    );
+    fSnap.docs.forEach((d) => {
+      const f = d.data() as Record<string, unknown>;
+      if (f.status === 'accepted' && Array.isArray(f.users)) {
+        (f.users as unknown[]).forEach((u) => {
+          if (typeof u === 'string' && /^[a-zA-Z0-9_-]{1,128}$/.test(u)) {
+            viewerSet.add(u);
+          }
+        });
+      }
+    });
+  } catch {
+    // Fall back to passed friendUids if query fails
+  }
+
+  const viewerUids = Array.from(viewerSet).slice(0, 100);
+  const storyId = sanitizeId(
+    `st_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`,
+  );
+  const nowMs = Date.now();
+  const expiresAtMs = nowMs + 24 * 3600 * 1000;
+  const bgTheme = String(params.bgTheme || 'sunset').trim().slice(0, 32) || 'sunset';
+  const textColor = String(params.textColor || '#ffffff').trim().slice(0, 16) || '#ffffff';
+  const fontStyle: StoryFontStyle =
+    params.fontStyle === 'serif' || params.fontStyle === 'mono' || params.fontStyle === 'bold'
+      ? params.fontStyle
+      : 'sans';
+  const stickerKind: StoryStickerKind =
+    params.stickerKind === 'focus' ||
+    params.stickerKind === 'streak' ||
+    params.stickerKind === 'xp' ||
+    params.stickerKind === 'exam'
+      ? params.stickerKind
+      : 'none';
+  const stickerLabel =
+    stickerKind === 'none' ? '' : String(params.stickerLabel || '').trim().slice(0, 64);
+
+  const payload = {
+    id: storyId,
+    authorUid: fbUser.uid,
+    authorUsername: myProfile.username,
+    authorDisplayName: sanitizeDisplayName(myProfile.displayName),
+    authorAvatarDataUrl: sanitizeAvatarDataUrl(myProfile.avatarDataUrl),
+    authorAvatarPreset: String(myProfile.avatarPreset || '').slice(0, 16),
+    viewerUids,
+    mediaType,
+    imageDataUrl: mediaType === 'image' ? imageDataUrl : '',
+    bgTheme,
+    caption,
+    textColor,
+    fontStyle,
+    stickerKind,
+    stickerLabel,
+    hasSong,
+    songId: hasSong ? String(params.song?.id || '').slice(0, 64) : '',
+    songTitle: hasSong ? String(params.song?.title || '').trim().slice(0, 80) : '',
+    songArtist: hasSong ? String(params.song?.artist || '').trim().slice(0, 64) : '',
+    songCoverUrl: hasSong ? sanitizeHttpsUrl(params.song?.coverUrl, 512) : '',
+    songPreviewUrl: hasSong ? songPreviewUrl : '',
+    songClipStartSec: hasSong
+      ? Math.max(0, Math.min(25, Math.round(Number(params.song?.clipStartSec) || 0)))
+      : 0,
+    createdAtMs: nowMs,
+    expiresAtMs,
+    createdAt: serverTimestamp(),
+  };
+
+  try {
+    await setDoc(doc(db, 'stories', storyId), payload);
+    return mapStoryDoc(storyId, payload as unknown as Record<string, unknown>);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, `stories/${storyId}`);
+  }
+}
+
+export function subscribeFriendStories(
+  cb: (stories: PlayerStoryView[]) => void,
+  onError?: (msg: string) => void,
+): Unsubscribe {
+  const fbUser = auth.currentUser;
+  if (!fbUser) {
+    cb([]);
+    return () => {};
+  }
+  const q = query(
+    collection(db, 'stories'),
+    where('viewerUids', 'array-contains', fbUser.uid),
+    limit(90),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const now = Date.now();
+      const list = snap.docs
+        .map((d) => mapStoryDoc(d.id, d.data() as Record<string, unknown>))
+        .filter((s) => s.expiresAtMs > now)
+        .sort((a, b) => a.createdAtMs - b.createdAtMs);
+      cb(list);
+    },
+    (error) => {
+      const friendly = reportFirestoreListenerError(
+        error,
+        OperationType.LIST,
+        'stories',
+      );
+      onError?.(friendly);
+    },
+  );
+}
+
+export async function deleteStory(storyId: string): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser || !storyId) throw new Error('Sign in required.');
+  const cleanId = sanitizeId(storyId);
+  try {
+    await deleteDoc(doc(db, 'stories', cleanId));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, `stories/${cleanId}`);
+  }
+}
+
+export async function markStoryViewed(
+  storyId: string,
+  storyAuthorUid: string,
+): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser || !storyId || !storyAuthorUid) return;
+  if (storyAuthorUid === fbUser.uid) return;
+  const cleanStoryId = sanitizeId(storyId);
+  const viewRef = doc(db, 'stories', cleanStoryId, 'views', fbUser.uid);
+  try {
+    const existing = await getDoc(viewRef);
+    if (existing.exists()) return;
+    const myProfile = await ensurePlayerProfile(fbUser);
+    await setDoc(viewRef, {
+      storyId: cleanStoryId,
+      storyAuthorUid: sanitizeId(storyAuthorUid),
+      viewerUid: fbUser.uid,
+      viewerUsername: myProfile.username,
+      viewerDisplayName: sanitizeDisplayName(myProfile.displayName),
+      viewerAvatarDataUrl: sanitizeAvatarDataUrl(myProfile.avatarDataUrl),
+      viewerAvatarPreset: String(myProfile.avatarPreset || '').slice(0, 16),
+      viewedAtMs: Date.now(),
+      createdAt: serverTimestamp(),
+    });
+  } catch {
+    // Non-fatal view receipt error
+  }
+}
+
+export async function fetchViewedStoryIds(storyIds: string[]): Promise<string[]> {
+  const fbUser = auth.currentUser;
+  if (!fbUser || !Array.isArray(storyIds) || storyIds.length === 0) return [];
+  const uniq = Array.from(new Set(storyIds.filter(Boolean))).slice(0, 40);
+  const checks = await Promise.all(
+    uniq.map(async (sid) => {
+      try {
+        const snap = await getDoc(doc(db, 'stories', sanitizeId(sid), 'views', fbUser.uid));
+        return snap.exists() ? sid : '';
+      } catch {
+        return '';
+      }
+    }),
+  );
+  return checks.filter(Boolean);
+}
+
+export function subscribeStoryViews(
+  storyId: string,
+  storyAuthorUid: string,
+  cb: (views: StoryViewerReceipt[]) => void,
+  onError?: (msg: string) => void,
+): Unsubscribe {
+  const fbUser = auth.currentUser;
+  const cleanId = sanitizeId(storyId || '');
+  if (!fbUser || !cleanId || fbUser.uid !== storyAuthorUid) {
+    cb([]);
+    return () => {};
+  }
+  const q = query(
+    collection(db, 'stories', cleanId, 'views'),
+    where('storyAuthorUid', '==', fbUser.uid),
+    limit(100),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: StoryViewerReceipt[] = snap.docs
+        .map((d) => {
+          const r = d.data() as Record<string, unknown>;
+          return {
+            storyId: String(r.storyId || cleanId),
+            storyAuthorUid: String(r.storyAuthorUid || storyAuthorUid),
+            viewerUid: String(r.viewerUid || d.id),
+            viewerUsername: String(r.viewerUsername || 'friend'),
+            viewerDisplayName: String(r.viewerDisplayName || 'Friend'),
+            viewerAvatarDataUrl: sanitizeAvatarDataUrl(r.viewerAvatarDataUrl),
+            viewerAvatarPreset: String(r.viewerAvatarPreset || '').slice(0, 16),
+            viewedAtMs: Number(r.viewedAtMs || 0),
+          };
+        })
+        .sort((a, b) => b.viewedAtMs - a.viewedAtMs);
+      cb(list);
+    },
+    (error) => {
+      const friendly = reportFirestoreListenerError(
+        error,
+        OperationType.LIST,
+        `stories/${cleanId}/views`,
+      );
+      onError?.(friendly);
+    },
+  );
+}
+
+export async function reactToStory(params: {
+  storyId: string;
+  storyAuthorUid: string;
+  emoji: string;
+  replyText?: string;
+}): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required.');
+  const cleanStoryId = sanitizeId(params.storyId);
+  const emoji = String(params.emoji || '🔥').trim().slice(0, 16) || '🔥';
+  const replyText = String(params.replyText || '').trim().replace(/\s+/g, ' ').slice(0, 140);
+  const myProfile = await ensurePlayerProfile(fbUser);
+  const rxId = sanitizeId(
+    `rx_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`,
+  );
+  const rxPath = `stories/${cleanStoryId}/reactions/${rxId}`;
+  try {
+    await setDoc(doc(db, 'stories', cleanStoryId, 'reactions', rxId), {
+      id: rxId,
+      storyId: cleanStoryId,
+      storyAuthorUid: sanitizeId(params.storyAuthorUid),
+      senderUid: fbUser.uid,
+      senderUsername: myProfile.username,
+      senderDisplayName: sanitizeDisplayName(myProfile.displayName),
+      senderAvatarDataUrl: sanitizeAvatarDataUrl(myProfile.avatarDataUrl),
+      senderAvatarPreset: String(myProfile.avatarPreset || '').slice(0, 16),
+      emoji,
+      replyText,
+      createdAtMs: Date.now(),
+      createdAt: serverTimestamp(),
+    });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.CREATE, rxPath);
+  }
+}
+
+export function subscribeStoryReactions(
+  storyId: string,
+  storyAuthorUid: string,
+  cb: (reactions: StoryReactionEntry[]) => void,
+  onError?: (msg: string) => void,
+): Unsubscribe {
+  const fbUser = auth.currentUser;
+  const cleanId = sanitizeId(storyId || '');
+  if (!fbUser || !cleanId) {
+    cb([]);
+    return () => {};
+  }
+  const isAuthor = fbUser.uid === storyAuthorUid;
+  const q = query(
+    collection(db, 'stories', cleanId, 'reactions'),
+    where(isAuthor ? 'storyAuthorUid' : 'senderUid', '==', fbUser.uid),
+    limit(100),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: StoryReactionEntry[] = snap.docs
+        .map((d) => {
+          const r = d.data() as Record<string, unknown>;
+          return {
+            id: String(r.id || d.id),
+            storyId: String(r.storyId || cleanId),
+            storyAuthorUid: String(r.storyAuthorUid || storyAuthorUid),
+            senderUid: String(r.senderUid || ''),
+            senderUsername: String(r.senderUsername || 'friend'),
+            senderDisplayName: String(r.senderDisplayName || 'Friend'),
+            senderAvatarDataUrl: sanitizeAvatarDataUrl(r.senderAvatarDataUrl),
+            senderAvatarPreset: String(r.senderAvatarPreset || '').slice(0, 16),
+            emoji: String(r.emoji || '🔥'),
+            replyText: String(r.replyText || ''),
+            createdAtMs: Number(r.createdAtMs || 0),
+          };
+        })
+        .sort((a, b) => b.createdAtMs - a.createdAtMs);
+      cb(list);
+    },
+    (error) => {
+      const friendly = reportFirestoreListenerError(
+        error,
+        OperationType.LIST,
+        `stories/${cleanId}/reactions`,
+      );
+      onError?.(friendly);
+    },
+  );
+}
+
 export const firebaseArenaBridge = {
   signInWithGoogle: signInArenaWithGoogle,
   sendEmailSignInLink,
@@ -2656,6 +3127,14 @@ export const firebaseArenaBridge = {
   sendRoomMessage,
   purgeRoomMessages,
   subscribeRoomMessages,
+  publishStory,
+  subscribeFriendStories,
+  deleteStory,
+  markStoryViewed,
+  fetchViewedStoryIds,
+  subscribeStoryViews,
+  reactToStory,
+  subscribeStoryReactions,
   getDiagnostics: () => ({
     logs: getArenaLogs(),
     online: typeof navigator !== 'undefined' ? navigator.onLine : true,

@@ -176,6 +176,22 @@ export const DIRTY_DOZEN_CASES: RuleAssertionCase[] = [
     expected: 'PERMISSION_DENIED',
     reason: 'presence update action restricts affectedKeys to isOnline, lastSeenAtMs, updatedAt',
   },
+  {
+    id: 21,
+    name: 'Non-Friend Story Snooping',
+    path: '/stories/story_abc',
+    operation: 'get',
+    expected: 'PERMISSION_DENIED',
+    reason: 'stories require request.auth.uid in resource.data.viewerUids or authorUid',
+  },
+  {
+    id: 22,
+    name: 'Spoofed Story Author or Reaction Sender',
+    path: '/stories/story_abc/reactions/rx1',
+    operation: 'create',
+    expected: 'PERMISSION_DENIED',
+    reason: 'create enforces senderUid == request.auth.uid and viewerUids membership',
+  },
 ];
 
 // Static structural verification when running without local Firestore emulator
@@ -193,6 +209,9 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('isValidFriendship('), 'Must define isValidFriendship');
   assert.ok(rulesText.includes('isValidFriendInvite('), 'Must define isValidFriendInvite');
   assert.ok(rulesText.includes('isValidRoomMessage('), 'Must define isValidRoomMessage');
+  assert.ok(rulesText.includes('isValidStory('), 'Must define isValidStory');
+  assert.ok(rulesText.includes('isValidStoryView('), 'Must define isValidStoryView');
+  assert.ok(rulesText.includes('isValidStoryReaction('), 'Must define isValidStoryReaction');
   assert.ok(rulesText.includes("existing().status != 'finished'"), 'Must lock finished rooms');
   assert.ok(rulesText.includes("'task_completed'"), 'Must allow task_completed activity kind');
   assert.ok(rulesText.includes('activeTaskTitle.size() <= 60'), 'Must bound activeTaskTitle length');
@@ -200,6 +219,6 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('data.avatarDataUrl.size() <= 28000'), 'Must bound avatarDataUrl size');
   assert.ok(rulesText.includes('data.dailyGoalMin <= 720'), 'Must bound dailyGoalMin');
   assert.ok(rulesText.includes("'isOnline'") && rulesText.includes("'lastSeenAtMs'"), 'Must support bounded presence fields');
+  assert.ok(rulesText.includes('match /stories/{storyId}'), 'Must secure stories collection and subcollections');
 }
-
 

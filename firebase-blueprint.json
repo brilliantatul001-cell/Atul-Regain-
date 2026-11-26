@@ -613,6 +613,179 @@
         "createdAtMs",
         "createdAt"
       ]
+    },
+    "PlayerStory": {
+      "title": "PlayerStory",
+      "description": "24-hour Instagram-style friend story with photo or study-card visual, optional live study sticker, and real trending song preview.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 4,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "authorUsername": {
+          "type": "string",
+          "minLength": 3,
+          "maxLength": 20,
+          "pattern": "^[a-z0-9_.]{3,20}$"
+        },
+        "authorDisplayName": {
+          "type": "string",
+          "minLength": 2,
+          "maxLength": 24
+        },
+        "authorAvatarDataUrl": {
+          "type": "string",
+          "maxLength": 28000
+        },
+        "authorAvatarPreset": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "viewerUids": { "type": "array" },
+        "mediaType": {
+          "type": "string",
+          "enum": ["image", "card"]
+        },
+        "imageDataUrl": {
+          "type": "string",
+          "maxLength": 240000
+        },
+        "bgTheme": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "caption": {
+          "type": "string",
+          "maxLength": 180
+        },
+        "textColor": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 16
+        },
+        "fontStyle": {
+          "type": "string",
+          "enum": ["sans", "serif", "mono", "bold"]
+        },
+        "stickerKind": {
+          "type": "string",
+          "enum": ["none", "focus", "streak", "xp", "exam"]
+        },
+        "stickerLabel": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "hasSong": { "type": "boolean" },
+        "songId": { "type": "string", "maxLength": 64 },
+        "songTitle": { "type": "string", "maxLength": 80 },
+        "songArtist": { "type": "string", "maxLength": 64 },
+        "songCoverUrl": { "type": "string", "maxLength": 512 },
+        "songPreviewUrl": { "type": "string", "maxLength": 512 },
+        "songClipStartSec": { "type": "number" },
+        "createdAtMs": { "type": "number" },
+        "expiresAtMs": { "type": "number" },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "authorUid",
+        "authorUsername",
+        "authorDisplayName",
+        "authorAvatarDataUrl",
+        "authorAvatarPreset",
+        "viewerUids",
+        "mediaType",
+        "imageDataUrl",
+        "bgTheme",
+        "caption",
+        "textColor",
+        "fontStyle",
+        "stickerKind",
+        "stickerLabel",
+        "hasSong",
+        "songId",
+        "songTitle",
+        "songArtist",
+        "songCoverUrl",
+        "songPreviewUrl",
+        "songClipStartSec",
+        "createdAtMs",
+        "expiresAtMs",
+        "createdAt"
+      ]
+    },
+    "StoryView": {
+      "title": "StoryView",
+      "description": "Seen receipt written once when a friend views a story.",
+      "type": "object",
+      "properties": {
+        "storyId": { "type": "string", "minLength": 4, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "storyAuthorUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "viewerUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "viewerUsername": { "type": "string", "minLength": 3, "maxLength": 20, "pattern": "^[a-z0-9_.]{3,20}$" },
+        "viewerDisplayName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "viewerAvatarDataUrl": { "type": "string", "maxLength": 28000 },
+        "viewerAvatarPreset": { "type": "string", "maxLength": 16 },
+        "viewedAtMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "storyId",
+        "storyAuthorUid",
+        "viewerUid",
+        "viewerUsername",
+        "viewerDisplayName",
+        "viewerAvatarDataUrl",
+        "viewerAvatarPreset",
+        "viewedAtMs",
+        "createdAt"
+      ]
+    },
+    "StoryReaction": {
+      "title": "StoryReaction",
+      "description": "Real-time emoji reaction or reply sent by a friend on an active story.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 4, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "storyId": { "type": "string", "minLength": 4, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "storyAuthorUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderUid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "senderUsername": { "type": "string", "minLength": 3, "maxLength": 20, "pattern": "^[a-z0-9_.]{3,20}$" },
+        "senderDisplayName": { "type": "string", "minLength": 2, "maxLength": 24 },
+        "senderAvatarDataUrl": { "type": "string", "maxLength": 28000 },
+        "senderAvatarPreset": { "type": "string", "maxLength": 16 },
+        "emoji": { "type": "string", "minLength": 1, "maxLength": 16 },
+        "replyText": { "type": "string", "maxLength": 140 },
+        "createdAtMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "id",
+        "storyId",
+        "storyAuthorUid",
+        "senderUid",
+        "senderUsername",
+        "senderDisplayName",
+        "senderAvatarDataUrl",
+        "senderAvatarPreset",
+        "emoji",
+        "replyText",
+        "createdAtMs",
+        "createdAt"
+      ]
     }
   },
   "firestore": {
@@ -647,6 +820,18 @@
     "/friendInvites/{inviteId}": {
       "schema": { "$ref": "#/entities/FriendInvite" },
       "description": "Real-time Arena room invitations sent between friends."
+    },
+    "/stories/{storyId}": {
+      "schema": { "$ref": "#/entities/PlayerStory" },
+      "description": "24-hour Instagram-style stories scoped strictly to author and accepted friends via viewerUids."
+    },
+    "/stories/{storyId}/views/{viewerUid}": {
+      "schema": { "$ref": "#/entities/StoryView" },
+      "description": "Per-viewer story seen receipts."
+    },
+    "/stories/{storyId}/reactions/{reactionId}": {
+      "schema": { "$ref": "#/entities/StoryReaction" },
+      "description": "Live story emoji reactions and replies from friends."
     }
   }
 }

@@ -20,6 +20,14 @@ export interface NotifyStatusResult {
   subscribed: boolean;
   swReady: boolean;
   inOuterIframe: boolean;
+  isMedian: boolean;
+  hasMedianOneSignal: boolean;
+  hasMedianFcm: boolean;
+  oneSignalOptedIn: boolean;
+  oneSignalSubscriptionId: string;
+  oneSignalExternalId: string;
+  fcmToken: string;
+  webPushSubscription: PushSubscriptionJSON | null;
 }
 
 export interface NotifyEnableResult extends NotifyStatusResult {
@@ -47,16 +55,52 @@ export interface NotifyHostBridge {
   completeEnableAfterPermission: (
     intervalMin?: number,
     permOverride?: NotificationPermission | 'unsupported',
+    externalId?: string,
   ) => Promise<NotifyEnableResult>;
+  bindExternalId: (externalId: string) => Promise<void>;
+  openAppSettings: () => boolean;
   disablePush: () => Promise<NotifyStatusResult>;
   showLocalNotification: (payload: NotifyLocalPayload) => Promise<NotifyShowResult>;
   syncSwSnapshot: (snapshot: unknown) => Promise<void>;
+}
+
+interface MedianOneSignalBridge {
+  login?: (arg: string | {externalId: string}) => void;
+  logout?: () => void;
+  register?: () => void;
+  promptNotification?: () => void;
+  enableForegroundNotifications?: (enabled: boolean) => void;
+  info?: (opts?: {callback?: string | ((data: Record<string, unknown>) => void)}) => Promise<Record<string, unknown>> | void;
+  userPrivacyConsent?: {grant?: () => void};
+}
+
+interface MedianBridge {
+  onesignal?: MedianOneSignalBridge;
+  fcm?: {
+    getToken?: () => Promise<string> | void;
+  };
+  permissions?: {
+    status?: (list: string[]) => Promise<Record<string, string>>;
+  };
+  open?: {
+    appSettings?: () => void;
+  };
+  notifications?: {
+    requestPermission?: () => Promise<string> | void;
+  };
 }
 
 declare global {
   interface Window {
     LeaveItFirebase?: FirebaseArenaBridge;
     LeaveItNotifyHost?: NotifyHostBridge;
+    median?: MedianBridge;
+    gonative?: MedianBridge;
+    median_library_ready?: () => void;
+    gonative_library_ready?: () => void;
+    median_onesignal_info?: (data: Record<string, unknown>) => void;
+    gonative_onesignal_info?: (data: Record<string, unknown>) => void;
+    median_fcm_registration?: (data: Record<string, unknown>) => void;
   }
 }
 
@@ -81,7 +125,93 @@ const isInOuterIframe = (): boolean => {
   }
 };
 
+const getMedianBridge = (): MedianBridge | null => {
+  if (typeof window === 'undefined') return null;
+  return window.median || window.gonative || null;
+};
+
+const isMedianEnvironment = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  if (getMedianBridge()) return true;
+  const ua = typeof navigator !== 'undefined' ? navigator.userAgent || '' : '';
+  return /median|gonative/i.test(ua);
+};
+
+interface MedianCachedState {
+  oneSignalId: string;
+  externalId: string;
+  subscriptionId: string;
+  optedIn: boolean;
+  fcmToken: string;
+  androidPermStatus: string;
+}
+
+const medianState: MedianCachedState = {
+  oneSignalId: '',
+  externalId: '',
+  subscriptionId: '',
+  optedIn: false,
+  fcmToken: '',
+  androidPermStatus: '',
+};
+
+const extractOneSignalInfo = (data: unknown) => {
+  if (!data || typeof data !== 'object') return;
+  const d = data as Record<string, unknown>;
+  if (typeof d.oneSignalId === 'string') medianState.oneSignalId = d.oneSignalId;
+  if (typeof d.externalId === 'string') medianState.externalId = d.externalId;
+  const sub = d.subscription && typeof d.subscription === 'object'
+    ? (d.subscription as Record<string, unknown>)
+    : null;
+  if (sub) {
+    if (typeof sub.id === 'string' && sub.id) medianState.subscriptionId = sub.id;
+    if (typeof sub.optedIn === 'boolean') medianState.optedIn = sub.optedIn;
+  } else {
+    if (typeof d.userId === 'string' && d.userId) medianState.subscriptionId = d.userId;
+    if (typeof d.isSubscribed === 'boolean') medianState.optedIn = d.isSubscribed;
+  }
+};
+
+const refreshMedianBridgeInfo = async (): Promise<void> => {
+  const bridge = getMedianBridge();
+  if (!bridge) return;
+  try {
+    bridge.onesignal?.enableForegroundNotifications?.(true);
+  } catch {
+    // ignore
+  }
+  if (bridge.permissions?.status) {
+    try {
+      const res = await bridge.permissions.status(['Notifications']);
+      if (res && typeof res === 'object') {
+        const val = res.Notifications || res.notifications || '';
+        if (typeof val === 'string') medianState.androidPermStatus = val.toLowerCase();
+      }
+    } catch {
+      // ignore
+    }
+  }
+  if (bridge.onesignal?.info) {
+    try {
+      const res = await Promise.race([
+        Promise.resolve(
+          bridge.onesignal.info({
+            callback: 'median_onesignal_info',
+          }),
+        ),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 900)),
+      ]);
+      if (res && typeof res === 'object') {
+        extractOneSignalInfo(res);
+      }
+    } catch {
+      // ignore
+    }
+  }
+};
+
 const getSwRegistration = async (): Promise<ServiceWorkerRegistration | null> => {
+  if (isMedianEnvironment()) return null;
   if (!('serviceWorker' in navigator)) return null;
   try {
     const existing = await navigator.serviceWorker.getRegistration('/');
@@ -106,6 +236,73 @@ const getSwRegistration = async (): Promise<ServiceWorkerRegistration | null> =>
 };
 
 const requestPermissionSyncHost = (): Promise<NotificationPermission | 'unsupported'> => {
+  const bridge = getMedianBridge();
+  if (bridge) {
+    try {
+      bridge.onesignal?.userPrivacyConsent?.grant?.();
+    } catch {
+      // ignore
+    }
+    try {
+      bridge.onesignal?.enableForegroundNotifications?.(true);
+    } catch {
+      // ignore
+    }
+    try {
+      if (bridge.onesignal?.register) {
+        bridge.onesignal.register();
+      } else if (bridge.onesignal?.promptNotification) {
+        bridge.onesignal.promptNotification();
+      } else if (bridge.notifications?.requestPermission) {
+        void bridge.notifications.requestPermission();
+      }
+    } catch {
+      // ignore
+    }
+    return new Promise((resolve) => {
+      let settled = false;
+      const checkAndResolve = async (isFinal: boolean) => {
+        if (settled) return;
+        await refreshMedianBridgeInfo();
+        if (settled) return;
+        if (medianState.androidPermStatus === 'denied') {
+          settled = true;
+          cleanup();
+          resolve('denied');
+          return;
+        }
+        if (
+          medianState.optedIn ||
+          medianState.subscriptionId ||
+          medianState.androidPermStatus === 'granted'
+        ) {
+          settled = true;
+          cleanup();
+          resolve('granted');
+          return;
+        }
+        if (isFinal) {
+          settled = true;
+          cleanup();
+          resolve(bridge.onesignal ? 'default' : 'unsupported');
+        }
+      };
+      const onFocus = () => {
+        void checkAndResolve(false);
+      };
+      window.addEventListener('focus', onFocus);
+      const t1 = setTimeout(() => void checkAndResolve(false), 700);
+      const t2 = setTimeout(() => void checkAndResolve(false), 1600);
+      const t3 = setTimeout(() => void checkAndResolve(true), 3200);
+      const cleanup = () => {
+        window.removeEventListener('focus', onFocus);
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    });
+  }
+
   if (typeof window === 'undefined' || !('Notification' in window)) {
     return Promise.resolve('unsupported');
   }
@@ -185,35 +382,118 @@ export default function App() {
     };
 
     const getNotifyStatus = async (): Promise<NotifyStatusResult> => {
+      const isMedian = isMedianEnvironment();
+      const bridge = getMedianBridge();
+      const hasMedianOneSignal = Boolean(bridge?.onesignal);
+      const hasMedianFcm = Boolean(bridge?.fcm);
+
+      if (isMedian) {
+        await refreshMedianBridgeInfo();
+        let perm: NotificationPermission | 'unsupported' = 'default';
+        if (!hasMedianOneSignal && !hasMedianFcm) {
+          perm = 'unsupported';
+        } else if (medianState.androidPermStatus === 'denied') {
+          perm = 'denied';
+        } else if (
+          medianState.optedIn ||
+          medianState.subscriptionId ||
+          medianState.androidPermStatus === 'granted'
+        ) {
+          perm = 'granted';
+        }
+        return {
+          supported: hasMedianOneSignal || hasMedianFcm,
+          permission: perm,
+          pushSupported: hasMedianOneSignal || hasMedianFcm,
+          subscribed: Boolean(medianState.subscriptionId || medianState.optedIn),
+          swReady: false,
+          inOuterIframe: false,
+          isMedian: true,
+          hasMedianOneSignal,
+          hasMedianFcm,
+          oneSignalOptedIn: medianState.optedIn,
+          oneSignalSubscriptionId: medianState.subscriptionId,
+          oneSignalExternalId: medianState.externalId,
+          fcmToken: medianState.fcmToken,
+          webPushSubscription: null,
+        };
+      }
+
       const supported = typeof window !== 'undefined' && 'Notification' in window;
       const permission: NotificationPermission | 'unsupported' = supported
         ? Notification.permission
         : 'unsupported';
       const reg = await getSwRegistration();
       const pushSupported = Boolean(reg && 'pushManager' in reg);
-      let subscribed = false;
+      let webSub: PushSubscriptionJSON | null = null;
       if (reg && 'pushManager' in reg) {
         try {
           const sub = await reg.pushManager.getSubscription();
-          subscribed = Boolean(sub);
+          webSub = sub ? sub.toJSON() : null;
         } catch {
-          subscribed = false;
+          webSub = null;
         }
       }
       return {
         supported,
         permission,
         pushSupported,
-        subscribed,
+        subscribed: Boolean(webSub),
         swReady: Boolean(reg),
         inOuterIframe: isInOuterIframe(),
+        isMedian: false,
+        hasMedianOneSignal: false,
+        hasMedianFcm: false,
+        oneSignalOptedIn: false,
+        oneSignalSubscriptionId: '',
+        oneSignalExternalId: '',
+        fcmToken: '',
+        webPushSubscription: webSub,
       };
+    };
+
+    const bindExternalId = async (externalId: string): Promise<void> => {
+      const clean = String(externalId || '').trim().slice(0, 128);
+      if (!clean || ['null', 'undefined', 'NA', '0', 'ANONYMOUS'].includes(clean)) return;
+      const bridge = getMedianBridge();
+      if (!bridge?.onesignal?.login) return;
+      try {
+        bridge.onesignal.enableForegroundNotifications?.(true);
+        bridge.onesignal.login(clean);
+        medianState.externalId = clean;
+      } catch {
+        try {
+          bridge.onesignal.login({externalId: clean});
+          medianState.externalId = clean;
+        } catch {
+          // ignore
+        }
+      }
     };
 
     const completeEnableAfterPermission = async (
       intervalMin?: number,
       permOverride?: NotificationPermission | 'unsupported',
+      externalId?: string,
     ): Promise<NotifyEnableResult> => {
+      const isMedian = isMedianEnvironment();
+      const bridge = getMedianBridge();
+
+      if (isMedian) {
+        if (externalId) {
+          await bindExternalId(externalId);
+        }
+        await refreshMedianBridgeInfo();
+        const st = await getNotifyStatus();
+        const finalPerm =
+          permOverride && permOverride !== 'unsupported' ? permOverride : st.permission;
+        return {
+          ...st,
+          permission: finalPerm,
+          subscription: null,
+        };
+      }
+
       const supported = typeof window !== 'undefined' && 'Notification' in window;
       const permission: NotificationPermission | 'unsupported' = supported
         ? permOverride && permOverride !== 'unsupported'
@@ -260,10 +540,18 @@ export default function App() {
         supported,
         permission,
         subscription,
+        webPushSubscription: subscription,
         swReady: Boolean(reg),
         pushSupported,
         subscribed: Boolean(subscription),
         inOuterIframe: isInOuterIframe(),
+        isMedian: false,
+        hasMedianOneSignal: Boolean(bridge?.onesignal),
+        hasMedianFcm: Boolean(bridge?.fcm),
+        oneSignalOptedIn: false,
+        oneSignalSubscriptionId: '',
+        oneSignalExternalId: '',
+        fcmToken: '',
       };
     };
 
@@ -280,9 +568,29 @@ export default function App() {
       return getNotifyStatus();
     };
 
+    const openAppSettings = (): boolean => {
+      const bridge = getMedianBridge();
+      if (bridge?.open?.appSettings) {
+        try {
+          bridge.open.appSettings();
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    };
+
     const showLocalNotification = async (
       payload: NotifyLocalPayload,
     ): Promise<NotifyShowResult> => {
+      if (isMedianEnvironment()) {
+        return {
+          ok: false,
+          method: 'blocked',
+          error: 'Inside Median wrapper use real server push via OneSignal',
+        };
+      }
       if (typeof window === 'undefined' || !('Notification' in window)) {
         return {ok: false, method: 'blocked', error: 'Notifications unsupported'};
       }
@@ -352,10 +660,48 @@ export default function App() {
       requestPermissionSync: requestPermissionSyncHost,
       getStatus: getNotifyStatus,
       completeEnableAfterPermission,
+      bindExternalId,
+      openAppSettings,
       disablePush,
       showLocalNotification,
       syncSwSnapshot,
     };
+
+    const pushStatusToIframe = async () => {
+      postToIframe({
+        type: 'leaveit-notify-status',
+        ...(await getNotifyStatus()),
+      });
+    };
+
+    const handleMedianInfo = (data: Record<string, unknown>) => {
+      extractOneSignalInfo(data);
+      void refreshMedianBridgeInfo().then(() => pushStatusToIframe());
+    };
+    window.median_onesignal_info = handleMedianInfo;
+    window.gonative_onesignal_info = handleMedianInfo;
+    window.median_fcm_registration = (data: Record<string, unknown>) => {
+      if (data && typeof data.fcmToken === 'string') {
+        medianState.fcmToken = data.fcmToken;
+        void pushStatusToIframe();
+      }
+    };
+    const onMedianReady = () => {
+      try {
+        getMedianBridge()?.onesignal?.enableForegroundNotifications?.(true);
+      } catch {
+        // ignore
+      }
+      void refreshMedianBridgeInfo().then(() => pushStatusToIframe());
+    };
+    window.median_library_ready = onMedianReady;
+    window.gonative_library_ready = onMedianReady;
+    const onWinFocus = () => {
+      if (isMedianEnvironment()) {
+        void refreshMedianBridgeInfo().then(() => pushStatusToIframe());
+      }
+    };
+    window.addEventListener('focus', onWinFocus);
 
     const postInstallState = () => {
       postToIframe({
@@ -412,12 +758,20 @@ export default function App() {
         });
       } else if (msg.type === 'leaveit-notify-enable') {
         const perm = await requestPermissionSyncHost();
-        const result = await completeEnableAfterPermission(Number(msg.intervalMin) || 45, perm);
+        const result = await completeEnableAfterPermission(
+          Number(msg.intervalMin) || 45,
+          perm,
+          typeof msg.externalId === 'string' ? msg.externalId : undefined,
+        );
         postToIframe({
           type: 'leaveit-notify-enabled-result',
           requestId: msg.requestId,
           ...result,
         });
+      } else if (msg.type === 'leaveit-notify-bind-user' && typeof msg.externalId === 'string') {
+        await bindExternalId(msg.externalId);
+      } else if (msg.type === 'leaveit-notify-open-settings') {
+        openAppSettings();
       } else if (msg.type === 'leaveit-notify-disable') {
         const status = await disablePush();
         postToIframe({
@@ -439,6 +793,7 @@ export default function App() {
 
     window.addEventListener('message', handleMessage);
     return () => {
+      window.removeEventListener('focus', onWinFocus);
       window.removeEventListener('message', handleMessage);
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.removeEventListener('message', handleSwMessage);
@@ -447,7 +802,7 @@ export default function App() {
   }, [canInstall, isInstalled, isIOS, promptInstall]);
 
   const showFloatingInstall =
-    !isStandalone && !isInstalled && !dismissedInstall && (canInstall || isIOS);
+    !isMedianEnvironment() && !isStandalone && !isInstalled && !dismissedInstall && (canInstall || isIOS);
 
   return (
     <main className="relative h-dvh w-full overflow-hidden bg-[#0b0b0b]">

@@ -3,6 +3,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import express from 'express';
 import {registerPushPlanner} from './server/pushPlanner.ts';
+import {registerMusicRoutes} from './server/musicRoutes.ts';
 
 const PORT = Number(process.env.PORT) || 3000;
 const IS_PROD = process.env.NODE_ENV === 'production';
@@ -10,6 +11,7 @@ const IS_PROD = process.env.NODE_ENV === 'production';
 const app = express();
 app.set('trust proxy', 1);
 registerPushPlanner(app);
+registerMusicRoutes(app);
 
 const httpServer = http.createServer(app);
 

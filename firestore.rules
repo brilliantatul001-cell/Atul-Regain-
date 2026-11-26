@@ -286,6 +286,97 @@ service cloud.firestore {
       data.createdAt is timestamp;
     }
 
+    function isValidStory(data) {
+      return data.keys().hasAll([
+        'id', 'authorUid', 'authorUsername', 'authorDisplayName',
+        'authorAvatarDataUrl', 'authorAvatarPreset', 'viewerUids',
+        'mediaType', 'imageDataUrl', 'bgTheme', 'caption', 'textColor',
+        'fontStyle', 'stickerKind', 'stickerLabel', 'hasSong', 'songId',
+        'songTitle', 'songArtist', 'songCoverUrl', 'songPreviewUrl',
+        'songClipStartSec', 'createdAtMs', 'expiresAtMs', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'authorUid', 'authorUsername', 'authorDisplayName',
+        'authorAvatarDataUrl', 'authorAvatarPreset', 'viewerUids',
+        'mediaType', 'imageDataUrl', 'bgTheme', 'caption', 'textColor',
+        'fontStyle', 'stickerKind', 'stickerLabel', 'hasSong', 'songId',
+        'songTitle', 'songArtist', 'songCoverUrl', 'songPreviewUrl',
+        'songClipStartSec', 'createdAtMs', 'expiresAtMs', 'createdAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.authorUid) &&
+      data.authorUsername is string && data.authorUsername.size() >= 3 && data.authorUsername.size() <= 20 && data.authorUsername.matches('^[a-z0-9_.]{3,20}$') &&
+      data.authorDisplayName is string && data.authorDisplayName.size() >= 2 && data.authorDisplayName.size() <= 24 &&
+      data.authorAvatarDataUrl is string && data.authorAvatarDataUrl.size() <= 28000 && (data.authorAvatarDataUrl == '' || data.authorAvatarDataUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')) &&
+      data.authorAvatarPreset is string && data.authorAvatarPreset.size() <= 16 &&
+      data.viewerUids is list && data.viewerUids.size() >= 1 && data.viewerUids.size() <= 100 && data.viewerUids[0] is string &&
+      data.mediaType in ['image', 'card'] &&
+      data.imageDataUrl is string && data.imageDataUrl.size() <= 240000 && (data.imageDataUrl == '' || data.imageDataUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')) &&
+      data.bgTheme is string && data.bgTheme.size() >= 1 && data.bgTheme.size() <= 32 &&
+      data.caption is string && data.caption.size() <= 180 &&
+      data.textColor is string && data.textColor.size() >= 1 && data.textColor.size() <= 16 &&
+      data.fontStyle in ['sans', 'serif', 'mono', 'bold'] &&
+      data.stickerKind in ['none', 'focus', 'streak', 'xp', 'exam'] &&
+      data.stickerLabel is string && data.stickerLabel.size() <= 64 &&
+      data.hasSong is bool &&
+      data.songId is string && data.songId.size() <= 64 &&
+      data.songTitle is string && data.songTitle.size() <= 80 &&
+      data.songArtist is string && data.songArtist.size() <= 64 &&
+      data.songCoverUrl is string && data.songCoverUrl.size() <= 512 && (data.songCoverUrl == '' || data.songCoverUrl.matches('^https://.*$')) &&
+      data.songPreviewUrl is string && data.songPreviewUrl.size() <= 512 && (data.songPreviewUrl == '' || data.songPreviewUrl.matches('^https://.*$')) &&
+      data.songClipStartSec is number && data.songClipStartSec >= 0 && data.songClipStartSec <= 25 &&
+      data.createdAtMs is number && data.createdAtMs >= 0 &&
+      data.expiresAtMs is number && data.expiresAtMs > data.createdAtMs && data.expiresAtMs <= data.createdAtMs + 86460000 &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidStoryView(data) {
+      return data.keys().hasAll([
+        'storyId', 'storyAuthorUid', 'viewerUid', 'viewerUsername',
+        'viewerDisplayName', 'viewerAvatarDataUrl', 'viewerAvatarPreset',
+        'viewedAtMs', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'storyId', 'storyAuthorUid', 'viewerUid', 'viewerUsername',
+        'viewerDisplayName', 'viewerAvatarDataUrl', 'viewerAvatarPreset',
+        'viewedAtMs', 'createdAt'
+      ]) &&
+      isValidId(data.storyId) &&
+      isValidId(data.storyAuthorUid) &&
+      isValidId(data.viewerUid) &&
+      data.viewerUsername is string && data.viewerUsername.size() >= 3 && data.viewerUsername.size() <= 20 && data.viewerUsername.matches('^[a-z0-9_.]{3,20}$') &&
+      data.viewerDisplayName is string && data.viewerDisplayName.size() >= 2 && data.viewerDisplayName.size() <= 24 &&
+      data.viewerAvatarDataUrl is string && data.viewerAvatarDataUrl.size() <= 28000 && (data.viewerAvatarDataUrl == '' || data.viewerAvatarDataUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')) &&
+      data.viewerAvatarPreset is string && data.viewerAvatarPreset.size() <= 16 &&
+      data.viewedAtMs is number && data.viewedAtMs >= 0 &&
+      data.createdAt is timestamp;
+    }
+
+    function isValidStoryReaction(data) {
+      return data.keys().hasAll([
+        'id', 'storyId', 'storyAuthorUid', 'senderUid', 'senderUsername',
+        'senderDisplayName', 'senderAvatarDataUrl', 'senderAvatarPreset',
+        'emoji', 'replyText', 'createdAtMs', 'createdAt'
+      ]) &&
+      data.keys().hasOnly([
+        'id', 'storyId', 'storyAuthorUid', 'senderUid', 'senderUsername',
+        'senderDisplayName', 'senderAvatarDataUrl', 'senderAvatarPreset',
+        'emoji', 'replyText', 'createdAtMs', 'createdAt'
+      ]) &&
+      isValidId(data.id) &&
+      isValidId(data.storyId) &&
+      isValidId(data.storyAuthorUid) &&
+      isValidId(data.senderUid) &&
+      data.senderUsername is string && data.senderUsername.size() >= 3 && data.senderUsername.size() <= 20 && data.senderUsername.matches('^[a-z0-9_.]{3,20}$') &&
+      data.senderDisplayName is string && data.senderDisplayName.size() >= 2 && data.senderDisplayName.size() <= 24 &&
+      data.senderAvatarDataUrl is string && data.senderAvatarDataUrl.size() <= 28000 && (data.senderAvatarDataUrl == '' || data.senderAvatarDataUrl.matches('^data:image/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$')) &&
+      data.senderAvatarPreset is string && data.senderAvatarPreset.size() <= 16 &&
+      data.emoji is string && data.emoji.size() >= 1 && data.emoji.size() <= 16 &&
+      data.replyText is string && data.replyText.size() <= 140 &&
+      data.createdAtMs is number && data.createdAtMs >= 0 &&
+      data.createdAt is timestamp;
+    }
+
     match /players/{userId} {
       allow get: if isVerifiedUser() && isValidId(userId);
       allow list: if isVerifiedUser() && (resource.data.xp >= 0 || resource.data.username is string);
@@ -631,6 +722,91 @@ service cloud.firestore {
       allow delete: if isVerifiedUser() &&
         isValidId(inviteId) &&
         (request.auth.uid == existing().toUid || request.auth.uid == existing().fromUid);
+    }
+
+    match /stories/{storyId} {
+      allow get: if isVerifiedUser() &&
+        isValidId(storyId) &&
+        (resource == null || request.auth.uid in resource.data.viewerUids || request.auth.uid == resource.data.authorUid);
+
+      allow list: if isVerifiedUser() &&
+        (request.auth.uid in resource.data.viewerUids || request.auth.uid == resource.data.authorUid);
+
+      allow create: if isVerifiedUser() &&
+        isValidId(storyId) &&
+        isValidStory(incoming()) &&
+        incoming().id == storyId &&
+        incoming().authorUid == request.auth.uid &&
+        request.auth.uid in incoming().viewerUids &&
+        incoming().createdAt == request.time &&
+        exists(/databases/$(database)/documents/players/$(request.auth.uid));
+
+      allow update: if false;
+
+      allow delete: if isVerifiedUser() &&
+        isValidId(storyId) &&
+        existing().authorUid == request.auth.uid;
+
+      match /views/{viewerUid} {
+        allow get: if isVerifiedUser() &&
+          isValidId(storyId) &&
+          isValidId(viewerUid) && (
+            request.auth.uid == viewerUid ||
+            (exists(/databases/$(database)/documents/stories/$(storyId)) &&
+              get(/databases/$(database)/documents/stories/$(storyId)).data.authorUid == request.auth.uid)
+          );
+
+        allow list: if isVerifiedUser() &&
+          (resource.data.storyAuthorUid == request.auth.uid || resource.data.viewerUid == request.auth.uid);
+
+        allow create: if isOwner(viewerUid) &&
+          isValidId(storyId) &&
+          isValidId(viewerUid) &&
+          isValidStoryView(incoming()) &&
+          incoming().storyId == storyId &&
+          incoming().viewerUid == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/stories/$(storyId)) &&
+          incoming().storyAuthorUid == get(/databases/$(database)/documents/stories/$(storyId)).data.authorUid &&
+          request.auth.uid in get(/databases/$(database)/documents/stories/$(storyId)).data.viewerUids;
+
+        allow update: if false;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(storyId) &&
+          isValidId(viewerUid) &&
+          (request.auth.uid == viewerUid || existing().storyAuthorUid == request.auth.uid);
+      }
+
+      match /reactions/{reactionId} {
+        allow get: if isVerifiedUser() &&
+          isValidId(storyId) &&
+          isValidId(reactionId) &&
+          exists(/databases/$(database)/documents/stories/$(storyId)) &&
+          request.auth.uid in get(/databases/$(database)/documents/stories/$(storyId)).data.viewerUids;
+
+        allow list: if isVerifiedUser() &&
+          (resource.data.storyAuthorUid == request.auth.uid || resource.data.senderUid == request.auth.uid);
+
+        allow create: if isVerifiedUser() &&
+          isValidId(storyId) &&
+          isValidId(reactionId) &&
+          isValidStoryReaction(incoming()) &&
+          incoming().id == reactionId &&
+          incoming().storyId == storyId &&
+          incoming().senderUid == request.auth.uid &&
+          incoming().createdAt == request.time &&
+          exists(/databases/$(database)/documents/stories/$(storyId)) &&
+          incoming().storyAuthorUid == get(/databases/$(database)/documents/stories/$(storyId)).data.authorUid &&
+          request.auth.uid in get(/databases/$(database)/documents/stories/$(storyId)).data.viewerUids;
+
+        allow update: if false;
+
+        allow delete: if isVerifiedUser() &&
+          isValidId(storyId) &&
+          isValidId(reactionId) &&
+          (request.auth.uid == existing().senderUid || request.auth.uid == existing().storyAuthorUid);
+      }
     }
   }
 }

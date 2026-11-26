@@ -6823,12 +6823,21 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     }catch(e){}
   }
 
+  let presenceWasOnline=false;
+  let lastFriendNotifyAtMs=0;
+
   function sendPresenceHeartbeat(isOnline,useBeacon){
     if(!ST.user)return;
     const fb=getFB();
     if(!useBeacon&&fb&&fb.updatePresenceHeartbeat){
       fb.updatePresenceHeartbeat(Boolean(isOnline)).catch(()=>{});
     }
+    const nowMs=Date.now();
+    const goingOnline=Boolean(isOnline)&&!presenceWasOnline&&(nowMs-lastFriendNotifyAtMs>180000);
+    if(goingOnline){
+      lastFriendNotifyAtMs=nowMs;
+    }
+    presenceWasOnline=Boolean(isOnline);
     const payload={
       uid:ST.user.id,
       username:ST.user.username,
@@ -6836,6 +6845,8 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       xp:ST.user.xp||0,
       streakDays:ST.user.streakDays||0,
       isOnline:Boolean(isOnline),
+      notifyFriends:goingOnline,
+      origin:window.location.origin,
       friendUids:Array.from(acceptedFriendUids()),
       deviceId:readAutoNotifyDeviceId()
     };
@@ -6944,6 +6955,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     ST.friendPresenceSeeded=true;
     if(window.LeaveItAutoNotify&&typeof window.LeaveItAutoNotify.syncFriends==='function'){
       window.LeaveItAutoNotify.syncFriends();
+    }
+    if(window.LeaveItStories&&typeof window.LeaveItStories.onContext==='function'){
+      window.LeaveItStories.onContext({user:ST.user,friends:ST.friends,friendProfiles:ST.friendProfiles});
     }
     renderArenaSafe();
   }
@@ -7784,6 +7798,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         startRoomsSub();
       }
       syncBridgeState();
+      if(window.LeaveItStories&&typeof window.LeaveItStories.onContext==='function'){
+        window.LeaveItStories.onContext({user:ST.user,friends:ST.friends,friendProfiles:ST.friendProfiles});
+      }
       if(typeof refreshTopLeftProfile==='function')refreshTopLeftProfile();
       if(isArenaVisible())renderArena();
     });
@@ -8200,6 +8217,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
               </div>
             </div>
             <div class="ar-friend-acts">
+              ${(window.LeaveItStories&&window.LeaveItStories.hasFriendStory&&window.LeaveItStories.hasFriendStory(f.uid))?`<button type="button" data-story-open-uid="${escHtml(f.uid)}" class="ar-btn-ghost ar-story-mini-btn" style="padding:7px 11px;font-size:12px">✨ Story</button>`:''}
               <button type="button" data-ar-duel-friend="${escHtml(f.uid)}" class="ar-btn-ghost" style="background:var(--accent);color:#06241a;border-color:var(--accent);padding:7px 12px;font-size:12px">⚔️ 1v1 Duel</button>
               <button type="button" data-ar-remove-pair="${escHtml(f.pairId)}" class="ar-btn-ghost" style="padding:7px 11px;font-size:12px">Remove</button>
             </div>
@@ -8442,8 +8460,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       <button type="button" data-ar-sub="leaderboard" class="${ST.subTab==='leaderboard'?'on':''}">🏆 Rankings</button>
     </div>`;
 
+    const storiesHtml=(window.LeaveItStories&&window.LeaveItStories.renderTrayHtml)?window.LeaveItStories.renderTrayHtml():'';
     const body=ST.subTab==='leaderboard'?renderLeaderboard():ST.subTab==='friends'?renderFriends():renderLobby();
-    arenaRoot.innerHTML=header+renderDiagnosticsPanel()+renderRoomInvitesBanner()+subBar+body;
+    arenaRoot.innerHTML=header+renderDiagnosticsPanel()+renderRoomInvitesBanner()+storiesHtml+subBar+body;
   }
 
   // ---- Event Delegation for #arenaRoot ----
@@ -9082,12 +9101,17 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         row.className='rg-prof-row';
         rgMain.insertBefore(row,rgMain.firstChild);
       }
+      const stMeta=(window.LeaveItStories&&window.LeaveItStories.getHomePillMeta)?window.LeaveItStories.getHomePillMeta():null;
+      const stBtnHtml=ST.user&&stMeta?`<button type="button" class="rg-story-home-btn ${stMeta.unseenCount?'unseen':''}" data-story-home="${stMeta.unseenCount||stMeta.hasOwn?'view':'create'}" title="${stMeta.unseenCount?'Watch friend stories':'Share a story'}"><i class="rg-story-dot"></i><span>${stMeta.unseenCount?stMeta.unseenCount+' New Story':stMeta.totalStories?'Stories':'+ Story'}</span></button>`:'';
       const nextHtml=`<button type="button" class="rg-prof-pill" data-prof-open="1" title="Open Detailed Profile">
         <span class="rg-prof-av">${avHtml}</span>
         <span class="rg-prof-meta"><b>${escHtml(dn)}</b><small>${escHtml(sub)}</small></span>
         <span class="rg-prof-ed">✎</span>
       </button>
-      <span class="rg-hour-brand"><img src="/hour-logo.png" alt="Hour"><span>Hour</span></span>`;
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        ${stBtnHtml}
+        <span class="rg-hour-brand"><img src="/hour-logo.png" alt="Hour"><span>Hour</span></span>
+      </div>`;
       if(row.innerHTML!==nextHtml)row.innerHTML=nextHtml;
     }
 
@@ -12727,7 +12751,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   justify-content: space-between;
   gap: 10px;
 }
-.an-env-alert a {
+.an-env-alert a,
+.an-env-alert button {
   flex: none;
   padding: 6px 10px;
   border-radius: 999px;
@@ -12737,90 +12762,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   font-size: 11px;
   text-decoration: none;
   white-space: nowrap;
-}
-#anInAppBanner {
-  position: fixed;
-  top: max(12px, env(safe-area-inset-top));
-  left: 50%;
-  transform: translateX(-50%) translateY(-16px);
-  width: min(420px, calc(100vw - 24px));
-  z-index: 99999;
-  background: linear-gradient(145deg, #1a1f36, #121526);
-  color: #f8fafc;
-  border: 1px solid rgba(110, 168, 254, 0.35);
-  border-radius: 16px;
-  padding: 12px 14px;
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.52);
-  display: flex;
-  align-items: flex-start;
-  gap: 11px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.22s ease, transform 0.22s ease;
-}
-#anInAppBanner.show {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  pointer-events: auto;
-}
-.an-bn-ic {
-  width: 34px;
-  height: 34px;
-  border-radius: 11px;
-  display: grid;
-  place-items: center;
-  background: rgba(110, 168, 254, 0.18);
-  font-size: 17px;
-  flex: none;
-}
-.an-bn-body {
-  flex: 1;
-  min-width: 0;
-}
-.an-bn-tag {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: #8bb9fe;
-  margin-bottom: 2px;
-}
-.an-bn-title {
-  font-size: 13px;
-  font-weight: 700;
-  color: #fff;
-  line-height: 1.3;
-}
-.an-bn-text {
-  font-size: 12px;
-  color: #cbd5e1;
-  line-height: 1.38;
-  margin-top: 2px;
-}
-.an-bn-btns {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-}
-.an-bn-open {
   border: 0;
-  border-radius: 999px;
-  background: rgba(61, 220, 151, 0.2);
-  color: #5eead4;
-  font-size: 11px;
-  font-weight: 700;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-.an-bn-close {
-  border: 0;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: #cbd5e1;
-  font-size: 13px;
-  width: 26px;
-  height: 26px;
   cursor: pointer;
 }
 </style>
@@ -12883,6 +12825,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     quietStart: 23,
     quietEnd: 7,
     queue: [],
+    scheduledIds: [],
     lastSentAt: 0,
     lastCategory: null,
     history: [],
@@ -12893,6 +12836,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   state.categories = Object.assign(defaultState().categories, state.categories || {});
   if (!state.deviceId) state.deviceId = genId();
   if (!Array.isArray(state.queue)) state.queue = [];
+  if (!Array.isArray(state.scheduledIds)) state.scheduledIds = [];
   if (!Array.isArray(state.history)) state.history = [];
 
   const envStatus = {
@@ -12903,8 +12847,24 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     swReady: false,
     inOuterIframe: false,
     outerBlocked: false,
+    isMedian: false,
+    hasMedianOneSignal: false,
+    hasMedianFcm: false,
+    oneSignalOptedIn: false,
+    oneSignalSubscriptionId: '',
+    oneSignalExternalId: '',
+    webPushSubscription: null,
     lastSyncError: '',
   };
+
+  const serverStatus = {
+    mode: '',
+    oneSignalConfigured: null,
+    webPushConfigured: null,
+    lastError: '',
+  };
+
+  let lastBoundExternalId = '';
 
   function getNotifyHost() {
     try {
@@ -12923,10 +12883,52 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     if (typeof d.subscribed === 'boolean') envStatus.subscribed = d.subscribed;
     if (typeof d.swReady === 'boolean') envStatus.swReady = d.swReady;
     if (typeof d.inOuterIframe === 'boolean') envStatus.inOuterIframe = d.inOuterIframe;
+    if (typeof d.isMedian === 'boolean') envStatus.isMedian = d.isMedian;
+    if (typeof d.hasMedianOneSignal === 'boolean') envStatus.hasMedianOneSignal = d.hasMedianOneSignal;
+    if (typeof d.hasMedianFcm === 'boolean') envStatus.hasMedianFcm = d.hasMedianFcm;
+    if (typeof d.oneSignalOptedIn === 'boolean') envStatus.oneSignalOptedIn = d.oneSignalOptedIn;
+    if (typeof d.oneSignalSubscriptionId === 'string') envStatus.oneSignalSubscriptionId = d.oneSignalSubscriptionId;
+    if (typeof d.oneSignalExternalId === 'string') envStatus.oneSignalExternalId = d.oneSignalExternalId;
+    if ('webPushSubscription' in d) envStatus.webPushSubscription = d.webPushSubscription || null;
+    if ('subscription' in d && d.subscription) envStatus.webPushSubscription = d.subscription;
     if (envStatus.permission === 'granted') envStatus.outerBlocked = false;
   }
 
+  function getExternalId(snap) {
+    const s = snap || collectSnapshot();
+    const uid = s && s.uid ? String(s.uid).trim() : '';
+    return uid || ('hour_' + state.deviceId);
+  }
+
+  function syncExternalIdentity(snap) {
+    const extId = getExternalId(snap);
+    if (!extId) return;
+    if (extId === lastBoundExternalId && envStatus.oneSignalExternalId === extId) return;
+    const host = getNotifyHost();
+    if (host && typeof host.bindExternalId === 'function') {
+      lastBoundExternalId = extId;
+      Promise.resolve(host.bindExternalId(extId)).catch(() => {});
+    } else if (isEmbedded()) {
+      lastBoundExternalId = extId;
+      postParent({ type: 'leaveit-notify-bind-user', externalId: extId });
+    }
+  }
+
+  async function refreshServerStatus() {
+    try {
+      const r = await fetch('/api/push/status', { cache: 'no-store' });
+      if (r.ok) {
+        const d = await r.json();
+        if (typeof d.mode === 'string') serverStatus.mode = d.mode;
+        if (typeof d.oneSignalConfigured === 'boolean') serverStatus.oneSignalConfigured = d.oneSignalConfigured;
+        if (typeof d.webPushConfigured === 'boolean') serverStatus.webPushConfigured = d.webPushConfigured;
+        renderUi();
+      }
+    } catch (e) {}
+  }
+
   async function refreshNotifyStatus() {
+    syncExternalIdentity();
     const host = getNotifyHost();
     if (host && typeof host.getStatus === 'function') {
       try {
@@ -12940,6 +12942,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       postParent({ type: 'leaveit-notify-query-status', requestId: 'poll-' + Date.now() });
       return envStatus;
     }
+    envStatus.isMedian = Boolean(window.median || window.gonative || /median|gonative/i.test(navigator.userAgent || ''));
     envStatus.supported = typeof window !== 'undefined' && 'Notification' in window;
     envStatus.permission = envStatus.supported ? Notification.permission : 'unsupported';
     try {
@@ -12947,13 +12950,14 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     } catch (e) {
       envStatus.inOuterIframe = true;
     }
-    if ('serviceWorker' in navigator) {
+    if (!envStatus.isMedian && 'serviceWorker' in navigator) {
       try {
         const reg = await navigator.serviceWorker.getRegistration('/');
         envStatus.swReady = Boolean(reg);
         envStatus.pushSupported = Boolean(reg && 'pushManager' in reg);
         if (reg && 'pushManager' in reg) {
           const sub = await reg.pushManager.getSubscription();
+          envStatus.webPushSubscription = sub ? sub.toJSON() : null;
           envStatus.subscribed = Boolean(sub);
         }
       } catch (e) {}
@@ -13359,46 +13363,11 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
   const pendingEnableResolvers = new Map();
   const pendingShowResolvers = new Map();
-  let bannerTimer = null;
-
-  function showInAppBanner(payload, deliveredSystem) {
-    if (!payload) return;
-    let el = document.getElementById('anInAppBanner');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = 'anInAppBanner';
-      el.setAttribute('role', 'status');
-      document.body.appendChild(el);
-    }
-    const meta = CAT_META.find((c) => c.id === payload.category) || { icon: '🔔', label: 'Notification' };
-    const statusLabel = deliveredSystem
-      ? `${meta.label} · System notification sent`
-      : `${meta.label} · In-app alert`;
-    el.innerHTML = `
-      <div class="an-bn-ic">${meta.icon}</div>
-      <div class="an-bn-body">
-        <div class="an-bn-tag">${escHtml(statusLabel)}</div>
-        <div class="an-bn-title">${escHtml(payload.title || 'Hour')}</div>
-        <div class="an-bn-text">${escHtml(payload.body || '')}</div>
-      </div>
-      <div class="an-bn-btns">
-        <button type="button" class="an-bn-open">Open</button>
-        <button type="button" class="an-bn-close" aria-label="Dismiss notification">×</button>
-      </div>
-    `;
-    const hideBanner = () => el.classList.remove('show');
-    el.querySelector('.an-bn-open').onclick = () => {
-      hideBanner();
-      openTarget(payload.target || 'home');
-    };
-    el.querySelector('.an-bn-close').onclick = hideBanner;
-    requestAnimationFrame(() => el.classList.add('show'));
-    if (bannerTimer) clearTimeout(bannerTimer);
-    bannerTimer = setTimeout(hideBanner, 7000);
-  }
 
   async function syncWithServerAndSw(replan) {
     const snap = collectSnapshot();
+    syncExternalIdentity(snap);
+    const extId = getExternalId(snap);
     const config = {
       enabled: Boolean(state.enabled),
       intervalMin: Number(state.intervalMin) || 45,
@@ -13409,24 +13378,26 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       tzOffsetMin: new Date().getTimezoneOffset(),
     };
 
-    const swSnap = Object.assign({}, snap, {
-      deviceId: state.deviceId,
-      enabled: Boolean(state.enabled),
-    });
-    const host = getNotifyHost();
-    if (host && typeof host.syncSwSnapshot === 'function') {
-      try {
-        await host.syncSwSnapshot(swSnap);
-      } catch (e) {}
-    } else if (!postParent({ type: 'leaveit-notify-sync-sw', snapshot: swSnap })) {
-      try {
-        if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage({
-            type: 'hour-notify-cache',
-            snapshot: swSnap,
-          });
-        }
-      } catch (e) {}
+    if (!envStatus.isMedian) {
+      const swSnap = Object.assign({}, snap, {
+        deviceId: state.deviceId,
+        enabled: Boolean(state.enabled),
+      });
+      const host = getNotifyHost();
+      if (host && typeof host.syncSwSnapshot === 'function') {
+        try {
+          await host.syncSwSnapshot(swSnap);
+        } catch (e) {}
+      } else if (!postParent({ type: 'leaveit-notify-sync-sw', snapshot: swSnap })) {
+        try {
+          if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+            navigator.serviceWorker.controller.postMessage({
+              type: 'hour-notify-cache',
+              snapshot: swSnap,
+            });
+          }
+        } catch (e) {}
+      }
     }
 
     try {
@@ -13437,20 +13408,34 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         body: JSON.stringify({
           deviceId: state.deviceId,
           uid: snap.uid || '',
+          externalId: extId,
+          oneSignalSubscriptionId: envStatus.oneSignalSubscriptionId || '',
+          subscription: envStatus.webPushSubscription || null,
+          cancelIds: replan ? state.scheduledIds : [],
           friendUids,
           config,
           snapshot: snap,
           lastSentAt: state.lastSentAt || 0,
           replan: Boolean(replan),
+          origin: window.location.origin,
         }),
       });
       if (res.ok) {
         const data = await res.json();
+        if (typeof data.oneSignalConfigured === 'boolean') {
+          serverStatus.oneSignalConfigured = data.oneSignalConfigured;
+        }
+        if (typeof data.webPushConfigured === 'boolean') {
+          serverStatus.webPushConfigured = data.webPushConfigured;
+        }
         if (typeof data.hasSubscription === 'boolean') {
           envStatus.subscribed = data.hasSubscription;
         }
         if (Array.isArray(data.plannedQueue) && data.plannedQueue.length) {
           state.queue = data.plannedQueue;
+        }
+        if (replan && Array.isArray(data.scheduledIds)) {
+          state.scheduledIds = data.scheduledIds;
         }
         if (Array.isArray(data.history) && data.history.length && !state.history.length) {
           state.history = data.history;
@@ -13466,6 +13451,9 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
   async function dispatchLocalNotification(payload) {
     if (!payload) return { ok: false, method: 'blocked' };
+    if (envStatus.isMedian) {
+      return { ok: false, method: 'blocked' };
+    }
 
     const host = getNotifyHost();
     if (host && typeof host.showLocalNotification === 'function') {
@@ -13537,6 +13525,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
   // IMPORTANT: Keep initial permission request SYNCHRONOUS inside click/change handler call stack!
   function requestEnableFlow() {
+    const extId = getExternalId();
     const host = getNotifyHost();
     if (host && typeof host.requestPermissionSync === 'function') {
       const startedAt = Date.now();
@@ -13544,7 +13533,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       return Promise.resolve(permPromise)
         .then(async (perm) => {
           const elapsedMs = Date.now() - startedAt;
-          const res = await host.completeEnableAfterPermission(state.intervalMin, perm);
+          const res = await host.completeEnableAfterPermission(state.intervalMin, perm, extId);
           envStatus.inOuterIframe = Boolean(res.inOuterIframe);
           envStatus.outerBlocked = Boolean(res.inOuterIframe && perm !== 'granted' && elapsedMs < 200);
           await handleEnableResult(res);
@@ -13576,12 +13565,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           type: 'leaveit-notify-enable',
           requestId: reqId,
           intervalMin: state.intervalMin,
+          externalId: extId,
         });
       });
     }
 
     if (!('Notification' in window)) {
-      showToast('Notifications are not supported on this browser');
+      showToast('System notifications require a supported browser or OneSignal in Median APK');
       state.enabled = false;
       saveState();
       renderUi();
@@ -13651,6 +13641,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         supported: true,
         permission: perm,
         subscription,
+        webPushSubscription: subscription,
         subscribed: Boolean(subscription),
         swReady: envStatus.swReady,
         pushSupported: envStatus.pushSupported,
@@ -13664,7 +13655,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   function requestPermissionIfDefault() {
     const host = getNotifyHost();
     if (host && typeof host.requestPermissionSync === 'function') {
-      return Promise.resolve(host.requestPermissionSync()).then((perm) => {
+      return Promise.resolve(host.requestPermissionSync()).then(async (perm) => {
+        await refreshNotifyStatus();
         envStatus.permission = perm;
         renderUi();
         return perm;
@@ -13684,12 +13676,20 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
   async function handleEnableResult(res) {
     applyStatusUpdate(res);
+    const snap = collectSnapshot();
+    syncExternalIdentity(snap);
 
     if (res.permission !== 'granted') {
       state.enabled = false;
       saveState();
       renderUi();
-      if (envStatus.outerBlocked || (envStatus.inOuterIframe && res.permission !== 'granted')) {
+      if (envStatus.isMedian && !envStatus.hasMedianOneSignal) {
+        showToast('Enable OneSignal plugin in Median App Studio & rebuild APK for real Android notifications');
+      } else if (envStatus.isMedian && res.permission === 'denied') {
+        showToast('Notifications blocked in Android settings — tap Open App Settings');
+      } else if (envStatus.isMedian) {
+        showToast('Allow Android notifications when prompted to activate real push alerts');
+      } else if (envStatus.outerBlocked || (envStatus.inOuterIframe && res.permission !== 'granted')) {
         showToast('Preview iframe blocks OS permission — open in a full tab or installed app');
       } else if (res.permission === 'denied') {
         showToast('Notifications blocked in browser settings — allow notifications to enable');
@@ -13703,17 +13703,24 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     buildQueue(Date.now(), 4);
     saveState();
 
-    if (res.subscription) {
+    const subPayload = res.subscription || envStatus.webPushSubscription || null;
+    const osSubId = res.oneSignalSubscriptionId || envStatus.oneSignalSubscriptionId || '';
+    const extId = getExternalId(snap);
+
+    if (subPayload || osSubId || (envStatus.isMedian && envStatus.hasMedianOneSignal)) {
       try {
-        const snap = collectSnapshot();
         const subRes = await fetch('/api/push/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             deviceId: state.deviceId,
             uid: snap.uid || '',
+            externalId: extId,
+            oneSignalSubscriptionId: osSubId,
+            cancelIds: state.scheduledIds,
             friendUids: (snap.friends || []).map((f) => f.uid).filter(Boolean),
-            subscription: res.subscription,
+            subscription: subPayload,
+            origin: window.location.origin,
             config: {
               enabled: true,
               intervalMin: state.intervalMin,
@@ -13728,10 +13735,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         });
         if (subRes.ok) {
           const data = await subRes.json();
+          if (typeof data.oneSignalConfigured === 'boolean') {
+            serverStatus.oneSignalConfigured = data.oneSignalConfigured;
+          }
+          if (typeof data.webPushConfigured === 'boolean') {
+            serverStatus.webPushConfigured = data.webPushConfigured;
+          }
           if (Array.isArray(data.plannedQueue) && data.plannedQueue.length) {
             state.queue = data.plannedQueue;
           }
-          envStatus.subscribed = true;
+          if (Array.isArray(data.scheduledIds)) {
+            state.scheduledIds = data.scheduledIds;
+          }
+          envStatus.subscribed = Boolean(subPayload || osSubId || envStatus.oneSignalOptedIn);
           saveState();
         }
       } catch (e) {}
@@ -13740,15 +13756,23 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     }
 
     renderUi();
-    showToast(
-      envStatus.subscribed
-        ? '📲 Auto Notifications planned & push-synced!'
-        : '🔔 Auto Notifications active on this device!'
-    );
+    if (envStatus.isMedian && serverStatus.oneSignalConfigured === false) {
+      showToast('Permission allowed! Add ONESIGNAL_APP_ID & ONESIGNAL_REST_API_KEY in Vercel to deliver push');
+    } else if (envStatus.isMedian) {
+      showToast('📲 Real Android push active & scheduled!');
+    } else {
+      showToast(
+        envStatus.subscribed
+          ? '📲 Auto Notifications planned & push-synced!'
+          : '🔔 Real OS notifications active on this device!'
+      );
+    }
   }
 
   async function disableFlow() {
     state.enabled = false;
+    const oldScheduled = Array.isArray(state.scheduledIds) ? state.scheduledIds.slice() : [];
+    state.scheduledIds = [];
     saveState();
     renderUi();
     const host = getNotifyHost();
@@ -13759,7 +13783,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       } catch (e) {}
     } else if (isEmbedded()) {
       postParent({ type: 'leaveit-notify-disable', requestId: 'dis-' + Date.now() });
-    } else if ('serviceWorker' in navigator) {
+    } else if (!envStatus.isMedian && 'serviceWorker' in navigator) {
       try {
         const reg = await navigator.serviceWorker.ready;
         const sub = await reg.pushManager.getSubscription();
@@ -13770,17 +13794,42 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       await fetch('/api/push/unsubscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ deviceId: state.deviceId }),
+        body: JSON.stringify({ deviceId: state.deviceId, cancelIds: oldScheduled }),
       });
     } catch (e) {}
     envStatus.subscribed = false;
+    envStatus.webPushSubscription = null;
     renderUi();
     showToast('Automatic notifications paused');
+  }
+
+  function openMedianAppSettings() {
+    const host = getNotifyHost();
+    if (host && typeof host.openAppSettings === 'function') {
+      return host.openAppSettings();
+    }
+    if (isEmbedded()) {
+      return postParent({ type: 'leaveit-notify-open-settings' });
+    }
+    try {
+      const bridge = window.median || window.gonative;
+      if (bridge && bridge.open && typeof bridge.open.appSettings === 'function') {
+        bridge.open.appSettings();
+        return true;
+      }
+    } catch (e) {}
+    return false;
   }
 
   function sendRandomNow(forcedCat) {
     const sendBtn = document.getElementById('anSendNowBtn');
     if (sendBtn && sendBtn.disabled) return Promise.resolve();
+    if (envStatus.isMedian && !envStatus.hasMedianOneSignal) {
+      showToast('Enable OneSignal plugin in Median App Studio & rebuild APK for Android notifications');
+      renderUi();
+      return Promise.resolve();
+    }
+
     if (sendBtn) {
       sendBtn.disabled = true;
       sendBtn.textContent = '⏳ Sending...';
@@ -13788,11 +13837,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
     let currentPerm = envStatus.permission;
     try {
-      const h = getNotifyHost();
-      if (h && window.parent && window.parent.Notification) {
-        currentPerm = window.parent.Notification.permission;
-      } else if ('Notification' in window) {
-        currentPerm = Notification.permission;
+      if (!envStatus.isMedian) {
+        const h = getNotifyHost();
+        if (h && window.parent && window.parent.Notification) {
+          currentPerm = window.parent.Notification.permission;
+        } else if ('Notification' in window) {
+          currentPerm = Notification.permission;
+        }
       }
     } catch (e) {}
     envStatus.permission = currentPerm;
@@ -13804,9 +13855,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
     return Promise.resolve(prepPromise).then(async () => {
       try {
+        await refreshNotifyStatus();
         const snap = collectSnapshot();
+        syncExternalIdentity(snap);
+        const extId = getExternalId(snap);
         let payload = null;
         let pushedByServer = false;
+        let serverError = '';
 
         try {
           const r = await fetch('/api/push/test', {
@@ -13815,6 +13870,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
             body: JSON.stringify({
               deviceId: state.deviceId,
               category: forcedCat,
+              oneSignalSubscriptionId: envStatus.oneSignalSubscriptionId || '',
+              externalId: envStatus.isMedian ? extId : '',
+              subscription: envStatus.webPushSubscription || null,
+              origin: window.location.origin,
               config: {
                 enabled: state.enabled,
                 intervalMin: state.intervalMin,
@@ -13831,46 +13890,69 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
             const data = await r.json();
             payload = data.payload;
             pushedByServer = Boolean(data.pushed);
+            serverError = typeof data.error === 'string' ? data.error : '';
+            if (typeof data.oneSignalConfigured === 'boolean') {
+              serverStatus.oneSignalConfigured = data.oneSignalConfigured;
+            }
+            if (typeof data.webPushConfigured === 'boolean') {
+              serverStatus.webPushConfigured = data.webPushConfigured;
+            }
+            serverStatus.lastError = pushedByServer ? '' : serverError;
           }
-        } catch (e) {}
+        } catch (e) {
+          serverError = 'Could not reach push server';
+        }
 
         if (!payload) {
           payload = buildLocalNotification(forcedCat);
         }
 
         let localRes = { ok: false, method: 'blocked' };
-        if (!pushedByServer && envStatus.permission === 'granted') {
+        if (!pushedByServer && !envStatus.isMedian && envStatus.permission === 'granted') {
           localRes = await dispatchLocalNotification(payload);
         }
 
         const deliveredSystem = pushedByServer || Boolean(localRes && localRes.ok);
-        state.lastSentAt = Date.now();
-        state.lastCategory = payload.category;
-        state.history = [
-          {
-            at: state.lastSentAt,
-            category: payload.category,
-            title: payload.title,
-            body: payload.body,
-          },
-          ...state.history,
-        ].slice(0, 12);
-        buildQueue(Date.now(), 4);
-        saveState();
+        if (deliveredSystem) {
+          state.lastSentAt = Date.now();
+          state.lastCategory = payload.category;
+          state.history = [
+            {
+              at: state.lastSentAt,
+              category: payload.category,
+              title: payload.title,
+              body: payload.body,
+            },
+            ...state.history,
+          ].slice(0, 12);
+          buildQueue(Date.now(), 4);
+          saveState();
+          if (state.enabled) {
+            void syncWithServerAndSw(true);
+          }
+        }
         renderUi();
 
-        showInAppBanner(payload, deliveredSystem);
-
         if (pushedByServer) {
-          showToast('📲 Sent via Push: ' + payload.title);
+          showToast('📲 Real push sent: ' + payload.title);
         } else if (deliveredSystem) {
-          showToast('🔔 Notification sent: ' + payload.title);
+          showToast('🔔 System notification sent: ' + payload.title);
+        } else if (envStatus.isMedian) {
+          if (serverStatus.oneSignalConfigured === false) {
+            showToast('Add ONESIGNAL_APP_ID & ONESIGNAL_REST_API_KEY in Vercel Environment Variables');
+          } else if (envStatus.permission === 'denied') {
+            showToast('Notifications blocked in Android settings — tap Open App Settings');
+          } else if (serverError) {
+            showToast('Android push failed: ' + serverError);
+          } else {
+            showToast('Allow Android notifications first to send real push alerts');
+          }
         } else if (envStatus.permission === 'denied') {
-          showToast('🔔 Sent in-app (allow browser notifications for OS alerts)');
+          showToast('Blocked in browser settings — allow Notifications for system alerts');
         } else if (envStatus.outerBlocked || envStatus.inOuterIframe) {
-          showToast('🔔 Sent in-app (preview frame blocks OS notification popups)');
+          showToast('Preview iframe blocks OS popups — open in a full tab or installed app');
         } else {
-          showToast('🔔 Notification shown in-app');
+          showToast('Allow notification permission to send a real system notification');
         }
       } finally {
         const btnAfter = document.getElementById('anSendNowBtn');
@@ -13883,15 +13965,37 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
 
   async function notifyNow(payload) {
-    if (!payload) return;
-    let res = { ok: false, method: 'blocked' };
+    if (!payload) return { ok: false, method: 'blocked' };
+    if (envStatus.isMedian) {
+      if (envStatus.permission !== 'granted' || serverStatus.oneSignalConfigured === false) {
+        return { ok: false, method: 'blocked' };
+      }
+      try {
+        const snap = collectSnapshot();
+        const r = await fetch('/api/push/test', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          keepalive: true,
+          body: JSON.stringify({
+            deviceId: state.deviceId,
+            oneSignalSubscriptionId: envStatus.oneSignalSubscriptionId || '',
+            externalId: getExternalId(snap),
+            origin: window.location.origin,
+            customPayload: payload,
+            snapshot: snap,
+          }),
+        });
+        if (r.ok) {
+          const d = await r.json();
+          if (d && d.pushed) return { ok: true, method: 'onesignal' };
+        }
+      } catch (e) {}
+      return { ok: false, method: 'blocked' };
+    }
     if (envStatus.permission === 'granted') {
-      res = await dispatchLocalNotification(payload);
+      return await dispatchLocalNotification(payload);
     }
-    if (!document.hidden || !res.ok) {
-      showInAppBanner(payload, Boolean(res && res.ok));
-    }
-    return res;
+    return { ok: false, method: 'blocked' };
   }
 
   async function checkLocalScheduleTick() {
@@ -13913,19 +14017,66 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       return;
     }
 
+    if (envStatus.isMedian) {
+      if (state.scheduledIds.length > 0) {
+        if (now - nextSlot.fireAt < 25_000) return;
+        state.lastSentAt = now;
+        state.lastCategory = nextSlot.category;
+        buildQueue(now, 4);
+        saveState();
+        renderUi();
+        syncWithServerAndSw(true);
+        return;
+      }
+      if (serverStatus.oneSignalConfigured) {
+        const snap = collectSnapshot();
+        try {
+          const r = await fetch('/api/push/test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              deviceId: state.deviceId,
+              category: nextSlot.category,
+              oneSignalSubscriptionId: envStatus.oneSignalSubscriptionId || '',
+              externalId: getExternalId(snap),
+              origin: window.location.origin,
+              snapshot: snap,
+            }),
+          });
+          if (r.ok) {
+            const d = await r.json();
+            if (d.pushed && d.payload) {
+              state.lastSentAt = now;
+              state.lastCategory = d.payload.category;
+              state.history = [
+                { at: now, category: d.payload.category, title: d.payload.title, body: d.payload.body },
+                ...state.history,
+              ].slice(0, 12);
+            }
+          }
+        } catch (e) {}
+      }
+      buildQueue(now, 4);
+      saveState();
+      renderUi();
+      syncWithServerAndSw(true);
+      return;
+    }
+
     if (envStatus.subscribed && now - nextSlot.fireAt < 25_000) {
       return;
     }
 
     const payload = buildLocalNotification(nextSlot.category, now);
     const localRes = await dispatchLocalNotification(payload);
-    if (!document.hidden) showInAppBanner(payload, Boolean(localRes && localRes.ok));
-    state.lastSentAt = now;
-    state.lastCategory = payload.category;
-    state.history = [
-      { at: now, category: payload.category, title: payload.title, body: payload.body },
-      ...state.history,
-    ].slice(0, 12);
+    if (localRes && localRes.ok) {
+      state.lastSentAt = now;
+      state.lastCategory = payload.category;
+      state.history = [
+        { at: now, category: payload.category, title: payload.title, body: payload.body },
+        ...state.history,
+      ].slice(0, 12);
+    }
     buildQueue(now, 4);
     saveState();
     renderUi();
@@ -14014,7 +14165,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
 
   function getBadgeInfo() {
-    if (!envStatus.supported) return { state: 'warn', text: 'In-app only' };
+    if (envStatus.isMedian) {
+      if (!envStatus.hasMedianOneSignal) return { state: 'warn', text: 'OneSignal Plugin Needed' };
+      if (envStatus.permission === 'denied') return { state: 'blocked', text: 'Blocked in Android' };
+      if (serverStatus.oneSignalConfigured === false) return { state: 'warn', text: 'Vercel Push Keys Needed' };
+      if (!state.enabled) {
+        return envStatus.permission === 'granted'
+          ? { state: 'off', text: 'Allowed · Off' }
+          : { state: 'off', text: 'Off' };
+      }
+      if (envStatus.permission !== 'granted') return { state: 'warn', text: 'Permission needed' };
+      return { state: 'push', text: 'Android Push Active' };
+    }
+    if (!envStatus.supported) return { state: 'warn', text: 'OS Push Unsupported' };
     if (envStatus.permission === 'denied') return { state: 'blocked', text: 'Blocked in browser' };
     if (envStatus.outerBlocked) return { state: 'warn', text: 'Preview blocked · Open Tab' };
     if (!state.enabled) {
@@ -14024,12 +14187,27 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     }
     if (envStatus.permission !== 'granted') return { state: 'warn', text: 'Permission needed' };
     if (envStatus.subscribed) return { state: 'push', text: 'Push + SW Active' };
-    return { state: 'local', text: 'Device Notifications Active' };
+    return { state: 'local', text: 'System Alerts Active' };
   }
 
   function renderEnvAlert() {
+    if (envStatus.isMedian) {
+      if (!envStatus.hasMedianOneSignal) {
+        return `<div class="an-env-alert"><span>Android WebView needs the <b>OneSignal</b> plugin enabled inside Median App Studio (then rebuild your APK) to deliver real phone notifications.</span></div>`;
+      }
+      if (envStatus.permission === 'denied') {
+        return `<div class="an-env-alert"><span>Android notifications are blocked for Hour. Enable notifications in App Settings to receive real alerts.</span><button type="button" id="anAppSettingsBtn">Open App Settings</button></div>`;
+      }
+      if (serverStatus.oneSignalConfigured === false) {
+        return `<div class="an-env-alert"><span>Add <b>ONESIGNAL_APP_ID</b> and <b>ONESIGNAL_REST_API_KEY</b> in Vercel Project Environment Variables and redeploy so real Android push alerts can be delivered.</span></div>`;
+      }
+      if (serverStatus.lastError) {
+        return `<div class="an-env-alert"><span>Push check: ${escHtml(serverStatus.lastError)}</span></div>`;
+      }
+      return '';
+    }
     if (!envStatus.supported) {
-      return `<div class="an-env-alert"><span>System notifications aren’t supported in this browser; alerts will show in-app.</span></div>`;
+      return `<div class="an-env-alert"><span>System notifications aren’t supported in this WebView/browser. Open in Chrome or enable OneSignal in Median.</span></div>`;
     }
     if (envStatus.permission === 'denied') {
       return `<div class="an-env-alert"><span>Notifications are blocked for this site. Tap the 🔒 icon in your browser address bar → Allow Notifications, or open in a full tab.</span><a href="/" target="_blank" rel="noopener noreferrer">Open Tab ↗</a></div>`;
@@ -14060,6 +14238,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           </div>`;
       }).join('');
 
+      const noteHtml = envStatus.isMedian
+        ? 'Real Android system notifications are delivered via <b>OneSignal</b> through your Vercel deployment — they arrive in your phone notification tray even when Hour is closed.'
+        : 'Tip: Install <b>Hour</b> to your Home Screen (Browser menu → Add to Home Screen) and allow notifications so random stats, greetings, and daily tasks arrive reliably as real system alerts.';
+
       box.innerHTML = `
         <div class="an-head">
           <span style="font-weight:700;font-size:15px">📲 Auto Notifications</span>
@@ -14067,7 +14249,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         </div>
         ${renderEnvAlert()}
         <div class="tog">
-          <span>Automatic random notifications<small style="display:block;color:var(--muted);font-size:11px;font-weight:500">Plans &amp; sends random greetings, stats, pending tasks, and study reminders</small></span>
+          <span>Automatic random notifications<small style="display:block;color:var(--muted);font-size:11px;font-weight:500">Plans &amp; sends real OS notifications for greetings, stats, pending tasks &amp; friends</small></span>
           <input type="checkbox" class="sw" id="anEnableSw" ${state.enabled ? 'checked' : ''}>
         </div>
         <div class="an-subhead">Random pacing</div>
@@ -14099,11 +14281,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           <button type="button" class="main" id="anSendNowBtn">🔔 Send Random Now</button>
           <button type="button" class="ctl" id="anReplanBtn">↻ Re-plan Queue</button>
         </div>
-        <div class="an-note">
-          Tip: Install <b>Hour</b> to your Home Screen (Browser menu → Add to Home Screen) and allow notifications so random stats, greetings, and daily tasks arrive reliably even when closed.
-        </div>
+        <div class="an-note">${noteHtml}</div>
       `;
 
+      const appSettingsBtn = box.querySelector('#anAppSettingsBtn');
+      if (appSettingsBtn) {
+        appSettingsBtn.onclick = () => openMedianAppSettings();
+      }
       box.querySelector('#anEnableSw').onchange = (e) => {
         if (e.target.checked) requestEnableFlow();
         else disableFlow();
@@ -14233,6 +14417,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const d = event.data;
     if (d.type === 'leaveit-notify-status') {
       applyStatusUpdate(d);
+      syncExternalIdentity();
       if (state.enabled && envStatus.permission === 'granted') {
         syncWithServerAndSw(false);
       }
@@ -14275,6 +14460,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
       refreshNotifyStatus();
+      refreshServerStatus();
       checkLocalScheduleTick();
       if (state.enabled) syncWithServerAndSw(false);
     }
@@ -14283,6 +14469,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   mountSettingsBox();
   mountRegainHomeButton();
   refreshNotifyStatus();
+  refreshServerStatus();
 
   try {
     if (navigator.permissions && typeof navigator.permissions.query === 'function') {
@@ -14324,11 +14511,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       target: payload.target || 'arena-friends',
       tag: payload.tag || ('hour-friend-online-' + key),
     };
-    const res = envStatus.permission === 'granted'
-      ? await dispatchLocalNotification(notePayload)
-      : { ok: false, method: 'blocked' };
-    if (!document.hidden || !res.ok) {
-      showInAppBanner(notePayload, Boolean(res && res.ok));
+    if (!envStatus.isMedian && envStatus.permission === 'granted' && document.hidden) {
+      await dispatchLocalNotification(notePayload);
     }
     state.history = [
       { at: now, category: 'compete', title: notePayload.title, body: notePayload.body },
@@ -14346,6 +14530,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     notifyFriendOnline,
     refreshStatus: refreshNotifyStatus,
     syncFriends: () => {
+      syncExternalIdentity();
       if (state.enabled) syncWithServerAndSw(false);
     },
     replan: () => {
@@ -14354,8 +14539,1996 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       syncWithServerAndSw(true);
       return q;
     },
-    getState: () => ({ state, envStatus, snapshot: collectSnapshot() }),
+    getState: () => ({ state, envStatus, serverStatus, snapshot: collectSnapshot() }),
     openTarget,
+  };
+})();
+</script>
+<style id="v110-stories-css">
+  /* Instagram-Style Friend Stories + Trending Music Picker */
+  .rg-story-home-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
+    border-radius: 99px;
+    border: 1px solid var(--track);
+    background: var(--card);
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 36px;
+    transition: transform .14s, border-color .14s;
+  }
+  .rg-story-home-btn:active { transform: scale(.97); }
+  .rg-story-home-btn.unseen {
+    border-color: color-mix(in srgb, #dd2a7b 65%, var(--track));
+    background: linear-gradient(135deg, color-mix(in srgb, #f58529 14%, var(--card)), color-mix(in srgb, #dd2a7b 14%, var(--card)));
+  }
+  .rg-story-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
+    flex-shrink: 0;
+  }
+  .ar-story-mini-btn {
+    border-color: color-mix(in srgb, #dd2a7b 55%, var(--track)) !important;
+    background: linear-gradient(135deg, color-mix(in srgb, #f58529 16%, var(--card)), color-mix(in srgb, #8134af 16%, var(--card))) !important;
+  }
+
+  #arenaRoot .ar-story-tray-card {
+    background: var(--card);
+    border: 1px solid var(--track);
+    border-radius: 24px;
+    padding: 14px 16px 12px;
+  }
+  .ar-story-tray-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .ar-story-tray-title {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 800;
+    letter-spacing: -.15px;
+  }
+  .ar-story-tray-title small {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+  }
+  .ar-story-add-pill {
+    border: 0;
+    border-radius: 99px;
+    padding: 6px 13px;
+    background: linear-gradient(135deg, #f58529, #dd2a7b, #8134af);
+    color: #fff;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    min-height: 32px;
+    box-shadow: 0 6px 16px rgba(221, 42, 123, .28);
+  }
+  .ar-story-scroll {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 4px 2px 4px;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .ar-story-scroll::-webkit-scrollbar { display: none; }
+
+  .ar-story-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: 72px;
+    flex: 0 0 auto;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: var(--text);
+    font: inherit;
+    cursor: pointer;
+  }
+  .ar-story-ring-wrap {
+    position: relative;
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    padding: 3px;
+    display: grid;
+    place-items: center;
+    transition: transform .16s ease;
+  }
+  .ar-story-item:active .ar-story-ring-wrap { transform: scale(.94); }
+  .ar-story-ring-wrap.unseen {
+    background: linear-gradient(135deg, #feda75 0%, #fa7e1e 25%, #d62976 55%, #962fbf 80%, #4f5bd5 100%);
+    box-shadow: 0 6px 18px rgba(214, 41, 118, .28);
+  }
+  .ar-story-ring-wrap.seen {
+    background: color-mix(in srgb, var(--muted) 42%, var(--track));
+  }
+  .ar-story-ring-wrap.empty {
+    background: var(--track);
+    border: 1.5px dashed color-mix(in srgb, var(--muted) 55%, transparent);
+    padding: 2px;
+  }
+  .ar-story-ring-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    padding: 2.5px;
+    background: var(--card);
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+  .ar-story-ring-av {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+    color: var(--accent);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 21px;
+    overflow: hidden;
+  }
+  .ar-story-ring-av img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .ar-story-plus {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f58529, #dd2a7b);
+    color: #fff;
+    border: 2.5px solid var(--card);
+    display: grid;
+    place-items: center;
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 1;
+    box-shadow: 0 3px 10px rgba(0,0,0,.35);
+    z-index: 2;
+  }
+  .ar-story-music-dot {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    width: 21px;
+    height: 21px;
+    border-radius: 50%;
+    background: #101322;
+    color: #f9a8d4;
+    border: 2px solid var(--card);
+    display: grid;
+    place-items: center;
+    font-size: 10px;
+    font-weight: 800;
+    z-index: 2;
+  }
+  .ar-story-online-dot {
+    position: absolute;
+    right: 2px;
+    top: 2px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    background: #22c55e;
+    border: 2px solid var(--card);
+    z-index: 2;
+  }
+  .ar-story-name {
+    width: 100%;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--text);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ar-story-hint-chip {
+    align-self: center;
+    padding: 10px 14px;
+    border-radius: 16px;
+    background: color-mix(in srgb, var(--track) 55%, transparent);
+    border: 1px dashed var(--track);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.4;
+    max-width: 240px;
+    flex-shrink: 0;
+  }
+
+  /* Story Gradients */
+  .st-bg-sunset { background: linear-gradient(155deg, #f97316 0%, #ec4899 52%, #7c3aed 100%); }
+  .st-bg-midnight { background: linear-gradient(160deg, #090d16 0%, #1e1b4b 55%, #0f766e 100%); }
+  .st-bg-emerald { background: linear-gradient(160deg, #022c22 0%, #059669 55%, #10b981 100%); }
+  .st-bg-crimson { background: linear-gradient(155deg, #450a0a 0%, #dc2626 52%, #fb7185 100%); }
+  .st-bg-violet { background: linear-gradient(155deg, #1e1b4b 0%, #7c3aed 55%, #db2777 100%); }
+  .st-bg-aurora { background: linear-gradient(160deg, #0f172a 0%, #2563eb 52%, #06b6d4 100%); }
+  .st-bg-gold { background: linear-gradient(155deg, #27272a 0%, #b45309 50%, #facc15 100%); }
+
+  /* Story Creator Modal */
+  #arStoryCreator {
+    position: fixed;
+    inset: 0;
+    z-index: 310;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 14px;
+    background: rgba(5, 7, 14, .82);
+    backdrop-filter: blur(10px);
+  }
+  #arStoryCreator.on { display: flex; }
+  .st-cr-box {
+    width: 100%;
+    max-width: 500px;
+    max-height: 92dvh;
+    background: var(--card);
+    border: 1px solid var(--track);
+    border-radius: 26px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 24px 64px rgba(0,0,0,.55);
+  }
+  .st-cr-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--track);
+    flex-shrink: 0;
+  }
+  .st-cr-top h3 { margin: 0; font-size: 16.5px; font-weight: 800; }
+  .st-cr-close {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--track);
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+    color: var(--text);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .st-cr-scroll {
+    padding: 14px 18px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .st-stage-preview {
+    position: relative;
+    width: 100%;
+    max-width: 245px;
+    aspect-ratio: 9 / 15;
+    margin: 0 auto;
+    border-radius: 22px;
+    overflow: hidden;
+    box-shadow: 0 16px 38px rgba(0,0,0,.42);
+    border: 1px solid rgba(255,255,255,.16);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 18px;
+    text-align: center;
+  }
+  .st-stage-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .st-stage-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,.42) 0%, rgba(0,0,0,.12) 38%, rgba(0,0,0,.18) 65%, rgba(0,0,0,.58) 100%);
+    pointer-events: none;
+  }
+  .st-stage-body {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+  }
+  .st-sticker-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    border-radius: 99px;
+    background: rgba(15, 18, 32, .68);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,.24);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: .2px;
+    box-shadow: 0 6px 18px rgba(0,0,0,.28);
+  }
+  .st-caption-text {
+    font-size: 18px;
+    line-height: 1.32;
+    word-break: break-word;
+    text-shadow: 0 2px 14px rgba(0,0,0,.55);
+    max-width: 100%;
+  }
+  .st-caption-text.f-sans { font-family: inherit; font-weight: 700; }
+  .st-caption-text.f-serif { font-family: Georgia, Cambria, serif; font-style: italic; font-weight: 700; }
+  .st-caption-text.f-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; font-size: 15.5px; }
+  .st-caption-text.f-bold { font-weight: 900; font-size: 21px; letter-spacing: -.4px; text-transform: uppercase; }
+
+  .st-music-sticker {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 11px 7px 7px;
+    border-radius: 14px;
+    background: rgba(12, 15, 28, .78);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,.22);
+    color: #fff;
+    max-width: 92%;
+    box-shadow: 0 8px 22px rgba(0,0,0,.35);
+    text-align: left;
+  }
+  .st-music-art {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    object-fit: cover;
+    background: #1e293b;
+    flex-shrink: 0;
+  }
+  .st-music-art-fallback {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, #f58529, #dd2a7b);
+    display: grid;
+    place-items: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  @keyframes stEqBounce {
+    0%, 100% { transform: scaleY(.35); }
+    50% { transform: scaleY(1); }
+  }
+  .st-eq {
+    display: inline-flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 13px;
+    margin-left: 4px;
+    flex-shrink: 0;
+  }
+  .st-eq i {
+    display: block;
+    width: 2.5px;
+    height: 100%;
+    border-radius: 99px;
+    background: #4ade80;
+    transform-origin: bottom;
+    animation: stEqBounce .7s ease-in-out infinite;
+  }
+  .st-eq i:nth-child(2) { animation-delay: .18s; }
+  .st-eq i:nth-child(3) { animation-delay: .36s; }
+  .st-eq.paused i { animation-play-state: paused; transform: scaleY(.4); }
+
+  .st-swatch-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .st-bg-dot {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 2.5px solid transparent;
+    cursor: pointer;
+    padding: 0;
+  }
+  .st-bg-dot.on {
+    border-color: #fff;
+    box-shadow: 0 0 0 2px var(--accent);
+    transform: scale(1.08);
+  }
+  .st-color-dot {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--track);
+    cursor: pointer;
+    padding: 0;
+  }
+  .st-color-dot.on {
+    box-shadow: 0 0 0 2px var(--accent);
+    transform: scale(1.1);
+  }
+  .st-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .st-chip {
+    border: 1.5px solid var(--track);
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+    color: var(--text);
+    border-radius: 99px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    min-height: 34px;
+  }
+  .st-chip.on {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #06241a;
+  }
+
+  /* Music Picker Panel inside Story Creator */
+  .st-music-box {
+    border-radius: 18px;
+    background: color-mix(in srgb, var(--bg) 52%, var(--card));
+    border: 1px solid var(--track);
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .st-music-list {
+    max-height: 230px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .st-track-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px;
+    border-radius: 13px;
+    background: color-mix(in srgb, var(--card) 85%, transparent);
+    border: 1px solid transparent;
+  }
+  .st-track-row.on {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 12%, var(--card));
+  }
+  .st-track-meta {
+    flex: 1;
+    min-width: 0;
+  }
+  .st-track-meta b {
+    display: block;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .st-track-meta small {
+    display: block;
+    font-size: 11.5px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .st-play-mini {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1px solid var(--track);
+    background: var(--bg);
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+  }
+  .st-use-btn {
+    border: 0;
+    border-radius: 99px;
+    padding: 7px 12px;
+    background: linear-gradient(135deg, #f58529, #dd2a7b);
+    color: #fff;
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 800;
+    cursor: pointer;
+    flex-shrink: 0;
+    min-height: 34px;
+  }
+
+  /* Full-Screen Instagram Story Viewer */
+  #arStoryViewer {
+    position: fixed;
+    inset: 0;
+    z-index: 330;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: #04050a;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  #arStoryViewer.on { display: flex; }
+  .st-vw-frame {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    max-width: 440px;
+    max-height: 94dvh;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #0b0e18;
+    box-shadow: 0 24px 80px rgba(0,0,0,.78);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  @media (max-width: 560px) {
+    .st-vw-frame {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 0;
+    }
+  }
+  .st-vw-media {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 84px 24px 104px;
+    text-align: center;
+  }
+  .st-vw-media img.st-vw-photo {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .st-vw-chrome-top {
+    position: relative;
+    z-index: 5;
+    padding: 12px 12px 8px;
+    background: linear-gradient(180deg, rgba(0,0,0,.72) 0%, rgba(0,0,0,0) 100%);
+  }
+  .st-prog-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 10px;
+  }
+  .st-prog-seg {
+    flex: 1;
+    height: 3px;
+    border-radius: 99px;
+    background: rgba(255,255,255,.28);
+    overflow: hidden;
+  }
+  .st-prog-fill {
+    display: block;
+    height: 100%;
+    width: 0%;
+    background: #fff;
+    border-radius: 99px;
+  }
+  .st-vw-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .st-vw-author {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-width: 0;
+    color: #fff;
+  }
+  .st-vw-av {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: rgba(255,255,255,.16);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 15px;
+    flex-shrink: 0;
+    border: 1.5px solid rgba(255,255,255,.45);
+  }
+  .st-vw-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .st-vw-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .st-vw-ico-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 0;
+    background: rgba(0,0,0,.35);
+    color: #fff;
+    font-size: 17px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .st-vw-tapzones {
+    position: absolute;
+    inset: 68px 0 84px;
+    z-index: 4;
+    display: grid;
+    grid-template-columns: 32% 68%;
+  }
+  .st-vw-bottom {
+    position: relative;
+    z-index: 6;
+    padding: 12px 14px calc(14px + env(safe-area-inset-bottom, 0px));
+    background: linear-gradient(0deg, rgba(0,0,0,.82) 0%, rgba(0,0,0,0) 100%);
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .st-react-row {
+    display: flex;
+    justify-content: space-around;
+    gap: 6px;
+  }
+  .st-react-emoji {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,.18);
+    background: rgba(255,255,255,.1);
+    backdrop-filter: blur(8px);
+    font-size: 20px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    transition: transform .12s;
+  }
+  .st-react-emoji:active { transform: scale(1.25); }
+  .st-reply-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .st-reply-in {
+    flex: 1;
+    min-width: 0;
+    height: 44px;
+    padding: 0 16px;
+    border-radius: 99px;
+    border: 1.5px solid rgba(255,255,255,.35);
+    background: rgba(0,0,0,.42);
+    color: #fff;
+    font: inherit;
+    font-size: 13.5px;
+    outline: none;
+  }
+  .st-reply-in::placeholder { color: rgba(255,255,255,.65); }
+  .st-reply-send {
+    height: 44px;
+    padding: 0 18px;
+    border-radius: 99px;
+    border: 0;
+    background: #fff;
+    color: #0b0e18;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+  }
+  .st-seen-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    min-height: 46px;
+    padding: 8px 14px;
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,.22);
+    background: rgba(15, 18, 32, .72);
+    backdrop-filter: blur(10px);
+    color: #fff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .st-unmute-pill {
+    position: relative;
+    z-index: 6;
+    align-self: center;
+    padding: 8px 15px;
+    border-radius: 99px;
+    border: 1px solid rgba(255,255,255,.35);
+    background: rgba(0,0,0,.68);
+    color: #fff;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  @keyframes stFloatUp {
+    0% { opacity: 1; transform: translateY(0) scale(.85); }
+    100% { opacity: 0; transform: translateY(-210px) scale(1.45); }
+  }
+  .st-float-burst {
+    position: absolute;
+    bottom: 110px;
+    z-index: 9;
+    font-size: 32px;
+    pointer-events: none;
+    animation: stFloatUp 1.2s ease-out forwards;
+  }
+  @keyframes stSpinArt {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .st-spin { animation: stSpinArt 6s linear infinite; border-radius: 50% !important; }
+  .st-spin.paused { animation-play-state: paused; }
+
+  /* Insights Drawer inside Viewer */
+  .st-drawer {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 68%;
+    z-index: 10;
+    background: var(--card);
+    color: var(--text);
+    border-top: 1px solid var(--track);
+    border-radius: 24px 24px 0 0;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 -16px 40px rgba(0,0,0,.55);
+  }
+  .st-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--track);
+  }
+  .st-drawer-body {
+    padding: 12px 16px 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .st-insight-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--track) 60%, transparent);
+  }
+  .st-insight-row:last-child { border-bottom: 0; }
+</style>
+<script id="v110-stories-js">
+(function(){
+  'use strict';
+  const getFB=()=>(window.parent&&window.parent!==window&&window.parent.LeaveItFirebase)||window.LeaveItFirebase||null;
+  const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const toast=msg=>{const o=document.getElementById('rgTo');if(o){o.textContent=msg;o.classList.add('on');clearTimeout(o._t);o._t=setTimeout(()=>o.classList.remove('on'),2600)}};
+
+  const BG_THEMES=[
+    {id:'sunset',label:'Sunset'},
+    {id:'midnight',label:'Midnight'},
+    {id:'emerald',label:'Emerald'},
+    {id:'crimson',label:'Crimson'},
+    {id:'violet',label:'Violet'},
+    {id:'aurora',label:'Aurora'},
+    {id:'gold',label:'Gold'}
+  ];
+  const TEXT_COLORS=['#ffffff','#fef3c7','#6ee7b7','#f9a8d4','#fde047','#38bdf8'];
+  const FONT_STYLES=[
+    {id:'sans',label:'Modern'},
+    {id:'bold',label:'Impact'},
+    {id:'serif',label:'Editorial'},
+    {id:'mono',label:'Code'}
+  ];
+  const GENRES=[
+    {id:'all',label:'🔥 Trending'},
+    {id:'bollywood',label:'🎬 Bollywood'},
+    {id:'pop',label:'🌟 Pop'},
+    {id:'lofi',label:'🎧 Lo-Fi'},
+    {id:'phonk',label:'⚡ Phonk'},
+    {id:'instrumental',label:'🎹 Focus'}
+  ];
+  const QUICK_EMOJIS=['🔥','❤️','⚡','👏','💯'];
+
+  const ST_STATE={
+    user:null,
+    friends:[],
+    friendProfiles:{},
+    stories:[],
+    seenIds:new Set(),
+    subUid:'',
+    unsubStories:null,
+    // Creator state
+    creatorOpen:false,
+    mediaType:'card',
+    imageDataUrl:'',
+    bgTheme:'sunset',
+    caption:'',
+    textColor:'#ffffff',
+    fontStyle:'sans',
+    stickerKind:'focus',
+    stickerLabel:'',
+    selectedSong:null,
+    clipStartSec:0,
+    musicOpen:false,
+    musicGenre:'all',
+    musicQuery:'',
+    musicTracks:[],
+    musicLoading:false,
+    musicErr:'',
+    previewPlayingId:'',
+    sharing:false,
+    // Viewer state
+    viewerOpen:false,
+    groups:[],
+    groupIdx:0,
+    slideIdx:0,
+    paused:false,
+    muted:false,
+    autoplayBlocked:false,
+    deleteArmedId:'',
+    drawerOpen:false,
+    viewsList:[],
+    reactionsList:[],
+    unsubViews:null,
+    unsubReactions:null,
+    rafId:0,
+    slideElapsedMs:0,
+    lastTickTs:0,
+    touchStartX:0,
+    holdTimer:0,
+    heldPause:false
+  };
+
+  const previewAudio=new Audio();
+  previewAudio.preload='none';
+  previewAudio.addEventListener('ended',()=>{ST_STATE.previewPlayingId='';renderCreator()});
+
+  const viewerAudio=new Audio();
+  viewerAudio.preload='auto';
+  viewerAudio.playsInline=true;
+
+  function seenStorageKey(uid){return 'hour_seen_stories_v1_'+uid}
+  function loadLocalSeen(uid){
+    ST_STATE.seenIds=new Set();
+    if(!uid)return;
+    try{
+      const arr=JSON.parse(localStorage.getItem(seenStorageKey(uid))||'[]');
+      if(Array.isArray(arr))arr.forEach(id=>{if(typeof id==='string')ST_STATE.seenIds.add(id)});
+    }catch(e){}
+  }
+  function saveLocalSeen(uid,storyId){
+    if(!uid||!storyId)return;
+    ST_STATE.seenIds.add(storyId);
+    try{
+      const arr=Array.from(ST_STATE.seenIds).slice(-120);
+      localStorage.setItem(seenStorageKey(uid),JSON.stringify(arr));
+    }catch(e){}
+  }
+
+  function safePhotoUrl(u){
+    if(typeof u!=='string')return '';
+    const t=u.trim();
+    return /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(t)?t:'';
+  }
+  function renderAv(dataUrl,preset,name){
+    const safe=safePhotoUrl(dataUrl);
+    if(safe)return `<img src="${esc(safe)}" alt="${esc(name||'Avatar')}">`;
+    if(preset)return esc(preset);
+    return esc((([...String(name||'F').trim()][0]||'F').toUpperCase()));
+  }
+  function timeAgo(ms){
+    const diff=Math.max(0,Date.now()-Number(ms||0));
+    if(diff<60000)return 'Just now';
+    if(diff<3600000)return Math.floor(diff/60000)+'m ago';
+    return Math.floor(diff/3600000)+'h ago';
+  }
+  function currentFocusSummarySticker(kind){
+    const u=ST_STATE.user;
+    if(kind==='streak')return '🔥 '+(u?u.streakDays:0)+'d Study Streak';
+    if(kind==='xp')return '⚡ '+(u?Number(u.xp||0).toLocaleString():0)+' Arena XP';
+    if(kind==='exam')return '🎓 '+((u&&u.examTarget)||'Deep Focus Mode');
+    if(kind==='focus')return '⏱ '+((u&&u.todayFocusMinutes)?u.todayFocusMinutes+'m focused today':'Locked In');
+    return '';
+  }
+
+  function buildAuthorGroups(){
+    const u=ST_STATE.user;
+    if(!u)return [];
+    const now=Date.now();
+    const active=(ST_STATE.stories||[]).filter(s=>s.expiresAtMs>now);
+    const byAuthor=new Map();
+    active.forEach(s=>{
+      if(!byAuthor.has(s.authorUid))byAuthor.set(s.authorUid,[]);
+      byAuthor.get(s.authorUid).push(s);
+    });
+    const list=[];
+    byAuthor.forEach((slides,uid)=>{
+      slides.sort((a,b)=>a.createdAtMs-b.createdAtMs);
+      const latest=slides[slides.length-1];
+      const prof=(uid===u.id)?u:((ST_STATE.friendProfiles&&ST_STATE.friendProfiles[uid])||null);
+      const isSelf=uid===u.id;
+      const unseenCount=isSelf?0:slides.filter(s=>!ST_STATE.seenIds.has(s.id)).length;
+      list.push({
+        authorUid:uid,
+        isSelf,
+        displayName:(prof&&prof.displayName)||latest.authorDisplayName||'Player',
+        username:(prof&&prof.username)||latest.authorUsername||'player',
+        avatarDataUrl:(prof&&prof.avatarDataUrl)||latest.authorAvatarDataUrl||'',
+        avatarPreset:(prof&&prof.avatarPreset)||latest.authorAvatarPreset||'',
+        isOnline:Boolean(prof&&prof.isOnline),
+        slides,
+        latestAtMs:latest.createdAtMs,
+        hasUnseen:unseenCount>0,
+        unseenCount,
+        hasMusic:slides.some(s=>s.hasSong)
+      });
+    });
+    list.sort((a,b)=>{
+      if(a.isSelf!==b.isSelf)return a.isSelf?-1:1;
+      if(a.hasUnseen!==b.hasUnseen)return a.hasUnseen?-1:1;
+      return b.latestAtMs-a.latestAtMs;
+    });
+    return list;
+  }
+
+  function refreshArenaTray(){
+    const arenaRoot=document.getElementById('arenaRoot');
+    if(!arenaRoot)return;
+    const slot=arenaRoot.querySelector('.ar-story-tray-card');
+    if(slot){
+      const tmp=document.createElement('div');
+      tmp.innerHTML=renderTrayHtml();
+      const next=tmp.firstElementChild;
+      if(next)slot.replaceWith(next);
+    }
+    const homeBtn=document.querySelector('.rg-story-home-btn');
+    if(homeBtn){
+      const meta=getHomePillMeta();
+      homeBtn.classList.toggle('unseen',Boolean(meta.unseenCount));
+      homeBtn.dataset.storyHome=(meta.unseenCount||meta.hasOwn)?'view':'create';
+      const sp=homeBtn.querySelector('span');
+      if(sp)sp.textContent=meta.unseenCount?meta.unseenCount+' New Story':meta.totalStories?'Stories':'+ Story';
+    }
+  }
+
+  function subscribeStoriesForUser(user){
+    const uid=user&&user.id?user.id:'';
+    if(uid===ST_STATE.subUid)return;
+    if(ST_STATE.unsubStories){try{ST_STATE.unsubStories()}catch(e){}ST_STATE.unsubStories=null}
+    ST_STATE.subUid=uid;
+    ST_STATE.stories=[];
+    loadLocalSeen(uid);
+    const fb=getFB();
+    if(!uid||!fb||!fb.subscribeFriendStories)return;
+    ST_STATE.unsubStories=fb.subscribeFriendStories(async list=>{
+      ST_STATE.stories=Array.isArray(list)?list:[];
+      const friendStoryIds=ST_STATE.stories.filter(s=>s.authorUid!==uid).map(s=>s.id);
+      if(friendStoryIds.length&&fb.fetchViewedStoryIds){
+        const cloudSeen=await fb.fetchViewedStoryIds(friendStoryIds).catch(()=>[]);
+        cloudSeen.forEach(id=>saveLocalSeen(uid,id));
+      }
+      refreshArenaTray();
+      if(ST_STATE.viewerOpen)syncViewerAfterLiveUpdate();
+    },errMsg=>{
+      if(errMsg)toast(errMsg);
+    });
+  }
+
+  function renderTrayHtml(){
+    const u=ST_STATE.user;
+    if(!u)return '';
+    const groups=buildAuthorGroups();
+    const myGroup=groups.find(g=>g.isSelf)||null;
+    const friendGroups=groups.filter(g=>!g.isSelf);
+    const mySlides=myGroup?myGroup.slides.length:0;
+
+    const myTile=`<div class="ar-story-item" role="button" tabindex="0" data-story-act="${mySlides?'openSelf':'openCreate'}" title="${mySlides?'View your story':'Share a story'}">
+      <div class="ar-story-ring-wrap ${mySlides?'unseen':'empty'}">
+        <div class="ar-story-ring-inner"><div class="ar-story-ring-av">${renderAv(u.avatarDataUrl,u.avatarPreset,u.displayName)}</div></div>
+        <span class="ar-story-plus" data-story-act="openCreate" title="Add story slide">+</span>
+      </div>
+      <span class="ar-story-name">Your Story</span>
+    </div>`;
+
+    const friendTiles=friendGroups.map(g=>{
+      return `<button type="button" class="ar-story-item" data-story-open-uid="${esc(g.authorUid)}">
+        <div class="ar-story-ring-wrap ${g.hasUnseen?'unseen':'seen'}">
+          <div class="ar-story-ring-inner"><div class="ar-story-ring-av">${renderAv(g.avatarDataUrl,g.avatarPreset,g.displayName)}</div></div>
+          ${g.hasMusic?'<span class="ar-story-music-dot" title="Includes music">♫</span>':''}
+          ${g.isOnline?'<span class="ar-story-online-dot" title="Online now"></span>':''}
+        </div>
+        <span class="ar-story-name">${esc(g.displayName)}</span>
+      </button>`;
+    }).join('');
+
+    const emptyHint=!friendGroups.length?`<div class="ar-story-hint-chip">Share a 24h photo, study streak &amp; trending song with your friends in real time.</div>`:'';
+
+    return `<div class="ar-story-tray-card">
+      <div class="ar-story-tray-head">
+        <div class="ar-story-tray-title">
+          <span>✨ Stories</span>
+          <small>${friendGroups.length?friendGroups.length+' friend'+(friendGroups.length>1?'s':'')+' active':'24h · Music · Live'}</small>
+        </div>
+        <button type="button" class="ar-story-add-pill" data-story-act="openCreate">+ Add Story</button>
+      </div>
+      <div class="ar-story-scroll">${myTile}${friendTiles}${emptyHint}</div>
+    </div>`;
+  }
+
+  function getHomePillMeta(){
+    const groups=buildAuthorGroups();
+    const unseenCount=groups.filter(g=>!g.isSelf&&g.hasUnseen).reduce((a,g)=>a+1,0);
+    const hasOwn=groups.some(g=>g.isSelf);
+    return {unseenCount,hasOwn,totalStories:groups.length};
+  }
+
+  // ---- Story Image Compressor (< 220 KB JPEG/WebP) ----
+  function compressStoryPhoto(file){
+    return new Promise((resolve,reject)=>{
+      if(!file||!/^image\//.test(file.type)){reject(new Error('Please choose a valid image file'));return}
+      const rd=new FileReader();
+      rd.onerror=()=>reject(new Error('Could not read that image'));
+      rd.onload=()=>{
+        const im=new Image();
+        im.onerror=()=>reject(new Error('Could not decode that image'));
+        im.onload=()=>{
+          const maxW=720;
+          const scale=Math.min(1,maxW/Math.max(im.width,im.height));
+          const w=Math.max(120,Math.round(im.width*scale));
+          const h=Math.max(120,Math.round(im.height*scale));
+          const canvas=document.createElement('canvas');
+          canvas.width=w;canvas.height=h;
+          const ctx=canvas.getContext('2d');
+          ctx.fillStyle='#080b12';
+          ctx.fillRect(0,0,w,h);
+          ctx.drawImage(im,0,0,w,h);
+          let out=canvas.toDataURL('image/webp',0.78);
+          if(!out.startsWith('data:image/webp')||out.length>210000){
+            for(const [mw,q] of [[720,0.74],[640,0.62],[540,0.54],[440,0.46]]){
+              const sc=Math.min(1,mw/Math.max(im.width,im.height));
+              canvas.width=Math.max(120,Math.round(im.width*sc));
+              canvas.height=Math.max(120,Math.round(im.height*sc));
+              ctx.fillStyle='#080b12';
+              ctx.fillRect(0,0,canvas.width,canvas.height);
+              ctx.drawImage(im,0,0,canvas.width,canvas.height);
+              const cand=canvas.toDataURL('image/jpeg',q);
+              out=cand;
+              if(cand.length<=210000)break;
+            }
+          }
+          resolve(out);
+        };
+        im.src=rd.result;
+      };
+      rd.readAsDataURL(file);
+    });
+  }
+
+  // ---- Story Creator DOM & Music Fetch ----
+  const creatorModal=document.createElement('div');
+  creatorModal.id='arStoryCreator';
+  creatorModal.setAttribute('role','dialog');
+  creatorModal.setAttribute('aria-modal','true');
+  creatorModal.setAttribute('aria-label','Create Story');
+  document.body.appendChild(creatorModal);
+
+  if(!document.getElementById('stPhotoInput')){
+    const inp=document.createElement('input');
+    inp.type='file';
+    inp.id='stPhotoInput';
+    inp.accept='image/*';
+    inp.hidden=true;
+    document.body.appendChild(inp);
+    inp.addEventListener('change',async e=>{
+      const f=e.target.files&&e.target.files[0];
+      e.target.value='';
+      if(!f)return;
+      try{
+        const dataUrl=await compressStoryPhoto(f);
+        ST_STATE.mediaType='image';
+        ST_STATE.imageDataUrl=dataUrl;
+        renderCreator();
+        toast('📸 Photo added to story');
+      }catch(err){
+        toast((err&&err.message)||'Could not load photo');
+      }
+    });
+  }
+
+  let musicSearchSeq=0,musicDebounce=0;
+
+  async function loadTrendingMusic(genre){
+    const seq=++musicSearchSeq;
+    ST_STATE.musicGenre=genre||'all';
+    ST_STATE.musicLoading=true;
+    ST_STATE.musicErr='';
+    renderCreatorMusicOnly();
+    try{
+      const r=await fetch('/api/music/trending?genre='+encodeURIComponent(ST_STATE.musicGenre));
+      const d=await r.json();
+      if(seq!==musicSearchSeq)return;
+      ST_STATE.musicLoading=false;
+      ST_STATE.musicTracks=Array.isArray(d&&d.tracks)?d.tracks:[];
+      if(!ST_STATE.musicTracks.length)ST_STATE.musicErr='No trending tracks returned right now. Try searching any song above!';
+    }catch(err){
+      if(seq!==musicSearchSeq)return;
+      ST_STATE.musicLoading=false;
+      ST_STATE.musicErr='Could not reach music service.';
+    }
+    renderCreatorMusicOnly();
+  }
+
+  async function searchMusic(q){
+    const clean=String(q||'').trim();
+    if(clean.length<2){
+      loadTrendingMusic(ST_STATE.musicGenre);
+      return;
+    }
+    const seq=++musicSearchSeq;
+    ST_STATE.musicLoading=true;
+    ST_STATE.musicErr='';
+    renderCreatorMusicOnly();
+    try{
+      const r=await fetch('/api/music/search?q='+encodeURIComponent(clean));
+      const d=await r.json();
+      if(seq!==musicSearchSeq)return;
+      ST_STATE.musicLoading=false;
+      ST_STATE.musicTracks=Array.isArray(d&&d.tracks)?d.tracks:[];
+      if(!ST_STATE.musicTracks.length)ST_STATE.musicErr='No playable song previews matched "'+clean+'".';
+    }catch(err){
+      if(seq!==musicSearchSeq)return;
+      ST_STATE.musicLoading=false;
+      ST_STATE.musicErr='Song search failed — check your connection.';
+    }
+    renderCreatorMusicOnly();
+  }
+
+  function stopPreviewAudio(){
+    try{previewAudio.pause()}catch(e){}
+    ST_STATE.previewPlayingId='';
+  }
+
+  function toggleTrackPreview(track,startSec){
+    if(!track||!track.previewUrl)return;
+    if(ST_STATE.previewPlayingId===track.id&&!previewAudio.paused){
+      stopPreviewAudio();
+      renderCreatorMusicOnly();
+      return;
+    }
+    try{
+      previewAudio.src=track.previewUrl;
+      previewAudio.currentTime=Math.max(0,Math.min(25,Number(startSec)||0));
+      const p=previewAudio.play();
+      ST_STATE.previewPlayingId=track.id;
+      if(p&&typeof p.catch==='function'){
+        p.catch(()=>{ST_STATE.previewPlayingId='';toast('Tap play again to allow audio preview');renderCreatorMusicOnly()});
+      }
+    }catch(e){}
+    renderCreatorMusicOnly();
+  }
+
+  function renderMusicTrackSticker(song,paused){
+    if(!song)return '';
+    const art=song.coverUrl?`<img class="st-music-art ${paused?'':'st-spin'}" src="${esc(song.coverUrl)}" alt="" referrerpolicy="no-referrer">`:`<span class="st-music-art-fallback">🎵</span>`;
+    return `<div class="st-music-sticker">
+      ${art}
+      <div style="min-width:0;flex:1">
+        <div style="font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(song.title)}</div>
+        <div style="font-size:10.5px;opacity:.78;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(song.artist)}</div>
+      </div>
+      <span class="st-eq ${paused?'paused':''}"><i></i><i></i><i></i></span>
+    </div>`;
+  }
+
+  function buildCreatorMusicInnerHtml(){
+    const s=ST_STATE.selectedSong;
+    const selHtml=s?`<div style="padding:10px;border-radius:14px;background:color-mix(in srgb,var(--accent) 12%,transparent);border:1px solid color-mix(in srgb,var(--accent) 36%,transparent);display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;gap:9px">
+        ${s.coverUrl?`<img class="st-music-art" src="${esc(s.coverUrl)}" alt="" referrerpolicy="no-referrer">`:'<span class="st-music-art-fallback">🎵</span>'}
+        <div class="st-track-meta"><b>${esc(s.title)}</b><small>${esc(s.artist)} · 15s clip from ${ST_STATE.clipStartSec}s</small></div>
+        <button type="button" class="st-play-mini" data-st-prev-sel="1" aria-label="Preview clip">${ST_STATE.previewPlayingId===s.id?'⏸':'▶'}</button>
+        <button type="button" class="st-chip" data-st-clear-song="1">Remove</button>
+      </div>
+      <label style="display:flex;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);font-weight:700">
+        <span>Clip Start (${ST_STATE.clipStartSec}s)</span>
+        <input type="range" id="stClipRange" min="0" max="15" step="1" value="${ST_STATE.clipStartSec}" style="flex:1;accent-color:var(--accent)">
+      </label>
+    </div>`:'';
+
+    const listHtml=ST_STATE.musicLoading?`<p class="ar-sub" style="text-align:center;padding:18px 0">Searching trending tracks…</p>`:
+      ST_STATE.musicErr?`<p class="ar-sub" style="text-align:center;padding:14px 0;color:var(--warn)">${esc(ST_STATE.musicErr)}</p>`:
+      `<div class="st-music-list">${(ST_STATE.musicTracks||[]).map(t=>{
+        const isSel=Boolean(s&&s.id===t.id);
+        const isPlay=ST_STATE.previewPlayingId===t.id;
+        return `<div class="st-track-row ${isSel?'on':''}">
+          ${t.coverUrl?`<img class="st-music-art" src="${esc(t.coverUrl)}" alt="" referrerpolicy="no-referrer">`:'<span class="st-music-art-fallback">🎵</span>'}
+          <div class="st-track-meta"><b>${esc(t.title)}</b><small>${esc(t.artist)}${t.genre?' · '+esc(t.genre):''}</small></div>
+          <button type="button" class="st-play-mini" data-st-play-id="${esc(t.id)}" aria-label="Preview song">${isPlay?'⏸':'▶'}</button>
+          <button type="button" class="st-use-btn" data-st-pick-id="${esc(t.id)}">${isSel?'Added ✓':'Use'}</button>
+        </div>`;
+      }).join('')}</div>`;
+
+    return `${selHtml}
+    <input class="ar-in" id="stMusicSearch" type="search" placeholder="Search trending songs, Arijit, Phonk, Lo-Fi…" value="${esc(ST_STATE.musicQuery)}" autocomplete="off" style="padding:10px 13px;font-size:13.5px">
+    <div class="st-chip-row">${GENRES.map(g=>`<button type="button" class="st-chip ${ST_STATE.musicGenre===g.id&&!ST_STATE.musicQuery.trim()?'on':''}" data-st-genre="${g.id}">${g.label}</button>`).join('')}</div>
+    ${listHtml}`;
+  }
+
+  function renderCreatorMusicOnly(){
+    const el=document.getElementById('stMusicInner');
+    if(!el)return;
+    const ae=document.activeElement;
+    if(ae&&ae.id==='stMusicSearch'){
+      const listWrap=el.querySelector('.st-music-list, p.ar-sub');
+      const tmp=document.createElement('div');
+      tmp.innerHTML=buildCreatorMusicInnerHtml();
+      const newList=tmp.querySelector('.st-music-list, p.ar-sub');
+      if(listWrap&&newList)listWrap.replaceWith(newList);
+      return;
+    }
+    el.innerHTML=buildCreatorMusicInnerHtml();
+  }
+
+  function renderCreator(){
+    if(!ST_STATE.creatorOpen){creatorModal.innerHTML='';return}
+    const stickerTxt=ST_STATE.stickerKind==='none'?'':(ST_STATE.stickerLabel||currentFocusSummarySticker(ST_STATE.stickerKind));
+    const hasPhoto=ST_STATE.mediaType==='image'&&safePhotoUrl(ST_STATE.imageDataUrl);
+    const previewCls=hasPhoto?'':'st-bg-'+esc(ST_STATE.bgTheme);
+
+    creatorModal.innerHTML=`<div class="st-cr-box">
+      <div class="st-cr-top">
+        <h3>✨ Create Story</h3>
+        <button type="button" class="st-cr-close" data-st-cr="close" aria-label="Close">✕</button>
+      </div>
+      <div class="st-cr-scroll">
+        <div class="st-stage-preview ${previewCls}">
+          ${hasPhoto?`<img class="st-stage-img" src="${esc(ST_STATE.imageDataUrl)}" alt="Story photo">`:''}
+          <div class="st-stage-scrim"></div>
+          <div class="st-stage-body">
+            ${stickerTxt?`<div class="st-sticker-pill">${esc(stickerTxt)}</div>`:''}
+            ${ST_STATE.caption?`<div class="st-caption-text f-${esc(ST_STATE.fontStyle)}" style="color:${esc(ST_STATE.textColor)}">${esc(ST_STATE.caption)}</div>`:`<div class="st-caption-text f-sans" style="color:rgba(255,255,255,.55);font-size:14px">Add caption, photo or song…</div>`}
+            ${ST_STATE.selectedSong?renderMusicTrackSticker(ST_STATE.selectedSong,!ST_STATE.previewPlayingId):''}
+          </div>
+        </div>
+
+        <div class="st-chip-row">
+          <button type="button" class="st-chip" data-st-cr="pickPhoto">📷 ${hasPhoto?'Change Photo':'Upload Photo'}</button>
+          ${hasPhoto?`<button type="button" class="st-chip" data-st-cr="clearPhoto">Use Gradient Card</button>`:''}
+          <button type="button" class="st-chip ${ST_STATE.musicOpen||ST_STATE.selectedSong?'on':''}" data-st-cr="toggleMusic">🎵 ${ST_STATE.selectedSong?'Song Added':'Add Trending Song'}</button>
+        </div>
+
+        ${!hasPhoto?`<div class="st-swatch-row">
+          ${BG_THEMES.map(t=>`<button type="button" class="st-bg-dot st-bg-${t.id} ${ST_STATE.bgTheme===t.id?'on':''}" data-st-bg="${t.id}" title="${t.label}"></button>`).join('')}
+        </div>`:''}
+
+        <div>
+          <input class="ar-in" id="stCaptionIn" maxlength="180" placeholder="Write a study vibe caption…" value="${esc(ST_STATE.caption)}" autocomplete="off">
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+          <div class="st-chip-row">
+            ${FONT_STYLES.map(f=>`<button type="button" class="st-chip ${ST_STATE.fontStyle===f.id?'on':''}" data-st-font="${f.id}">${f.label}</button>`).join('')}
+          </div>
+          <div class="st-swatch-row">
+            ${TEXT_COLORS.map(c=>`<button type="button" class="st-color-dot ${ST_STATE.textColor===c?'on':''}" data-st-color="${c}" style="background:${c}" title="Text color"></button>`).join('')}
+          </div>
+        </div>
+
+        <div class="st-chip-row">
+          ${[['focus','⏱ Focus'],['streak','🔥 Streak'],['xp','⚡ XP'],['exam','🎓 Target'],['none','No Sticker']].map(([k,lbl])=>`<button type="button" class="st-chip ${ST_STATE.stickerKind===k?'on':''}" data-st-sticker="${k}">${lbl}</button>`).join('')}
+        </div>
+
+        ${ST_STATE.musicOpen?`<div class="st-music-box" id="stMusicInner">${buildCreatorMusicInnerHtml()}</div>`:''}
+
+        <button type="button" class="ar-prof-save" data-st-cr="publish" ${ST_STATE.sharing?'disabled':''} style="width:100%;margin-top:2px;background:linear-gradient(135deg,#f58529,#dd2a7b,#8134af);color:#fff">${ST_STATE.sharing?'Sharing to friends…':'Share Story to Friends ⚡'}</button>
+      </div>
+    </div>`;
+  }
+
+  function openCreator(){
+    if(!ST_STATE.user){
+      toast('Sign in inside Arena to share stories');
+      return;
+    }
+    ST_STATE.creatorOpen=true;
+    ST_STATE.sharing=false;
+    ST_STATE.musicOpen=true;
+    renderCreator();
+    creatorModal.classList.add('on');
+    if(!ST_STATE.musicTracks.length)loadTrendingMusic(ST_STATE.musicGenre);
+  }
+  function closeCreator(){
+    stopPreviewAudio();
+    ST_STATE.creatorOpen=false;
+    creatorModal.classList.remove('on');
+    creatorModal.innerHTML='';
+  }
+
+  creatorModal.addEventListener('input',e=>{
+    if(e.target.id==='stCaptionIn'){
+      ST_STATE.caption=e.target.value||'';
+      const capEl=creatorModal.querySelector('.st-caption-text');
+      if(capEl){
+        capEl.textContent=ST_STATE.caption||'Add caption, photo or song…';
+        capEl.style.color=ST_STATE.caption?ST_STATE.textColor:'rgba(255,255,255,.55)';
+      }
+    }else if(e.target.id==='stMusicSearch'){
+      ST_STATE.musicQuery=e.target.value||'';
+      clearTimeout(musicDebounce);
+      musicDebounce=setTimeout(()=>searchMusic(ST_STATE.musicQuery),280);
+    }else if(e.target.id==='stClipRange'){
+      ST_STATE.clipStartSec=Math.max(0,Math.min(15,Number(e.target.value)||0));
+      const lbl=e.target.previousElementSibling;
+      if(lbl)lbl.textContent='Clip Start ('+ST_STATE.clipStartSec+'s)';
+      if(ST_STATE.selectedSong&&ST_STATE.previewPlayingId===ST_STATE.selectedSong.id){
+        try{previewAudio.currentTime=ST_STATE.clipStartSec}catch(err){}
+      }
+    }
+  });
+
+  creatorModal.addEventListener('click',async e=>{
+    if(e.target===creatorModal){closeCreator();return}
+    const bgBtn=e.target.closest('[data-st-bg]');
+    if(bgBtn){ST_STATE.bgTheme=bgBtn.dataset.stBg||'sunset';renderCreator();return}
+    const colBtn=e.target.closest('[data-st-color]');
+    if(colBtn){ST_STATE.textColor=colBtn.dataset.stColor||'#ffffff';renderCreator();return}
+    const fontBtn=e.target.closest('[data-st-font]');
+    if(fontBtn){ST_STATE.fontStyle=fontBtn.dataset.stFont||'sans';renderCreator();return}
+    const stkBtn=e.target.closest('[data-st-sticker]');
+    if(stkBtn){ST_STATE.stickerKind=stkBtn.dataset.stSticker||'none';renderCreator();return}
+    const genBtn=e.target.closest('[data-st-genre]');
+    if(genBtn){ST_STATE.musicQuery='';loadTrendingMusic(genBtn.dataset.stGenre||'all');return}
+
+    const playBtn=e.target.closest('[data-st-play-id]');
+    if(playBtn){
+      const t=(ST_STATE.musicTracks||[]).find(x=>x.id===playBtn.dataset.stPlayId);
+      if(t)toggleTrackPreview(t,0);
+      return;
+    }
+    const prevSelBtn=e.target.closest('[data-st-prev-sel]');
+    if(prevSelBtn&&ST_STATE.selectedSong){
+      toggleTrackPreview(ST_STATE.selectedSong,ST_STATE.clipStartSec);
+      return;
+    }
+    const pickBtn=e.target.closest('[data-st-pick-id]');
+    if(pickBtn){
+      const t=(ST_STATE.musicTracks||[]).find(x=>x.id===pickBtn.dataset.stPickId);
+      if(t){
+        ST_STATE.selectedSong=t;
+        ST_STATE.clipStartSec=0;
+        toggleTrackPreview(t,0);
+        renderCreator();
+        toast('🎵 Attached '+t.title);
+      }
+      return;
+    }
+    const clrSongBtn=e.target.closest('[data-st-clear-song]');
+    if(clrSongBtn){
+      stopPreviewAudio();
+      ST_STATE.selectedSong=null;
+      renderCreator();
+      return;
+    }
+
+    const actBtn=e.target.closest('[data-st-cr]');
+    if(!actBtn)return;
+    const act=actBtn.dataset.stCr;
+    if(act==='close'){closeCreator();return}
+    if(act==='pickPhoto'){document.getElementById('stPhotoInput')?.click();return}
+    if(act==='clearPhoto'){ST_STATE.mediaType='card';ST_STATE.imageDataUrl='';renderCreator();return}
+    if(act==='toggleMusic'){
+      ST_STATE.musicOpen=!ST_STATE.musicOpen;
+      renderCreator();
+      if(ST_STATE.musicOpen&&!ST_STATE.musicTracks.length)loadTrendingMusic(ST_STATE.musicGenre);
+      return;
+    }
+    if(act==='publish'){
+      const fb=getFB();
+      if(!fb||!fb.publishStory||ST_STATE.sharing)return;
+      if(ST_STATE.mediaType==='card'&&!ST_STATE.caption.trim()&&!ST_STATE.selectedSong){
+        toast('Add a caption, photo, or trending song first!');
+        return;
+      }
+      stopPreviewAudio();
+      ST_STATE.sharing=true;
+      renderCreator();
+      try{
+        const friendUids=(ST_STATE.friends||[]).filter(f=>f.status==='accepted'&&f.uid).map(f=>f.uid);
+        const stickerLabel=ST_STATE.stickerKind==='none'?'':currentFocusSummarySticker(ST_STATE.stickerKind);
+        await fb.publishStory({
+          mediaType:ST_STATE.mediaType,
+          imageDataUrl:ST_STATE.mediaType==='image'?ST_STATE.imageDataUrl:'',
+          bgTheme:ST_STATE.bgTheme,
+          caption:ST_STATE.caption.trim(),
+          textColor:ST_STATE.textColor,
+          fontStyle:ST_STATE.fontStyle,
+          stickerKind:ST_STATE.stickerKind,
+          stickerLabel,
+          song:ST_STATE.selectedSong?{
+            id:ST_STATE.selectedSong.id,
+            title:ST_STATE.selectedSong.title,
+            artist:ST_STATE.selectedSong.artist,
+            coverUrl:ST_STATE.selectedSong.coverUrl,
+            previewUrl:ST_STATE.selectedSong.previewUrl,
+            clipStartSec:ST_STATE.clipStartSec
+          }:null,
+          friendUids
+        });
+        ST_STATE.caption='';
+        ST_STATE.imageDataUrl='';
+        ST_STATE.mediaType='card';
+        ST_STATE.selectedSong=null;
+        ST_STATE.clipStartSec=0;
+        closeCreator();
+        toast('✨ Story shared with friends!');
+      }catch(err){
+        ST_STATE.sharing=false;
+        renderCreator();
+        toast((err&&err.message)||'Could not share story');
+      }
+    }
+  });
+
+  // ---- Full-Screen Instagram Story Viewer ----
+  const viewerModal=document.createElement('div');
+  viewerModal.id='arStoryViewer';
+  viewerModal.setAttribute('role','dialog');
+  viewerModal.setAttribute('aria-modal','true');
+  viewerModal.setAttribute('aria-label','Story Viewer');
+  document.body.appendChild(viewerModal);
+
+  function stopViewerInsights(){
+    if(ST_STATE.unsubViews){try{ST_STATE.unsubViews()}catch(e){}ST_STATE.unsubViews=null}
+    if(ST_STATE.unsubReactions){try{ST_STATE.unsubReactions()}catch(e){}ST_STATE.unsubReactions=null}
+  }
+  function stopViewerAudio(){
+    try{viewerAudio.pause();viewerAudio.removeAttribute('src');viewerAudio.load()}catch(e){}
+  }
+  function currentGroup(){return ST_STATE.groups[ST_STATE.groupIdx]||null}
+  function currentSlide(){const g=currentGroup();return g&&g.slides[ST_STATE.slideIdx]?g.slides[ST_STATE.slideIdx]:null}
+  function slideDurationMs(slide){return (slide&&slide.hasSong&&slide.songPreviewUrl)?15000:5500}
+
+  function startSlideInsights(slide){
+    stopViewerInsights();
+    ST_STATE.viewsList=[];
+    ST_STATE.reactionsList=[];
+    if(!slide||!ST_STATE.user)return;
+    const fb=getFB();
+    if(!fb)return;
+    if(slide.authorUid===ST_STATE.user.id&&fb.subscribeStoryViews){
+      ST_STATE.unsubViews=fb.subscribeStoryViews(slide.id,slide.authorUid,list=>{
+        ST_STATE.viewsList=Array.isArray(list)?list:[];
+        patchSeenCounter();
+      });
+    }
+    if(fb.subscribeStoryReactions){
+      ST_STATE.unsubReactions=fb.subscribeStoryReactions(slide.id,slide.authorUid,list=>{
+        ST_STATE.reactionsList=Array.isArray(list)?list:[];
+        patchSeenCounter();
+      });
+    }
+  }
+
+  function patchSeenCounter(){
+    const bar=viewerModal.querySelector('.st-seen-bar');
+    if(bar){
+      const vc=ST_STATE.viewsList.length;
+      const rc=ST_STATE.reactionsList.length;
+      bar.innerHTML=`<span>👁 Seen by ${vc}</span><span>❤️ ${rc} reaction${rc===1?'':'s'} · Tap to view</span>`;
+    }
+    if(ST_STATE.drawerOpen){
+      const dBody=viewerModal.querySelector('.st-drawer-body');
+      if(dBody)dBody.innerHTML=buildDrawerBodyHtml();
+    }
+  }
+
+  function playSlideAudio(slide){
+    stopViewerAudio();
+    ST_STATE.autoplayBlocked=false;
+    if(!slide||!slide.hasSong||!slide.songPreviewUrl)return;
+    try{
+      viewerAudio.src=slide.songPreviewUrl;
+      viewerAudio.muted=ST_STATE.muted;
+      viewerAudio.currentTime=Math.max(0,Math.min(25,Number(slide.songClipStartSec)||0));
+      const p=viewerAudio.play();
+      if(p&&typeof p.catch==='function'){
+        p.catch(()=>{
+          ST_STATE.autoplayBlocked=true;
+          renderViewer();
+        });
+      }
+    }catch(e){}
+  }
+
+  function stepViewerTicker(ts){
+    if(!ST_STATE.viewerOpen)return;
+    const slide=currentSlide();
+    if(!slide){closeViewer();return}
+    if(!ST_STATE.lastTickTs)ST_STATE.lastTickTs=ts;
+    const dt=Math.min(120,ts-ST_STATE.lastTickTs);
+    ST_STATE.lastTickTs=ts;
+    if(!ST_STATE.paused&&!ST_STATE.drawerOpen&&!ST_STATE.heldPause){
+      ST_STATE.slideElapsedMs+=dt;
+      const dur=slideDurationMs(slide);
+      const fills=viewerModal.querySelectorAll('.st-prog-fill');
+      fills.forEach((f,idx)=>{
+        if(idx<ST_STATE.slideIdx)f.style.width='100%';
+        else if(idx>ST_STATE.slideIdx)f.style.width='0%';
+        else f.style.width=Math.min(100,(ST_STATE.slideElapsedMs/dur)*100)+'%';
+      });
+      if(ST_STATE.slideElapsedMs>=dur){
+        nextSlide();
+        return;
+      }
+    }
+    ST_STATE.rafId=requestAnimationFrame(stepViewerTicker);
+  }
+
+  function activateCurrentSlide(){
+    const g=currentGroup();
+    const slide=currentSlide();
+    if(!g||!slide){closeViewer();return}
+    ST_STATE.slideElapsedMs=0;
+    ST_STATE.lastTickTs=0;
+    ST_STATE.deleteArmedId='';
+    ST_STATE.drawerOpen=false;
+    if(ST_STATE.user&&slide.authorUid!==ST_STATE.user.id){
+      saveLocalSeen(ST_STATE.user.id,slide.id);
+      const fb=getFB();
+      if(fb&&fb.markStoryViewed)fb.markStoryViewed(slide.id,slide.authorUid).catch(()=>{});
+      refreshArenaTray();
+    }
+    renderViewer();
+    startSlideInsights(slide);
+    playSlideAudio(slide);
+    cancelAnimationFrame(ST_STATE.rafId);
+    ST_STATE.rafId=requestAnimationFrame(stepViewerTicker);
+  }
+
+  function nextSlide(){
+    const g=currentGroup();
+    if(!g){closeViewer();return}
+    if(ST_STATE.slideIdx<g.slides.length-1){
+      ST_STATE.slideIdx+=1;
+      activateCurrentSlide();
+    }else if(ST_STATE.groupIdx<ST_STATE.groups.length-1){
+      ST_STATE.groupIdx+=1;
+      ST_STATE.slideIdx=0;
+      activateCurrentSlide();
+    }else{
+      closeViewer();
+    }
+  }
+  function prevSlide(){
+    if(ST_STATE.slideIdx>0){
+      ST_STATE.slideIdx-=1;
+      activateCurrentSlide();
+    }else if(ST_STATE.groupIdx>0){
+      ST_STATE.groupIdx-=1;
+      const g=currentGroup();
+      ST_STATE.slideIdx=g?Math.max(0,g.slides.length-1):0;
+      activateCurrentSlide();
+    }else{
+      ST_STATE.slideElapsedMs=0;
+      activateCurrentSlide();
+    }
+  }
+
+  function syncViewerAfterLiveUpdate(){
+    const slide=currentSlide();
+    const slideId=slide?slide.id:'';
+    ST_STATE.groups=buildAuthorGroups();
+    if(!ST_STATE.groups.length){closeViewer();return}
+    if(slideId){
+      for(let gi=0;gi<ST_STATE.groups.length;gi++){
+        const si=ST_STATE.groups[gi].slides.findIndex(s=>s.id===slideId);
+        if(si>=0){ST_STATE.groupIdx=gi;ST_STATE.slideIdx=si;return}
+      }
+    }
+    ST_STATE.groupIdx=Math.min(ST_STATE.groupIdx,ST_STATE.groups.length-1);
+    ST_STATE.slideIdx=0;
+    activateCurrentSlide();
+  }
+
+  function openViewerForAuthor(authorUid){
+    const groups=buildAuthorGroups().filter(g=>g.slides.length>0);
+    if(!groups.length){openCreator();return}
+    let gi=groups.findIndex(g=>g.authorUid===authorUid);
+    if(gi<0)gi=0;
+    const g=groups[gi];
+    let si=g.slides.findIndex(s=>!ST_STATE.seenIds.has(s.id));
+    if(si<0)si=0;
+    ST_STATE.groups=groups;
+    ST_STATE.groupIdx=gi;
+    ST_STATE.slideIdx=si;
+    ST_STATE.viewerOpen=true;
+    ST_STATE.paused=false;
+    ST_STATE.heldPause=false;
+    viewerModal.classList.add('on');
+    activateCurrentSlide();
+  }
+
+  function closeViewer(){
+    cancelAnimationFrame(ST_STATE.rafId);
+    stopViewerAudio();
+    stopViewerInsights();
+    ST_STATE.viewerOpen=false;
+    ST_STATE.drawerOpen=false;
+    viewerModal.classList.remove('on');
+    viewerModal.innerHTML='';
+    refreshArenaTray();
+  }
+
+  function buildDrawerBodyHtml(){
+    const views=ST_STATE.viewsList||[];
+    const reacts=ST_STATE.reactionsList||[];
+    const rxHtml=reacts.length?`<div class="ar-dna-sec-title" style="margin-top:2px">Reactions &amp; Replies (${reacts.length})</div>
+      ${reacts.map(r=>`<div class="st-insight-row">
+        <div class="st-vw-av" style="width:34px;height:34px;border-color:var(--track);color:var(--text)">${renderAv(r.senderAvatarDataUrl,r.senderAvatarPreset,r.senderDisplayName)}</div>
+        <div style="flex:1;min-width:0">
+          <b style="font-size:13px">${esc(r.senderDisplayName)} <span style="font-weight:500;color:var(--muted)">@${esc(r.senderUsername)}</span></b>
+          <div style="font-size:12.5px;color:var(--text)">${esc(r.emoji)} ${esc(r.replyText||'reacted to your story')}</div>
+        </div>
+        <small style="color:var(--muted);font-size:11px">${timeAgo(r.createdAtMs)}</small>
+      </div>`).join('')}`:'';
+
+    const vwHtml=`<div class="ar-dna-sec-title" style="margin-top:${reacts.length?'10px':'2px'}">Viewed By (${views.length})</div>
+      ${views.length?views.map(v=>`<div class="st-insight-row">
+        <div class="st-vw-av" style="width:34px;height:34px;border-color:var(--track);color:var(--text)">${renderAv(v.viewerAvatarDataUrl,v.viewerAvatarPreset,v.viewerDisplayName)}</div>
+        <div style="flex:1;min-width:0">
+          <b style="font-size:13px">${esc(v.viewerDisplayName)}</b>
+          <div style="font-size:11.5px;color:var(--muted)">@${esc(v.viewerUsername)}</div>
+        </div>
+        <small style="color:var(--muted);font-size:11px">${timeAgo(v.viewedAtMs)}</small>
+      </div>`).join(''):'<p class="ar-sub" style="text-align:center;padding:12px 0">No friend views yet — your story is live for 24h!</p>'}`;
+
+    return rxHtml+vwHtml;
+  }
+
+  function launchEmojiBurst(emoji){
+    const frame=viewerModal.querySelector('.st-vw-frame');
+    if(!frame)return;
+    for(let i=0;i<5;i++){
+      const el=document.createElement('span');
+      el.className='st-float-burst';
+      el.textContent=emoji;
+      el.style.left=(20+Math.random()*60)+'%';
+      el.style.animationDelay=(i*70)+'ms';
+      frame.appendChild(el);
+      setTimeout(()=>el.remove(),1400);
+    }
+  }
+
+  function renderViewer(){
+    const g=currentGroup();
+    const s=currentSlide();
+    if(!ST_STATE.viewerOpen||!g||!s){viewerModal.innerHTML='';return}
+    const isOwner=Boolean(ST_STATE.user&&s.authorUid===ST_STATE.user.id);
+    const hasPhoto=s.mediaType==='image'&&safePhotoUrl(s.imageDataUrl);
+    const bgCls=hasPhoto?'':'st-bg-'+esc(s.bgTheme||'sunset');
+    const delArmed=ST_STATE.deleteArmedId===s.id;
+    const vc=ST_STATE.viewsList.length;
+    const rc=ST_STATE.reactionsList.length;
+
+    const songSticker=s.hasSong?renderMusicTrackSticker({
+      title:s.songTitle,
+      artist:s.songArtist,
+      coverUrl:s.songCoverUrl
+    },ST_STATE.paused||ST_STATE.muted||ST_STATE.autoplayBlocked):'';
+
+    viewerModal.innerHTML=`<div class="st-vw-frame ${bgCls}">
+      <div class="st-vw-media ${bgCls}">
+        ${hasPhoto?`<img class="st-vw-photo" src="${esc(s.imageDataUrl)}" alt="Story">`:''}
+        <div class="st-stage-scrim"></div>
+        <div class="st-stage-body">
+          ${s.stickerLabel?`<div class="st-sticker-pill">${esc(s.stickerLabel)}</div>`:''}
+          ${s.caption?`<div class="st-caption-text f-${esc(s.fontStyle||'sans')}" style="color:${esc(s.textColor||'#ffffff')}">${esc(s.caption)}</div>`:''}
+          ${songSticker}
+        </div>
+      </div>
+
+      <div class="st-vw-chrome-top">
+        <div class="st-prog-row">${g.slides.map((_,i)=>`<div class="st-prog-seg"><span class="st-prog-fill" style="width:${i<ST_STATE.slideIdx?100:0}%"></span></div>`).join('')}</div>
+        <div class="st-vw-head">
+          <div class="st-vw-author">
+            <div class="st-vw-av">${renderAv(g.avatarDataUrl,g.avatarPreset,g.displayName)}</div>
+            <div style="min-width:0">
+              <div style="display:flex;align-items:center;gap:6px">
+                <b style="font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(g.displayName)}</b>
+                <span style="font-size:11.5px;opacity:.75">${timeAgo(s.createdAtMs)}</span>
+              </div>
+              <div style="font-size:11.5px;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.hasSong?'♫ '+esc(s.songTitle)+' · '+esc(s.songArtist):'@'+esc(g.username)}</div>
+            </div>
+          </div>
+          <div class="st-vw-actions">
+            ${s.hasSong?`<button type="button" class="st-vw-ico-btn" data-st-vw="toggleMute" aria-label="Mute or unmute">${ST_STATE.muted?'🔇':'🔊'}</button>`:''}
+            ${isOwner?`<button type="button" class="st-vw-ico-btn" data-st-vw="delete" style="${delArmed?'background:#dc2626;width:auto;padding:0 12px;border-radius:99px;font-size:12px;font-weight:800':''}" aria-label="Delete story">${delArmed?'Confirm 🗑':'🗑'}</button>`:''}
+            <button type="button" class="st-vw-ico-btn" data-st-vw="close" aria-label="Close">✕</button>
+          </div>
+        </div>
+      </div>
+
+      ${(s.hasSong&&ST_STATE.autoplayBlocked)?`<button type="button" class="st-unmute-pill" data-st-vw="unlockAudio">🔊 Tap to play song audio</button>`:''}
+
+      <div class="st-vw-tapzones">
+        <div data-st-nav="prev"></div>
+        <div data-st-nav="next"></div>
+      </div>
+
+      <div class="st-vw-bottom">
+        ${isOwner?`<button type="button" class="st-seen-bar" data-st-vw="openDrawer">
+          <span>👁 Seen by ${vc}</span>
+          <span>❤️ ${rc} reaction${rc===1?'':'s'} · Tap to view</span>
+        </button>`:`
+          <div class="st-react-row">${QUICK_EMOJIS.map(em=>`<button type="button" class="st-react-emoji" data-st-react="${em}">${em}</button>`).join('')}</div>
+          <form class="st-reply-form" id="stReplyForm">
+            <input class="st-reply-in" id="stReplyIn" maxlength="140" placeholder="Reply to ${esc(g.displayName)}…" autocomplete="off">
+            <button type="submit" class="st-reply-send">Send</button>
+          </form>
+        `}
+      </div>
+
+      ${ST_STATE.drawerOpen?`<div class="st-drawer">
+        <div class="st-drawer-head">
+          <b style="font-size:14px">Story Activity</b>
+          <button type="button" class="st-cr-close" data-st-vw="closeDrawer" style="width:34px;height:34px" aria-label="Close">✕</button>
+        </div>
+        <div class="st-drawer-body">${buildDrawerBodyHtml()}</div>
+      </div>`:''}
+    </div>`;
+  }
+
+  viewerModal.addEventListener('pointerdown',e=>{
+    if(e.target.closest('button,input,form,.st-drawer,.st-vw-chrome-top,.st-vw-bottom'))return;
+    clearTimeout(ST_STATE.holdTimer);
+    ST_STATE.touchStartX=e.clientX||0;
+    ST_STATE.heldPause=false;
+    ST_STATE.holdTimer=setTimeout(()=>{
+      ST_STATE.heldPause=true;
+      try{if(!viewerAudio.paused)viewerAudio.pause()}catch(err){}
+    },165);
+  });
+  viewerModal.addEventListener('pointerup',e=>{
+    clearTimeout(ST_STATE.holdTimer);
+    const wasHeld=ST_STATE.heldPause;
+    ST_STATE.heldPause=false;
+    if(wasHeld){
+      const s=currentSlide();
+      if(s&&s.hasSong&&!ST_STATE.muted&&!ST_STATE.paused){
+        try{viewerAudio.play().catch(()=>{})}catch(err){}
+      }
+      return;
+    }
+    if(e.target.closest('button,input,form,.st-drawer,.st-vw-chrome-top,.st-vw-bottom'))return;
+    const dx=(e.clientX||0)-ST_STATE.touchStartX;
+    if(Math.abs(dx)>55){
+      if(dx<0){
+        if(ST_STATE.groupIdx<ST_STATE.groups.length-1){ST_STATE.groupIdx+=1;ST_STATE.slideIdx=0;activateCurrentSlide()}
+        else closeViewer();
+      }else{
+        if(ST_STATE.groupIdx>0){ST_STATE.groupIdx-=1;ST_STATE.slideIdx=0;activateCurrentSlide()}
+        else{ST_STATE.slideElapsedMs=0;activateCurrentSlide()}
+      }
+      return;
+    }
+    const navEl=e.target.closest('[data-st-nav]');
+    if(navEl){
+      if(navEl.dataset.stNav==='prev')prevSlide();
+      else nextSlide();
+    }
+  });
+  viewerModal.addEventListener('pointercancel',()=>{clearTimeout(ST_STATE.holdTimer);ST_STATE.heldPause=false});
+
+  viewerModal.addEventListener('focusin',e=>{
+    if(e.target&&e.target.id==='stReplyIn')ST_STATE.paused=true;
+  });
+  viewerModal.addEventListener('focusout',e=>{
+    if(e.target&&e.target.id==='stReplyIn'&&!ST_STATE.drawerOpen)ST_STATE.paused=false;
+  });
+
+  viewerModal.addEventListener('click',async e=>{
+    if(e.target===viewerModal){closeViewer();return}
+    const reactBtn=e.target.closest('[data-st-react]');
+    if(reactBtn){
+      const s=currentSlide();
+      const fb=getFB();
+      const em=reactBtn.dataset.stReact||'🔥';
+      launchEmojiBurst(em);
+      if(s&&fb&&fb.reactToStory){
+        fb.reactToStory({storyId:s.id,storyAuthorUid:s.authorUid,emoji:em,replyText:''}).catch(()=>{});
+      }
+      return;
+    }
+    const vwBtn=e.target.closest('[data-st-vw]');
+    if(!vwBtn)return;
+    const act=vwBtn.dataset.stVw;
+    if(act==='close'){closeViewer();return}
+    if(act==='toggleMute'){
+      ST_STATE.muted=!ST_STATE.muted;
+      viewerAudio.muted=ST_STATE.muted;
+      renderViewer();
+      return;
+    }
+    if(act==='unlockAudio'){
+      ST_STATE.autoplayBlocked=false;
+      ST_STATE.muted=false;
+      viewerAudio.muted=false;
+      try{await viewerAudio.play()}catch(err){}
+      renderViewer();
+      return;
+    }
+    if(act==='openDrawer'){
+      ST_STATE.drawerOpen=true;
+      ST_STATE.paused=true;
+      renderViewer();
+      return;
+    }
+    if(act==='closeDrawer'){
+      ST_STATE.drawerOpen=false;
+      ST_STATE.paused=false;
+      renderViewer();
+      return;
+    }
+    if(act==='delete'){
+      const s=currentSlide();
+      const fb=getFB();
+      if(!s||!fb||!fb.deleteStory)return;
+      if(ST_STATE.deleteArmedId!==s.id){
+        ST_STATE.deleteArmedId=s.id;
+        renderViewer();
+        return;
+      }
+      try{
+        await fb.deleteStory(s.id);
+        toast('🗑 Story deleted');
+        syncViewerAfterLiveUpdate();
+      }catch(err){
+        toast((err&&err.message)||'Could not delete story');
+      }
+    }
+  });
+
+  viewerModal.addEventListener('submit',async e=>{
+    if(e.target.id!=='stReplyForm')return;
+    e.preventDefault();
+    const inp=document.getElementById('stReplyIn');
+    const txt=(inp&&inp.value||'').trim();
+    if(!txt)return;
+    const s=currentSlide();
+    const fb=getFB();
+    if(!s||!fb||!fb.reactToStory)return;
+    if(inp){inp.value='';inp.blur()}
+    ST_STATE.paused=false;
+    launchEmojiBurst('💬');
+    try{
+      await fb.reactToStory({storyId:s.id,storyAuthorUid:s.authorUid,emoji:'💬',replyText:txt});
+      toast('💬 Reply sent to story');
+    }catch(err){
+      toast((err&&err.message)||'Could not send reply');
+    }
+  });
+
+  // ---- Global Click Handlers for Tray, Friend Rows & Home Quick Pill ----
+  document.addEventListener('click',e=>{
+    const plusBtn=e.target.closest('[data-story-act="openCreate"]');
+    if(plusBtn){
+      e.stopPropagation();
+      openCreator();
+      return;
+    }
+    const selfBtn=e.target.closest('[data-story-act="openSelf"]');
+    if(selfBtn){
+      if(ST_STATE.user)openViewerForAuthor(ST_STATE.user.id);
+      return;
+    }
+    const frStoryBtn=e.target.closest('[data-story-open-uid]');
+    if(frStoryBtn){
+      e.stopPropagation();
+      openViewerForAuthor(frStoryBtn.dataset.storyOpenUid);
+      return;
+    }
+    const homeBtn=e.target.closest('[data-story-home]');
+    if(homeBtn){
+      const mode=homeBtn.dataset.storyHome;
+      const groups=buildAuthorGroups().filter(g=>g.slides.length>0);
+      if(mode==='view'&&groups.length){
+        const firstUnseen=groups.find(g=>!g.isSelf&&g.hasUnseen)||groups[0];
+        openViewerForAuthor(firstUnseen.authorUid);
+      }else{
+        openCreator();
+      }
+    }
+  });
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'){
+      if(ST_STATE.viewerOpen){closeViewer()}
+      else if(ST_STATE.creatorOpen){closeCreator()}
+    }else if(ST_STATE.viewerOpen){
+      if(e.key==='ArrowRight')nextSlide();
+      else if(e.key==='ArrowLeft')prevSlide();
+    }
+  });
+
+  window.LeaveItStories={
+    onContext(ctx){
+      if(!ctx)return;
+      ST_STATE.user=ctx.user||null;
+      ST_STATE.friends=Array.isArray(ctx.friends)?ctx.friends:[];
+      ST_STATE.friendProfiles=ctx.friendProfiles||{};
+      subscribeStoriesForUser(ST_STATE.user);
+      refreshArenaTray();
+    },
+    renderTrayHtml,
+    getHomePillMeta,
+    hasFriendStory(uid){
+      const now=Date.now();
+      return (ST_STATE.stories||[]).some(s=>s.authorUid===uid&&s.expiresAtMs>now);
+    },
+    openCreator,
+    openViewerForAuthor
   };
 })();
 </script>

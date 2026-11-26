@@ -16,7 +16,7 @@ html[data-mode="light"]:not([data-diwali="on"])::before{opacity:.5}
 <script>try{var s=JSON.parse(localStorage.getItem('leaveit')||'{}'),m=s.mode;if(m==='light'||(m==='auto'&&matchMedia('(prefers-color-scheme: light)').matches))document.documentElement.dataset.mode='light'}catch(e){}</script>
 
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Hour</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -7224,7 +7224,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     'leaveit','leaveit_h','leaveit_m','leaveit_mkr','leaveit_mkch',
     'leaveit_x','leaveit_t','leaveit_u','leaveit_bk','leaveit_pl',
     'leaveit_rg','leaveit_hx','leaveit_activity_v38','leaveit_study_context_v38',
-    'leaveit_times_v86','leaveit_ext','leaveit_lily_v1'
+    'leaveit_times_v86','leaveit_ext','leaveit_lily_v1','leaveit_lily_sessions_v1'
   ];
   const PREF_KEYS=[
     'leaveit_ui','leaveit_um','leaveit_bat','leaveit_batv','leaveit_experience_mode'
@@ -7235,7 +7235,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     'leaveit','leaveit_h','leaveit_m','leaveit_mkr','leaveit_mkch',
     'leaveit_x','leaveit_t','leaveit_u','leaveit_bk','leaveit_pl',
     'leaveit_rg','leaveit_hx','leaveit_activity_v38','leaveit_study_context_v38',
-    'leaveit_times_v86','leaveit_ext','leaveit_lily_v1'
+    'leaveit_times_v86','leaveit_ext','leaveit_lily_v1','leaveit_lily_sessions_v1'
   ]);
 
   let syncApplying=false,syncInFlight=false,syncDebounce=null,syncedUidThisBoot=null;
@@ -7557,6 +7557,21 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       const cl=Array.isArray(c.leaveit_lily_v1)?c.leaveit_lily_v1:[];
       const gl=Array.isArray(g.leaveit_lily_v1)?g.leaveit_lily_v1:[];
       out.leaveit_lily_v1=cl.length>=gl.length?cl.slice(-40):gl.slice(-40);
+    }
+    if(c.leaveit_lily_sessions_v1||g.leaveit_lily_sessions_v1){
+      const cs=c.leaveit_lily_sessions_v1&&Array.isArray(c.leaveit_lily_sessions_v1.sessions)?c.leaveit_lily_sessions_v1.sessions:[];
+      const gs=g.leaveit_lily_sessions_v1&&Array.isArray(g.leaveit_lily_sessions_v1.sessions)?g.leaveit_lily_sessions_v1.sessions:[];
+      const byId=new Map();
+      [...gs,...cs].forEach((sess)=>{
+        if(!sess||!sess.id)return;
+        const prev=byId.get(sess.id);
+        if(!prev||Number(sess.updatedAt||0)>=Number(prev.updatedAt||0)){
+          byId.set(sess.id,sess);
+        }
+      });
+      const merged=Array.from(byId.values()).sort((a,b)=>Number(b.updatedAt||0)-Number(a.updatedAt||0)).slice(0,30);
+      const activeId=(c.leaveit_lily_sessions_v1&&c.leaveit_lily_sessions_v1.activeSessionId)||(g.leaveit_lily_sessions_v1&&g.leaveit_lily_sessions_v1.activeSessionId)||(merged[0]&&merged[0].id)||'';
+      out.leaveit_lily_sessions_v1={activeSessionId:activeId,sessions:merged};
     }
     PREF_KEYS.forEach(k=>{
       if(c[k]!==undefined)out[k]=c[k];
@@ -18975,9 +18990,89 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     margin-top: 2px;
   }
 
+  html.lily-lock,
+  body.lily-lock {
+    overflow: hidden !important;
+    overscroll-behavior: none !important;
+  }
+
+  #lilyFab {
+    position: fixed;
+    right: max(14px, env(safe-area-inset-right, 14px));
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 84px);
+    z-index: 9990;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 15px 10px 11px;
+    border-radius: 999px;
+    border: 1px solid color-mix(in srgb, #a5b4fc 52%, transparent);
+    background: linear-gradient(135deg, #4f46e5, #059669);
+    color: #fff;
+    font: inherit;
+    font-size: 13.5px;
+    font-weight: 850;
+    letter-spacing: -0.1px;
+    box-shadow: 0 12px 28px rgba(79, 70, 229, 0.42), 0 2px 8px rgba(0, 0, 0, 0.35);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+    transition: transform 0.16s ease, box-shadow 0.16s ease, opacity 0.18s ease;
+  }
+  #lilyFab:active {
+    cursor: grabbing;
+    transform: scale(0.95);
+  }
+  #lilyFab.dragging {
+    transition: none;
+    box-shadow: 0 18px 36px rgba(79, 70, 229, 0.55);
+    transform: scale(1.04);
+  }
+  #lilyFab.hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.86);
+  }
+  .lily-fab-orb {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+    flex: none;
+    position: relative;
+  }
+  .lily-fab-orb::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #34d399;
+    border: 1.5px solid #065f46;
+  }
+  @media (max-width: 420px) {
+    #lilyFab {
+      padding: 9px 13px 9px 10px;
+      font-size: 13px;
+    }
+  }
+  body.focus #lilyFab,
+  body.simple-mode #lilyFab.simple-hide {
+    display: none !important;
+  }
+
   #lilyModal {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100dvh;
     z-index: 99994;
     display: none;
     align-items: center;
@@ -18986,10 +19081,12 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     background: rgba(7, 9, 18, 0.78);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+    overscroll-behavior: contain;
   }
   #lilyModal.on { display: flex; }
 
   .lily-shell {
+    position: relative;
     width: min(820px, 100%);
     height: min(92dvh, 840px);
     max-height: 92dvh;
@@ -19006,19 +19103,44 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     #lilyModal { padding: 0; }
     .lily-shell {
       width: 100%;
-      height: 100dvh;
-      max-height: 100dvh;
+      height: 100%;
+      max-height: 100%;
       border-radius: 0;
       border: 0;
     }
+  }
+  #lilyModal.lily-kb-open {
+    padding: 0;
+    align-items: stretch;
+  }
+  #lilyModal.lily-kb-open .lily-shell {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    border: 0;
+  }
+  #lilyModal.lily-kb-open .lily-radar {
+    display: none;
+  }
+  #lilyModal.lily-kb-open .lily-quick-strip {
+    display: none;
+  }
+  #lilyModal.lily-kb-open .lily-head {
+    padding-top: max(8px, env(safe-area-inset-top, 8px));
+    padding-bottom: 8px;
+  }
+  #lilyModal.lily-kb-open .lily-dock {
+    padding-top: 6px;
+    padding-bottom: 8px;
   }
 
   .lily-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 10px;
-    padding: max(12px, env(safe-area-inset-top, 12px)) 14px 12px;
+    gap: 8px;
+    padding: max(12px, env(safe-area-inset-top, 12px)) 14px 10px;
     background: linear-gradient(135deg, color-mix(in srgb, #4f46e5 18%, var(--card)), color-mix(in srgb, #059669 10%, var(--card)));
     border-bottom: 1px solid var(--track);
     flex-shrink: 0;
@@ -19330,12 +19452,39 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 8px;
     margin-top: 8px;
     padding-top: 6px;
     border-top: 1px solid color-mix(in srgb, var(--track) 60%, transparent);
     font-size: 11px;
     color: var(--muted);
+  }
+  .lily-msg-acts {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+  .lily-user-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    max-width: min(640px, 88%);
+  }
+  .lily-msg-row.user .lily-user-wrap .lily-bubble {
+    max-width: 100%;
+  }
+  .lily-user-acts {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0.78;
+  }
+  .lily-user-acts:hover,
+  .lily-user-acts:focus-within {
+    opacity: 1;
   }
   .lily-copy-btn {
     border: 0;
@@ -19345,10 +19494,241 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     font-size: 11px;
     font-weight: 700;
     cursor: pointer;
-    padding: 2px 6px;
-    border-radius: 7px;
+    padding: 3px 7px;
+    border-radius: 8px;
   }
   .lily-copy-btn:hover { background: var(--track); color: var(--text); }
+  .lily-copy-btn.danger:hover {
+    background: color-mix(in srgb, var(--bad) 20%, transparent);
+    color: var(--bad);
+  }
+
+  /* Inline message editor */
+  .lily-edit-box {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: min(560px, 86vw);
+    background: var(--card);
+    border: 1.5px solid #818cf8;
+    border-radius: 16px;
+    padding: 10px;
+  }
+  .lily-edit-box textarea {
+    width: 100%;
+    min-height: 68px;
+    max-height: 180px;
+    resize: vertical;
+    border: 1px solid var(--track);
+    border-radius: 11px;
+    background: var(--bg);
+    color: var(--text);
+    font: inherit;
+    font-size: 15px;
+    line-height: 1.45;
+    padding: 8px 10px;
+    outline: none;
+  }
+  .lily-edit-acts {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .lily-mini-btn {
+    border: 1px solid var(--track);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+  }
+  .lily-mini-btn.primary {
+    border: 0;
+    background: linear-gradient(135deg, #6366f1, #10b981);
+    color: #fff;
+  }
+  .lily-mini-btn.danger {
+    border-color: color-mix(in srgb, var(--bad) 50%, var(--track));
+    background: color-mix(in srgb, var(--bad) 18%, var(--bg));
+    color: var(--bad);
+  }
+
+  /* Session title bar + saved sessions drawer */
+  .lily-sess-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 14px;
+    background: color-mix(in srgb, var(--card) 85%, var(--bg));
+    border-bottom: 1px solid var(--track);
+    flex-shrink: 0;
+  }
+  .lily-sess-title-btn {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--track);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 11px;
+    padding: 5px 10px;
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 750;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .lily-sess-title-btn span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .lily-sess-bar-acts {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+  }
+  .lily-sess-rename-form {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+  .lily-sess-rename-form input {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px solid #818cf8;
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 10px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+
+  .lily-drawer {
+    position: absolute;
+    inset: 0;
+    z-index: 15;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+  }
+  .lily-drawer.on {
+    display: flex;
+  }
+  .lily-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: max(12px, env(safe-area-inset-top, 12px)) 14px 12px;
+    background: var(--card);
+    border-bottom: 1px solid var(--track);
+  }
+  .lily-drawer-head h3 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 850;
+  }
+  .lily-drawer-tools {
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    border-bottom: 1px solid var(--track);
+    background: color-mix(in srgb, var(--card) 55%, var(--bg));
+  }
+  .lily-save-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .lily-save-row input,
+  .lily-sess-search {
+    flex: 1;
+    min-width: 0;
+    border: 1.5px solid var(--track);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 8px 11px;
+    font: inherit;
+    font-size: 14px;
+    outline: none;
+  }
+  .lily-save-row input:focus,
+  .lily-sess-search:focus {
+    border-color: #818cf8;
+  }
+  .lily-sess-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px 14px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .lily-sess-card {
+    border: 1px solid var(--track);
+    background: var(--card);
+    border-radius: 16px;
+    padding: 11px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .lily-sess-card.active {
+    border-color: color-mix(in srgb, #818cf8 70%, var(--track));
+    background: linear-gradient(135deg, color-mix(in srgb, #6366f1 12%, var(--card)), color-mix(in srgb, #10b981 8%, var(--card)));
+  }
+  .lily-sess-card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .lily-sess-open {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+  }
+  .lily-sess-open b {
+    display: block;
+    font-size: 14px;
+    font-weight: 800;
+    overflow-wrap: anywhere;
+  }
+  .lily-sess-open small {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .lily-sess-card-acts {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    flex: none;
+  }
 
   .lily-cursor {
     display: inline-block;
@@ -19401,6 +19781,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     border: 1.5px solid var(--track);
     border-radius: 18px;
     padding: 6px 8px 6px 12px;
+    transition: border-color 0.15s ease;
   }
   .lily-composer:focus-within {
     border-color: #818cf8;
@@ -19408,25 +19789,33 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   .lily-composer textarea {
     flex: 1;
     min-width: 0;
-    max-height: 120px;
+    max-height: 116px;
     min-height: 24px;
     resize: none;
     border: 0;
     background: transparent;
     color: var(--text);
     font: inherit;
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1.45;
     padding: 4px 0;
     outline: none;
     scrollbar-width: none;
+    touch-action: manipulation;
+    -webkit-user-select: text;
+    user-select: text;
+  }
+  @media (max-width: 640px) {
+    .lily-composer textarea {
+      font-size: 16px;
+    }
   }
   .lily-composer textarea::-webkit-scrollbar { display: none; }
   .lily-send-btn {
     flex: none;
     border: 0;
     border-radius: 13px;
-    padding: 8px 14px;
+    padding: 9px 14px;
     font: inherit;
     font-size: 13px;
     font-weight: 800;
@@ -19434,6 +19823,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     background: linear-gradient(135deg, #6366f1, #10b981);
     color: #fff;
     white-space: nowrap;
+    touch-action: manipulation;
   }
   .lily-send-btn.stop {
     background: var(--bad);
@@ -19447,6 +19837,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 <script id="v112-lily-js">
 (function () {
   const CHAT_KEY = 'leaveit_lily_v1';
+  const SESSIONS_KEY = 'leaveit_lily_sessions_v1';
+  const FAB_POS_KEY = 'leaveit_lily_fab_pos_v1';
   const MODE_KEY = 'leaveit_lily_mode_v1';
 
   const SUBJECT_NAMES = {
@@ -20036,28 +20428,256 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     return html.join('');
   }
 
+  function uid(prefix) {
+    return (prefix || 'id') + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function deriveTitleFromMessages(msgs) {
+    const firstUser = (msgs || []).find((m) => m && m.role === 'user' && typeof m.text === 'string' && m.text.trim());
+    if (!firstUser) return 'New Study Session';
+    const clean = firstUser.text.replace(/\s+/g, ' ').trim();
+    return clean.length > 40 ? clean.slice(0, 39).trim() + '…' : clean;
+  }
+
+  function sanitizeMessagesList(arr) {
+    if (!Array.isArray(arr)) return [];
+    return arr
+      .filter((m) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.text === 'string')
+      .slice(-40)
+      .map((m) => ({
+        id: typeof m.id === 'string' && m.id ? m.id : uid('m'),
+        role: m.role,
+        text: m.text,
+        error: Boolean(m.error),
+      }));
+  }
+
+  function createSessionObj(seedMsgs, title, customTitle, mode) {
+    const msgs = sanitizeMessagesList(seedMsgs || []);
+    const now = Date.now();
+    return {
+      id: uid('ls'),
+      title: (typeof title === 'string' && title.trim()) ? title.trim().slice(0, 60) : deriveTitleFromMessages(msgs),
+      customTitle: Boolean(customTitle && typeof title === 'string' && title.trim()),
+      mode: mode === 'quick' ? 'quick' : 'deep',
+      createdAt: now,
+      updatedAt: now,
+      messages: msgs,
+    };
+  }
+
+  function loadSessionsStore() {
+    const rawStore = readJson(SESSIONS_KEY, null);
+    let sessions = [];
+    let activeId = '';
+    if (rawStore && typeof rawStore === 'object' && Array.isArray(rawStore.sessions)) {
+      sessions = rawStore.sessions
+        .filter((s) => s && typeof s === 'object')
+        .slice(0, 30)
+        .map((s) => {
+          const msgs = sanitizeMessagesList(s.messages);
+          const hasCustom = Boolean(s.customTitle);
+          const rawTitle = typeof s.title === 'string' ? s.title.trim().slice(0, 60) : '';
+          return {
+            id: typeof s.id === 'string' && s.id ? s.id : uid('ls'),
+            title: rawTitle || deriveTitleFromMessages(msgs),
+            customTitle: hasCustom,
+            mode: s.mode === 'quick' ? 'quick' : 'deep',
+            createdAt: Number(s.createdAt) || Date.now(),
+            updatedAt: Number(s.updatedAt) || Date.now(),
+            messages: msgs,
+          };
+        });
+      activeId = typeof rawStore.activeSessionId === 'string' ? rawStore.activeSessionId : '';
+    }
+
+    if (!sessions.length) {
+      const legacy = sanitizeMessagesList(readJson(CHAT_KEY, []));
+      const first = createSessionObj(
+        legacy,
+        legacy.length ? deriveTitleFromMessages(legacy) : 'New Study Session',
+        false,
+        localStorage.getItem(MODE_KEY) === 'quick' ? 'quick' : 'deep',
+      );
+      sessions = [first];
+      activeId = first.id;
+    }
+
+    const active = sessions.find((s) => s.id === activeId) || sessions[0];
+    return { sessions, activeSessionId: active.id };
+  }
+
+  const initialStore = loadSessionsStore();
+
   const STATE = {
     open: false,
     mode: localStorage.getItem(MODE_KEY) === 'quick' ? 'quick' : 'deep',
-    messages: (() => {
-      const saved = readJson(CHAT_KEY, []);
-      return Array.isArray(saved) ? saved.filter((m) => m && m.role && typeof m.text === 'string').slice(-40) : [];
-    })(),
+    sessions: initialStore.sessions,
+    activeSessionId: initialStore.activeSessionId,
+    messages: [],
     streaming: false,
     abortCtrl: null,
     user: null,
     autoScroll: true,
     configured: null,
+    editingMsgIndex: -1,
+    headerRenaming: false,
+    drawerOpen: false,
+    drawerRenameId: '',
+    drawerDeleteId: '',
+    drawerSearch: '',
   };
 
+  function getActiveSession() {
+    let sess = STATE.sessions.find((s) => s.id === STATE.activeSessionId);
+    if (!sess) {
+      if (!STATE.sessions.length) {
+        sess = createSessionObj([], 'New Study Session', false, STATE.mode);
+        STATE.sessions.unshift(sess);
+      } else {
+        sess = STATE.sessions[0];
+      }
+      STATE.activeSessionId = sess.id;
+    }
+    return sess;
+  }
+
+  function syncStateMessagesFromActive() {
+    const sess = getActiveSession();
+    STATE.messages = sess.messages;
+    if (sess.mode === 'quick' || sess.mode === 'deep') {
+      STATE.mode = sess.mode;
+    }
+  }
+  syncStateMessagesFromActive();
+
   function persistMessages() {
-    writeJson(CHAT_KEY, STATE.messages.slice(-40));
+    const sess = getActiveSession();
+    sess.messages = STATE.messages.slice(-40);
+    sess.mode = STATE.mode;
+    sess.updatedAt = Date.now();
+    if (!sess.customTitle) {
+      sess.title = deriveTitleFromMessages(sess.messages);
+    }
+    STATE.sessions = STATE.sessions
+      .slice()
+      .sort((a, b) => Number(b.updatedAt || 0) - Number(a.updatedAt || 0))
+      .slice(0, 30);
+
+    writeJson(SESSIONS_KEY, {
+      activeSessionId: STATE.activeSessionId,
+      sessions: STATE.sessions,
+    });
+    writeJson(CHAT_KEY, sess.messages);
     try {
       if (window.LeaveItArenaSync && typeof window.LeaveItArenaSync.notifyStateChange === 'function') {
         window.LeaveItArenaSync.notifyStateChange(false);
       }
     } catch (e) {}
   }
+
+  // Build Floating Draggable AI Button (#lilyFab)
+  const fab = document.createElement('button');
+  fab.id = 'lilyFab';
+  fab.type = 'button';
+  fab.setAttribute('aria-label', 'Open AI Coach Lily');
+  fab.title = 'Ask Lily · AI Study Coach (drag to move)';
+  fab.innerHTML = `<span class="lily-fab-orb" aria-hidden="true">✦</span><span>Lily AI</span>`;
+  document.body.appendChild(fab);
+
+  function clampFabPosition(x, y) {
+    const w = fab.offsetWidth || 104;
+    const h = fab.offsetHeight || 44;
+    const maxX = Math.max(8, window.innerWidth - w - 8);
+    const maxY = Math.max(8, window.innerHeight - h - 8);
+    return {
+      x: Math.max(8, Math.min(maxX, x)),
+      y: Math.max(8, Math.min(maxY, y)),
+    };
+  }
+
+  function applySavedFabPosition() {
+    const saved = readJson(FAB_POS_KEY, null);
+    if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+      const pos = clampFabPosition(saved.x, saved.y);
+      fab.style.left = pos.x + 'px';
+      fab.style.top = pos.y + 'px';
+      fab.style.right = 'auto';
+      fab.style.bottom = 'auto';
+    }
+  }
+  applySavedFabPosition();
+
+  function updateFabVisibility() {
+    let hide = STATE.open || document.body.classList.contains('focus');
+    if (!hide) {
+      const sp = document.getElementById('splash');
+      if (sp && !sp.classList.contains('out') && getComputedStyle(sp).display !== 'none') hide = true;
+    }
+    if (!hide) {
+      for (const id of ['rgS', 'rgSh', 'hx', 'ts', 'gm', 'pf', 'nm', 'arProfModal', 'arPlayerModal', 'dyModal', 'dyEodModal', 'lilyModal']) {
+        const el = document.getElementById(id);
+        if (el && el.classList.contains('on')) {
+          hide = true;
+          break;
+        }
+      }
+    }
+    fab.classList.toggle('hidden', hide);
+  }
+
+  (function setupFabDrag() {
+    let startX = 0;
+    let startY = 0;
+    let origLeft = 0;
+    let origTop = 0;
+    let moved = false;
+    let pointerId = null;
+
+    fab.addEventListener('pointerdown', (e) => {
+      if (e.button && e.button !== 0) return;
+      pointerId = e.pointerId;
+      try { fab.setPointerCapture(pointerId); } catch (err) {}
+      const rect = fab.getBoundingClientRect();
+      startX = e.clientX;
+      startY = e.clientY;
+      origLeft = rect.left;
+      origTop = rect.top;
+      moved = false;
+    });
+
+    fab.addEventListener('pointermove', (e) => {
+      if (pointerId === null || e.pointerId !== pointerId) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (!moved && Math.hypot(dx, dy) > 7) {
+        moved = true;
+        fab.classList.add('dragging');
+      }
+      if (moved) {
+        const pos = clampFabPosition(origLeft + dx, origTop + dy);
+        fab.style.left = pos.x + 'px';
+        fab.style.top = pos.y + 'px';
+        fab.style.right = 'auto';
+        fab.style.bottom = 'auto';
+      }
+    });
+
+    const endDrag = (e) => {
+      if (pointerId === null || e.pointerId !== pointerId) return;
+      pointerId = null;
+      fab.classList.remove('dragging');
+      if (moved) {
+        const rect = fab.getBoundingClientRect();
+        const pos = clampFabPosition(rect.left, rect.top);
+        writeJson(FAB_POS_KEY, pos);
+      } else {
+        openLily();
+      }
+    };
+    fab.addEventListener('pointerup', endDrag);
+    fab.addEventListener('pointercancel', endDrag);
+  })();
 
   const modal = document.createElement('section');
   modal.id = 'lilyModal';
@@ -20077,21 +20697,34 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         </div>
         <div class="lily-head-acts">
           <button type="button" class="lily-mode-btn deep" id="lilyModeBtn" title="Toggle Deep Analysis vs Quick Drill">🧠 Deep</button>
-          <button type="button" class="lily-ic-btn" id="lilyResetBtn" title="New coaching session" aria-label="New session">↺</button>
+          <button type="button" class="lily-ic-btn" id="lilySessionsBtn" title="Saved Sessions &amp; History">🗂️ <span id="lilySessCount">1</span></button>
+          <button type="button" class="lily-ic-btn" id="lilyResetBtn" title="New titled session" aria-label="New session">+ New</button>
           <button type="button" class="lily-ic-btn" id="lilyCloseBtn" title="Close Lily" aria-label="Close">✕</button>
         </div>
       </header>
 
+      <div class="lily-sess-bar" id="lilySessBar"></div>
       <div class="lily-radar" id="lilyRadar"></div>
       <div class="lily-thread" id="lilyThread"></div>
 
       <footer class="lily-dock">
         <div class="lily-quick-strip" id="lilyQuickStrip"></div>
         <div class="lily-composer">
-          <textarea id="lilyInput" rows="1" maxlength="4000" placeholder="Ask Lily anything about your solves, skips, speed, mocks, or plan…"></textarea>
+          <textarea
+            id="lilyInput"
+            rows="1"
+            maxlength="4000"
+            enterkeyhint="send"
+            autocapitalize="sentences"
+            autocomplete="off"
+            spellcheck="true"
+            placeholder="Ask Lily anything about your solves, skips, speed, mocks, or plan…"
+          ></textarea>
           <button type="button" class="lily-send-btn" id="lilySendBtn">Send ↑</button>
         </div>
       </footer>
+
+      <aside class="lily-drawer" id="lilyDrawer" aria-label="Saved Chat Sessions"></aside>
     </div>
   `;
   document.body.appendChild(modal);
@@ -20103,6 +20736,39 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   const sendBtn = document.getElementById('lilySendBtn');
   const modeBtn = document.getElementById('lilyModeBtn');
   const subTxtEl = document.getElementById('lilySubTxt');
+  const sessBarEl = document.getElementById('lilySessBar');
+  const sessCountEl = document.getElementById('lilySessCount');
+  const drawerEl = document.getElementById('lilyDrawer');
+
+  let baseInnerHeight = window.innerHeight;
+  let activeStreamMdEl = null;
+
+  function syncLilyViewport() {
+    if (!STATE.open) return;
+    const vv = window.visualViewport;
+    const vh = vv ? Math.round(vv.height) : window.innerHeight;
+    const vTop = vv ? Math.max(0, Math.round(vv.offsetTop)) : 0;
+    if (!vv || vh > baseInnerHeight) {
+      baseInnerHeight = Math.max(baseInnerHeight, vh);
+    }
+    const kbOpen = (baseInnerHeight - vh > 95) || (document.activeElement === inputEl && vh < 560);
+    modal.classList.toggle('lily-kb-open', kbOpen);
+    if (window.innerWidth <= 640 || kbOpen) {
+      modal.style.top = vTop + 'px';
+      modal.style.height = vh + 'px';
+      modal.style.bottom = 'auto';
+    } else {
+      modal.style.top = '0px';
+      modal.style.height = '100dvh';
+      modal.style.bottom = '0px';
+    }
+    if (kbOpen) {
+      try {
+        if (window.scrollY !== 0) window.scrollTo(0, 0);
+      } catch (e) {}
+      requestAnimationFrame(() => scrollToBottom(false));
+    }
+  }
 
   function renderRadar() {
     const snap = collectLilySnapshot();
@@ -20134,12 +20800,127 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     modeBtn.title = isDeep ? 'Deep Reasoning Mode (tap for Quick Drill)' : 'Quick Drill Mode (tap for Deep Analysis)';
   }
 
+  function renderSessionBar() {
+    const sess = getActiveSession();
+    sessCountEl.textContent = String(STATE.sessions.length);
+
+    if (STATE.headerRenaming) {
+      sessBarEl.innerHTML = `
+        <form class="lily-sess-rename-form" id="lilyHeaderRenameForm">
+          <input type="text" id="lilyHeaderRenameInput" maxlength="60" value="${escHtml(sess.title)}" placeholder="Enter session title…" />
+          <button type="submit" class="lily-mini-btn primary">Save</button>
+          <button type="button" class="lily-mini-btn" id="lilyHeaderRenameCancel">Cancel</button>
+        </form>
+      `;
+      const inp = document.getElementById('lilyHeaderRenameInput');
+      if (inp) {
+        setTimeout(() => {
+          try { inp.focus(); inp.select(); } catch (e) {}
+        }, 20);
+      }
+      return;
+    }
+
+    sessBarEl.innerHTML = `
+      <button type="button" class="lily-sess-title-btn" id="lilySessOpenDrawerBtn" title="Open saved chat sessions">
+        <span>💬 ${escHtml(sess.title)}</span>
+      </button>
+      <div class="lily-sess-bar-acts">
+        <button type="button" class="lily-mini-btn" id="lilySessRenameBtn" title="Edit &amp; save session title">✎ Title</button>
+      </div>
+    `;
+  }
+
+  function formatRelDate(ts) {
+    if (!ts) return '';
+    try {
+      return new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
+  }
+
+  function renderDrawer() {
+    if (!STATE.drawerOpen) {
+      drawerEl.classList.remove('on');
+      return;
+    }
+    drawerEl.classList.add('on');
+    const active = getActiveSession();
+    const query = STATE.drawerSearch.trim().toLowerCase();
+    const filtered = STATE.sessions.filter((s) => {
+      if (!query) return true;
+      if ((s.title || '').toLowerCase().includes(query)) return true;
+      return (s.messages || []).some((m) => (m.text || '').toLowerCase().includes(query));
+    });
+
+    drawerEl.innerHTML = `
+      <div class="lily-drawer-head">
+        <h3>Saved Coaching Sessions (${STATE.sessions.length})</h3>
+        <div class="lily-sess-bar-acts">
+          <button type="button" class="lily-mini-btn primary" data-lily-new-session="1">+ New Chat</button>
+          <button type="button" class="lily-ic-btn" data-lily-close-drawer="1" aria-label="Close sessions">✕</button>
+        </div>
+      </div>
+      <div class="lily-drawer-tools">
+        <form class="lily-save-row" id="lilySaveTitleForm">
+          <input type="text" id="lilySaveTitleInput" maxlength="60" value="${escHtml(active.title)}" placeholder="Save current session title…" />
+          <button type="submit" class="lily-mini-btn primary">Save Title</button>
+        </form>
+        ${STATE.sessions.length >= 4 ? `<input type="search" class="lily-sess-search" id="lilySessSearch" value="${escHtml(STATE.drawerSearch)}" placeholder="Search saved sessions…" />` : ''}
+      </div>
+      <div class="lily-sess-list">
+        ${filtered.length ? filtered.map((s) => {
+          const isActive = s.id === STATE.activeSessionId;
+          const isRenaming = STATE.drawerRenameId === s.id;
+          const isDeleting = STATE.drawerDeleteId === s.id;
+          const msgCount = (s.messages || []).length;
+          return `
+            <div class="lily-sess-card${isActive ? ' active' : ''}">
+              ${isRenaming ? `
+                <form class="lily-sess-rename-form" data-lily-sess-rename-form="${escHtml(s.id)}">
+                  <input type="text" maxlength="60" value="${escHtml(s.title)}" placeholder="Session title…" />
+                  <button type="submit" class="lily-mini-btn primary">Save</button>
+                  <button type="button" class="lily-mini-btn" data-lily-sess-rename-cancel="1">Cancel</button>
+                </form>
+              ` : `
+                <div class="lily-sess-card-top">
+                  <button type="button" class="lily-sess-open" data-lily-switch-sess="${escHtml(s.id)}">
+                    <b>${isActive ? '● ' : ''}${escHtml(s.title)}</b>
+                    <small>${msgCount} msg${msgCount === 1 ? '' : 's'} · ${s.mode === 'quick' ? '⚡ Quick' : '🧠 Deep'} · ${escHtml(formatRelDate(s.updatedAt))}</small>
+                  </button>
+                  <div class="lily-sess-card-acts">
+                    <button type="button" class="lily-mini-btn" data-lily-sess-edit="${escHtml(s.id)}" title="Rename session">✎</button>
+                    ${isDeleting ? `
+                      <button type="button" class="lily-mini-btn danger" data-lily-sess-del-confirm="${escHtml(s.id)}">Confirm</button>
+                      <button type="button" class="lily-mini-btn" data-lily-sess-del-cancel="1">Keep</button>
+                    ` : `
+                      <button type="button" class="lily-mini-btn danger" data-lily-sess-del="${escHtml(s.id)}" title="Delete session">🗑</button>
+                    `}
+                  </div>
+                </div>
+              `}
+            </div>
+          `;
+        }).join('') : `<div class="empty" style="text-align:center;padding:30px 10px">No matching saved sessions.</div>`}
+      </div>
+    `;
+
+    if (STATE.drawerRenameId) {
+      const inp = drawerEl.querySelector('[data-lily-sess-rename-form] input');
+      if (inp) {
+        setTimeout(() => { try { inp.focus(); inp.select(); } catch (e) {} }, 20);
+      }
+    }
+  }
+
   function scrollToBottom(force) {
     if (!force && !STATE.autoScroll) return;
     threadEl.scrollTop = threadEl.scrollHeight;
   }
 
   function renderThread() {
+    activeStreamMdEl = null;
     if (!STATE.messages.length) {
       const snap = collectLilySnapshot();
       const firstName = escHtml((snap.profile.name || 'champ').split(' ')[0]);
@@ -20167,13 +20948,39 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     threadEl.innerHTML = STATE.messages
       .map((m, idx) => {
         const isLast = idx === STATE.messages.length - 1;
-        if (m.role === 'user') {
+        const isEditing = !STATE.streaming && STATE.editingMsgIndex === idx;
+
+        if (isEditing) {
           return `
-            <div class="lily-msg-row user">
-              <div class="lily-bubble">${escHtml(m.text)}</div>
+            <div class="lily-msg-row ${m.role === 'user' ? 'user' : 'assistant'}">
+              <div class="lily-edit-box">
+                <textarea id="lilyEditMsgInput" maxlength="4000">${escHtml(m.text)}</textarea>
+                <div class="lily-edit-acts">
+                  ${m.role === 'user' ? `<button type="button" class="lily-mini-btn primary" data-lily-edit-resend="${idx}">Save &amp; Resend</button>` : ''}
+                  <button type="button" class="lily-mini-btn primary" data-lily-edit-save="${idx}">Save</button>
+                  <button type="button" class="lily-mini-btn" data-lily-edit-cancel="1">Cancel</button>
+                </div>
+              </div>
             </div>
           `;
         }
+
+        if (m.role === 'user') {
+          return `
+            <div class="lily-msg-row user">
+              <div class="lily-user-wrap">
+                <div class="lily-bubble">${escHtml(m.text)}</div>
+                ${!STATE.streaming ? `
+                  <div class="lily-user-acts">
+                    <button type="button" class="lily-copy-btn" data-lily-edit-msg="${idx}">✎ Edit</button>
+                    <button type="button" class="lily-copy-btn danger" data-lily-del-msg="${idx}">🗑 Delete</button>
+                  </div>
+                ` : ''}
+              </div>
+            </div>
+          `;
+        }
+
         const isErr = Boolean(m.error);
         const bodyHtml = isErr
           ? `<p><b>Coach connection note:</b> ${escHtml(m.text)}</p>`
@@ -20183,16 +20990,16 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           <div class="lily-msg-row assistant${isErr ? ' error' : ''}">
             <div class="lily-msg-mini-av" aria-hidden="true">✦</div>
             <div class="lily-bubble">
-              <div class="lily-md">${bodyHtml}${cursor}</div>
+              <div class="lily-md" ${STATE.streaming && isLast ? 'id="lilyActiveStreamMd"' : ''}>${bodyHtml}${cursor}</div>
               ${
                 !STATE.streaming || !isLast
                   ? `<div class="lily-msg-foot">
                       <span>${isErr ? 'Unable to respond' : 'Grounded in your live Hour telemetry'}</span>
-                      ${
-                        !isErr && m.text
-                          ? `<button type="button" class="lily-copy-btn" data-lily-copy="${idx}">Copy</button>`
-                          : `<button type="button" class="lily-copy-btn" data-lily-retry="1">Retry</button>`
-                      }
+                      <span class="lily-msg-acts">
+                        ${!isErr && m.text ? `<button type="button" class="lily-copy-btn" data-lily-copy="${idx}">Copy</button>` : `<button type="button" class="lily-copy-btn" data-lily-retry="1">Retry</button>`}
+                        <button type="button" class="lily-copy-btn" data-lily-edit-msg="${idx}">✎ Edit</button>
+                        <button type="button" class="lily-copy-btn danger" data-lily-del-msg="${idx}">🗑</button>
+                      </span>
                     </div>`
                   : ''
               }
@@ -20202,6 +21009,15 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       })
       .join('');
 
+    if (STATE.streaming) {
+      activeStreamMdEl = document.getElementById('lilyActiveStreamMd');
+    }
+    if (STATE.editingMsgIndex >= 0) {
+      const editBox = document.getElementById('lilyEditMsgInput');
+      if (editBox) {
+        setTimeout(() => { try { editBox.focus(); } catch (e) {} }, 20);
+      }
+    }
     scrollToBottom(false);
   }
 
@@ -20229,9 +21045,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const text = String(rawText || '').trim();
     if (!text || STATE.streaming) return;
 
+    STATE.editingMsgIndex = -1;
     renderRadar();
-    STATE.messages.push({ role: 'user', text });
-    const assistantMsg = { role: 'assistant', text: '', error: false };
+    STATE.messages.push({ id: uid('m'), role: 'user', text });
+    const assistantMsg = { id: uid('m'), role: 'assistant', text: '', error: false };
     STATE.messages.push(assistantMsg);
     STATE.streaming = true;
     STATE.autoScroll = true;
@@ -20239,6 +21056,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
     inputEl.value = '';
     inputEl.style.height = 'auto';
+    persistMessages();
+    renderSessionBar();
     syncComposerState();
     renderThread();
     scrollToBottom(true);
@@ -20254,7 +21073,12 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       if (pendingFrame) return;
       pendingFrame = requestAnimationFrame(() => {
         pendingFrame = 0;
-        renderThread();
+        if (activeStreamMdEl) {
+          activeStreamMdEl.innerHTML = renderSafeMarkdown(assistantMsg.text) + '<span class="lily-cursor"></span>';
+          scrollToBottom(false);
+        } else {
+          renderThread();
+        }
       });
     };
 
@@ -20357,30 +21181,70 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       }
     } finally {
       if (pendingFrame) cancelAnimationFrame(pendingFrame);
+      activeStreamMdEl = null;
       STATE.streaming = false;
       STATE.abortCtrl = null;
       syncComposerState();
       persistMessages();
+      renderSessionBar();
       renderThread();
       scrollToBottom(false);
     }
   }
 
-  function openLily(initialPrompt) {
-    STATE.open = true;
+  function startNewSession(customTitle) {
+    if (STATE.streaming && STATE.abortCtrl) {
+      try { STATE.abortCtrl.abort(); } catch (e) {}
+    }
+    const current = getActiveSession();
+    // Reuse empty current session instead of cluttering with empty rows
+    if (current.messages.length === 0 && !customTitle) {
+      STATE.drawerOpen = false;
+      STATE.editingMsgIndex = -1;
+      renderSessionBar();
+      renderDrawer();
+      renderThread();
+      return;
+    }
+    const fresh = createSessionObj([], customTitle || 'New Study Session', Boolean(customTitle), STATE.mode);
+    STATE.sessions.unshift(fresh);
+    STATE.sessions = STATE.sessions.slice(0, 30);
+    STATE.activeSessionId = fresh.id;
+    STATE.messages = fresh.messages;
+    STATE.editingMsgIndex = -1;
+    STATE.drawerOpen = false;
+    STATE.headerRenaming = false;
+    persistMessages();
+    renderSessionBar();
+    renderDrawer();
     renderModeButton();
     renderRadar();
+    renderThread();
+  }
+
+  function openLily(initialPrompt) {
+    STATE.open = true;
+    baseInnerHeight = Math.max(baseInnerHeight, window.innerHeight);
+    document.documentElement.classList.add('lily-lock');
+    document.body.classList.add('lily-lock');
+    renderModeButton();
+    renderSessionBar();
+    renderRadar();
     renderQuickChips();
+    renderDrawer();
     renderThread();
     syncComposerState();
     modal.classList.add('on');
     modal.setAttribute('aria-hidden', 'false');
+    updateFabVisibility();
+    syncLilyViewport();
     void checkStatus();
     if (initialPrompt) {
       setTimeout(() => void sendMessage(initialPrompt), 60);
     } else {
       setTimeout(() => {
         try { inputEl.focus({ preventScroll: true }); } catch (e) {}
+        syncLilyViewport();
       }, 90);
     }
   }
@@ -20390,12 +21254,21 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       try { STATE.abortCtrl.abort(); } catch (e) {}
     }
     STATE.open = false;
-    modal.classList.remove('on');
+    STATE.drawerOpen = false;
+    STATE.headerRenaming = false;
+    STATE.editingMsgIndex = -1;
+    try { inputEl.blur(); } catch (e) {}
+    modal.classList.remove('on', 'lily-kb-open');
+    modal.style.top = '';
+    modal.style.height = '';
+    modal.style.bottom = '';
     modal.setAttribute('aria-hidden', 'true');
+    document.documentElement.classList.remove('lily-lock');
+    document.body.classList.remove('lily-lock');
+    updateFabVisibility();
   }
 
   function injectEntryPoints() {
-    // 1. Regain Home item
     const rgMain = document.getElementById('rgMain');
     if (rgMain && !document.getElementById('rgLilyBtn')) {
       const btn = document.createElement('button');
@@ -20415,7 +21288,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       }
     }
 
-    // 2. Regain "More" bottom sheet item
     const rgShB = document.getElementById('rgShB');
     if (rgShB) {
       const h3 = rgShB.querySelector('h3');
@@ -20433,7 +21305,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       }
     }
 
-    // 3. Stats tab CTA button inside Classic progress card
     const insightEl = document.getElementById('insight');
     if (insightEl && !document.getElementById('lilyStatsCta')) {
       const cta = document.createElement('button');
@@ -20448,18 +21319,17 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
   // Event listeners
   document.getElementById('lilyCloseBtn').onclick = closeLily;
-  document.getElementById('lilyResetBtn').onclick = () => {
-    if (STATE.streaming && STATE.abortCtrl) {
-      try { STATE.abortCtrl.abort(); } catch (e) {}
-    }
-    STATE.messages = [];
-    persistMessages();
-    renderRadar();
-    renderThread();
+  document.getElementById('lilyResetBtn').onclick = () => startNewSession();
+  document.getElementById('lilySessionsBtn').onclick = () => {
+    STATE.drawerOpen = !STATE.drawerOpen;
+    STATE.drawerRenameId = '';
+    STATE.drawerDeleteId = '';
+    renderDrawer();
   };
   modeBtn.onclick = () => {
     STATE.mode = STATE.mode === 'quick' ? 'deep' : 'quick';
     try { localStorage.setItem(MODE_KEY, STATE.mode); } catch (e) {}
+    persistMessages();
     renderModeButton();
   };
   sendBtn.onclick = () => {
@@ -20473,7 +21343,18 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   };
   inputEl.addEventListener('input', () => {
     inputEl.style.height = 'auto';
-    inputEl.style.height = Math.min(120, inputEl.scrollHeight) + 'px';
+    inputEl.style.height = Math.min(116, inputEl.scrollHeight) + 'px';
+  });
+  inputEl.addEventListener('focus', () => {
+    syncLilyViewport();
+    setTimeout(syncLilyViewport, 120);
+    setTimeout(() => {
+      syncLilyViewport();
+      scrollToBottom(true);
+    }, 320);
+  });
+  inputEl.addEventListener('blur', () => {
+    setTimeout(syncLilyViewport, 120);
   });
   inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -20484,11 +21365,170 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   threadEl.addEventListener('scroll', () => {
     const distFromBottom = threadEl.scrollHeight - threadEl.scrollTop - threadEl.clientHeight;
     STATE.autoScroll = distFromBottom < 48;
+  }, { passive: true });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', syncLilyViewport);
+    window.visualViewport.addEventListener('scroll', syncLilyViewport);
+  }
+  window.addEventListener('resize', () => {
+    if (!STATE.open) baseInnerHeight = window.innerHeight;
+    syncLilyViewport();
+    applySavedFabPosition();
+  });
+
+  modal.addEventListener('submit', (e) => {
+    if (e.target.id === 'lilyHeaderRenameForm') {
+      e.preventDefault();
+      const inp = document.getElementById('lilyHeaderRenameInput');
+      const val = inp ? inp.value.trim().slice(0, 60) : '';
+      const sess = getActiveSession();
+      if (val) {
+        sess.title = val;
+        sess.customTitle = true;
+      }
+      STATE.headerRenaming = false;
+      persistMessages();
+      renderSessionBar();
+      if (STATE.drawerOpen) renderDrawer();
+      return;
+    }
+    if (e.target.id === 'lilySaveTitleForm') {
+      e.preventDefault();
+      const inp = document.getElementById('lilySaveTitleInput');
+      const val = inp ? inp.value.trim().slice(0, 60) : '';
+      const sess = getActiveSession();
+      if (val) {
+        sess.title = val;
+        sess.customTitle = true;
+        persistMessages();
+        renderSessionBar();
+        renderDrawer();
+      }
+      return;
+    }
+    const renameForm = e.target.closest('[data-lily-sess-rename-form]');
+    if (renameForm) {
+      e.preventDefault();
+      const sid = renameForm.dataset.lilySessRenameForm;
+      const inp = renameForm.querySelector('input');
+      const val = inp ? inp.value.trim().slice(0, 60) : '';
+      const sess = STATE.sessions.find((s) => s.id === sid);
+      if (sess && val) {
+        sess.title = val;
+        sess.customTitle = true;
+        persistMessages();
+      }
+      STATE.drawerRenameId = '';
+      renderSessionBar();
+      renderDrawer();
+    }
+  });
+
+  modal.addEventListener('input', (e) => {
+    if (e.target.id === 'lilySessSearch') {
+      STATE.drawerSearch = e.target.value || '';
+      const pos = e.target.selectionStart || STATE.drawerSearch.length;
+      renderDrawer();
+      const freshInp = document.getElementById('lilySessSearch');
+      if (freshInp) {
+        try {
+          freshInp.focus();
+          freshInp.setSelectionRange(pos, pos);
+        } catch (err) {}
+      }
+    }
   });
 
   modal.addEventListener('click', (e) => {
     if (e.target === modal) {
       closeLily();
+      return;
+    }
+    if (e.target.closest('#lilySessOpenDrawerBtn')) {
+      STATE.drawerOpen = true;
+      STATE.drawerRenameId = '';
+      STATE.drawerDeleteId = '';
+      renderDrawer();
+      return;
+    }
+    if (e.target.closest('#lilySessRenameBtn')) {
+      STATE.headerRenaming = true;
+      renderSessionBar();
+      return;
+    }
+    if (e.target.closest('#lilyHeaderRenameCancel')) {
+      STATE.headerRenaming = false;
+      renderSessionBar();
+      return;
+    }
+    if (e.target.closest('[data-lily-close-drawer]')) {
+      STATE.drawerOpen = false;
+      renderDrawer();
+      return;
+    }
+    if (e.target.closest('[data-lily-new-session]')) {
+      startNewSession();
+      return;
+    }
+    const swBtn = e.target.closest('[data-lily-switch-sess]');
+    if (swBtn) {
+      if (STATE.streaming && STATE.abortCtrl) {
+        try { STATE.abortCtrl.abort(); } catch (err) {}
+      }
+      STATE.activeSessionId = swBtn.dataset.lilySwitchSess;
+      STATE.drawerOpen = false;
+      STATE.editingMsgIndex = -1;
+      syncStateMessagesFromActive();
+      persistMessages();
+      renderSessionBar();
+      renderModeButton();
+      renderDrawer();
+      renderThread();
+      return;
+    }
+    const sEditBtn = e.target.closest('[data-lily-sess-edit]');
+    if (sEditBtn) {
+      STATE.drawerRenameId = sEditBtn.dataset.lilySessEdit;
+      STATE.drawerDeleteId = '';
+      renderDrawer();
+      return;
+    }
+    if (e.target.closest('[data-lily-sess-rename-cancel]')) {
+      STATE.drawerRenameId = '';
+      renderDrawer();
+      return;
+    }
+    const sDelBtn = e.target.closest('[data-lily-sess-del]');
+    if (sDelBtn) {
+      STATE.drawerDeleteId = sDelBtn.dataset.lilySessDel;
+      STATE.drawerRenameId = '';
+      renderDrawer();
+      return;
+    }
+    if (e.target.closest('[data-lily-sess-del-cancel]')) {
+      STATE.drawerDeleteId = '';
+      renderDrawer();
+      return;
+    }
+    const sDelConf = e.target.closest('[data-lily-sess-del-confirm]');
+    if (sDelConf) {
+      const sid = sDelConf.dataset.lilySessDelConfirm;
+      STATE.sessions = STATE.sessions.filter((s) => s.id !== sid);
+      STATE.drawerDeleteId = '';
+      if (!STATE.sessions.length) {
+        const fresh = createSessionObj([], 'New Study Session', false, STATE.mode);
+        STATE.sessions = [fresh];
+      }
+      if (STATE.activeSessionId === sid) {
+        STATE.activeSessionId = STATE.sessions[0].id;
+        syncStateMessagesFromActive();
+      }
+      persistMessages();
+      renderSessionBar();
+      renderModeButton();
+      renderDrawer();
+      renderThread();
       return;
     }
     const qBtn = e.target.closest('[data-lily-q]');
@@ -20510,10 +21550,62 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       }
       return;
     }
+    const editMsgBtn = e.target.closest('[data-lily-edit-msg]');
+    if (editMsgBtn && !STATE.streaming) {
+      STATE.editingMsgIndex = Number(editMsgBtn.dataset.lilyEditMsg);
+      renderThread();
+      return;
+    }
+    if (e.target.closest('[data-lily-edit-cancel]')) {
+      STATE.editingMsgIndex = -1;
+      renderThread();
+      return;
+    }
+    const editSaveBtn = e.target.closest('[data-lily-edit-save]');
+    if (editSaveBtn) {
+      const idx = Number(editSaveBtn.dataset.lilyEditSave);
+      const inp = document.getElementById('lilyEditMsgInput');
+      const val = inp ? inp.value.trim() : '';
+      if (val && STATE.messages[idx]) {
+        STATE.messages[idx].text = val;
+        STATE.messages[idx].error = false;
+      }
+      STATE.editingMsgIndex = -1;
+      persistMessages();
+      renderSessionBar();
+      renderThread();
+      return;
+    }
+    const editResendBtn = e.target.closest('[data-lily-edit-resend]');
+    if (editResendBtn && !STATE.streaming) {
+      const idx = Number(editResendBtn.dataset.lilyEditResend);
+      const inp = document.getElementById('lilyEditMsgInput');
+      const val = inp ? inp.value.trim() : '';
+      STATE.editingMsgIndex = -1;
+      if (val) {
+        STATE.messages = STATE.messages.slice(0, idx);
+        persistMessages();
+        void sendMessage(val);
+      } else {
+        renderThread();
+      }
+      return;
+    }
+    const delMsgBtn = e.target.closest('[data-lily-del-msg]');
+    if (delMsgBtn && !STATE.streaming) {
+      const idx = Number(delMsgBtn.dataset.lilyDelMsg);
+      if (idx >= 0 && idx < STATE.messages.length) {
+        STATE.messages.splice(idx, 1);
+        if (STATE.editingMsgIndex === idx) STATE.editingMsgIndex = -1;
+        persistMessages();
+        renderSessionBar();
+        renderThread();
+      }
+      return;
+    }
     if (e.target.closest('[data-lily-retry]')) {
       const lastUser = [...STATE.messages].reverse().find((m) => m.role === 'user' && m.text);
       if (lastUser && !STATE.streaming) {
-        // Drop trailing error bubble and previous duplicate user turn cleanly before resending
         while (STATE.messages.length && (STATE.messages[STATE.messages.length - 1].error || STATE.messages[STATE.messages.length - 1] === lastUser)) {
           STATE.messages.pop();
         }
@@ -20523,15 +21615,27 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   });
 
   document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && STATE.open) closeLily();
+    if (e.key === 'Escape' && STATE.open) {
+      if (STATE.drawerOpen) {
+        STATE.drawerOpen = false;
+        renderDrawer();
+      } else {
+        closeLily();
+      }
+    }
   });
 
   function onAuthUser(user) {
     STATE.user = user || null;
-    const saved = readJson(CHAT_KEY, []);
-    STATE.messages = Array.isArray(saved) ? saved.filter((m) => m && m.role && typeof m.text === 'string').slice(-40) : [];
+    const loaded = loadSessionsStore();
+    STATE.sessions = loaded.sessions;
+    STATE.activeSessionId = loaded.activeSessionId;
+    syncStateMessagesFromActive();
     if (STATE.open) {
+      renderSessionBar();
+      renderModeButton();
       renderRadar();
+      renderDrawer();
       renderThread();
     }
   }
@@ -20545,6 +21649,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     if (rgShB) {
       new MutationObserver(() => injectEntryPoints()).observe(rgShB, { childList: true });
     }
+    new MutationObserver(() => updateFabVisibility()).observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class', 'data-tab'],
+    });
+    for (const watchId of ['rgS', 'rgSh', 'hx', 'ts', 'gm', 'pf', 'nm', 'arProfModal', 'arPlayerModal', 'dyModal', 'dyEodModal', 'splash']) {
+      const el = document.getElementById(watchId);
+      if (el) {
+        new MutationObserver(() => updateFabVisibility()).observe(el, {
+          attributes: true,
+          attributeFilter: ['class', 'style'],
+        });
+      }
+    }
   }
 
   window.LeaveItLily = {
@@ -20553,9 +21670,11 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     onAuthUser,
     collectSnapshot: collectLilySnapshot,
     refreshEntryPoints: injectEntryPoints,
+    newSession: startNewSession,
   };
 
   injectEntryPoints();
+  updateFabVisibility();
 })();
 </script>
 </body>

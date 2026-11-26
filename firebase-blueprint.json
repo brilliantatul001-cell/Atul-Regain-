@@ -793,6 +793,49 @@
         "createdAtMs",
         "createdAt"
       ]
+    },
+    "DiaryEntry": {
+      "title": "DiaryEntry",
+      "description": "Private owner-only daily reflection & closing-day journal entry keyed by local date YYYY-MM-DD.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "dateKey": { "type": "string", "minLength": 10, "maxLength": 10, "pattern": "^20[2-9][0-9]-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$" },
+        "title": { "type": "string", "maxLength": 80 },
+        "body": { "type": "string", "maxLength": 8000 },
+        "highlight": { "type": "string", "maxLength": 240 },
+        "tomorrowGoal": { "type": "string", "maxLength": 240 },
+        "mood": { "type": "string", "enum": ["", "calm", "focused", "proud", "tired", "grateful", "stressed"] },
+        "paperStyle": { "type": "string", "enum": ["ruled-yellow", "plain-cream", "ruled-white", "plain-white", "plain-night"] },
+        "inkStyle": { "type": "string", "enum": ["serif", "sans", "mono"] },
+        "focusMinutes": { "type": "number", "minimum": 0, "maximum": 1440 },
+        "questionsSolved": { "type": "number", "minimum": 0, "maximum": 2000 },
+        "tasksDone": { "type": "number", "minimum": 0, "maximum": 500 },
+        "wordCount": { "type": "number", "minimum": 0, "maximum": 3000 },
+        "createdAtMs": { "type": "number" },
+        "updatedAtMs": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "uid",
+        "dateKey",
+        "title",
+        "body",
+        "highlight",
+        "tomorrowGoal",
+        "mood",
+        "paperStyle",
+        "inkStyle",
+        "focusMinutes",
+        "questionsSolved",
+        "tasksDone",
+        "wordCount",
+        "createdAtMs",
+        "updatedAtMs",
+        "createdAt",
+        "updatedAt"
+      ]
     }
   },
   "firestore": {
@@ -807,6 +850,10 @@
     "/players/{userId}/backup/{backupId}": {
       "schema": { "$ref": "#/entities/AccountBackup" },
       "description": "Private owner-only full account progress snapshot across all study tools."
+    },
+    "/players/{userId}/diary/{entryId}": {
+      "schema": { "$ref": "#/entities/DiaryEntry" },
+      "description": "Private owner-only daily diary pad entries keyed by YYYY-MM-DD."
     },
     "/rooms/{roomCode}": {
       "schema": { "$ref": "#/entities/ArenaRoom" },

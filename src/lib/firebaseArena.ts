@@ -168,6 +168,42 @@ export interface StoryReactionEntry {
   createdAtMs: number;
 }
 
+export type DiaryMood =
+  | ''
+  | 'calm'
+  | 'focused'
+  | 'proud'
+  | 'tired'
+  | 'grateful'
+  | 'stressed';
+
+export type DiaryPaperStyle =
+  | 'ruled-yellow'
+  | 'plain-cream'
+  | 'ruled-white'
+  | 'plain-white'
+  | 'plain-night';
+
+export type DiaryInkStyle = 'serif' | 'sans' | 'mono';
+
+export interface DiaryEntryView {
+  uid: string;
+  dateKey: string;
+  title: string;
+  body: string;
+  highlight: string;
+  tomorrowGoal: string;
+  mood: DiaryMood;
+  paperStyle: DiaryPaperStyle;
+  inkStyle: DiaryInkStyle;
+  focusMinutes: number;
+  questionsSolved: number;
+  tasksDone: number;
+  wordCount: number;
+  createdAtMs: number;
+  updatedAtMs: number;
+}
+
 export interface ArenaUser {
   id: string;
   username: string;
@@ -3123,6 +3159,252 @@ export function subscribeStoryReactions(
   );
 }
 
+// ---- Private Owner-Only Daily Diary ----
+
+const DIARY_DATE_RE = /^20[2-9][0-9]-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/;
+const DIARY_MOODS = new Set<DiaryMood>([
+  '',
+  'calm',
+  'focused',
+  'proud',
+  'tired',
+  'grateful',
+  'stressed',
+]);
+const DIARY_PAPERS = new Set<DiaryPaperStyle>([
+  'ruled-yellow',
+  'plain-cream',
+  'ruled-white',
+  'plain-white',
+  'plain-night',
+]);
+const DIARY_INKS = new Set<DiaryInkStyle>(['serif', 'sans', 'mono']);
+
+function sanitizeDiaryDateKey(raw: string): string {
+  const s = String(raw || '').trim();
+  if (!DIARY_DATE_RE.test(s)) {
+    throw new Error('Invalid diary date.');
+  }
+  return s;
+}
+
+function sanitizeDiaryBody(raw: unknown, maxLen: number): string {
+  return String(raw ?? '')
+    .replace(/\r\n/g, '\n')
+    .replace(/\r/g, '\n')
+    .slice(0, maxLen);
+}
+
+function toDiaryEntryView(
+  uidFallback: string,
+  docId: string,
+  raw: Record<string, unknown>,
+): DiaryEntryView {
+  const moodRaw = String(raw.mood || '') as DiaryMood;
+  const paperRaw = String(raw.paperStyle || 'ruled-yellow') as DiaryPaperStyle;
+  const inkRaw = String(raw.inkStyle || 'serif') as DiaryInkStyle;
+  const body = sanitizeDiaryBody(raw.body, 8000);
+  const words = body.trim() ? body.trim().split(/\s+/).length : 0;
+  return {
+    uid: String(raw.uid || uidFallback),
+    dateKey: String(raw.dateKey || docId),
+    title: sanitizeTextField(raw.title, 80),
+    body,
+    highlight: sanitizeTextField(raw.highlight, 240),
+    tomorrowGoal: sanitizeTextField(raw.tomorrowGoal, 240),
+    mood: DIARY_MOODS.has(moodRaw) ? moodRaw : '',
+    paperStyle: DIARY_PAPERS.has(paperRaw) ? paperRaw : 'ruled-yellow',
+    inkStyle: DIARY_INKS.has(inkRaw) ? inkRaw : 'serif',
+    focusMinutes: Math.max(0, Math.min(1440, Math.round(Number(raw.focusMinutes || 0)))),
+    questionsSolved: Math.max(0, Math.min(2000, Math.round(Number(raw.questionsSolved || 0)))),
+    tasksDone: Math.max(0, Math.min(500, Math.round(Number(raw.tasksDone || 0)))),
+    wordCount: Math.max(0, Math.min(3000, Math.round(Number(raw.wordCount ?? words)))),
+    createdAtMs: Math.max(0, Number(raw.createdAtMs || 0)),
+    updatedAtMs: Math.max(0, Number(raw.updatedAtMs || 0)),
+  };
+}
+
+export function subscribeDiaryEntries(
+  cb: (entries: DiaryEntryView[]) => void,
+  onError?: (msg: string) => void,
+): Unsubscribe {
+  const fbUser = auth.currentUser;
+  if (!fbUser) {
+    cb([]);
+    return () => {};
+  }
+  const pathStr = `players/${fbUser.uid}/diary`;
+  const q = query(
+    collection(db, 'players', fbUser.uid, 'diary'),
+    where('uid', '==', fbUser.uid),
+    limit(365),
+  );
+  return onSnapshot(
+    q,
+    (snap) => {
+      const list: DiaryEntryView[] = snap.docs
+        .map((d) => toDiaryEntryView(fbUser.uid, d.id, d.data() as Record<string, unknown>))
+        .filter((e) => DIARY_DATE_RE.test(e.dateKey))
+        .sort((a, b) => b.dateKey.localeCompare(a.dateKey));
+      cb(list);
+    },
+    (error) => {
+      const friendly = reportFirestoreListenerError(error, OperationType.LIST, pathStr);
+      onError?.(friendly);
+    },
+  );
+}
+
+export async function saveDiaryEntry(params: {
+  dateKey: string;
+  title?: string;
+  body: string;
+  highlight?: string;
+  tomorrowGoal?: string;
+  mood?: DiaryMood;
+  paperStyle?: DiaryPaperStyle;
+  inkStyle?: DiaryInkStyle;
+  focusMinutes?: number;
+  questionsSolved?: number;
+  tasksDone?: number;
+}): Promise<DiaryEntryView> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required to save diary to account.');
+  await ensurePlayerProfile(fbUser);
+  const dateKey = sanitizeDiaryDateKey(params.dateKey);
+  const title = sanitizeTextField(params.title, 80);
+  const body = sanitizeDiaryBody(params.body, 8000);
+  const highlight = sanitizeTextField(params.highlight, 240);
+  const tomorrowGoal = sanitizeTextField(params.tomorrowGoal, 240);
+  const moodRaw = String(params.mood || '') as DiaryMood;
+  const mood: DiaryMood = DIARY_MOODS.has(moodRaw) ? moodRaw : '';
+  const paperRaw = String(params.paperStyle || 'ruled-yellow') as DiaryPaperStyle;
+  const paperStyle: DiaryPaperStyle = DIARY_PAPERS.has(paperRaw) ? paperRaw : 'ruled-yellow';
+  const inkRaw = String(params.inkStyle || 'serif') as DiaryInkStyle;
+  const inkStyle: DiaryInkStyle = DIARY_INKS.has(inkRaw) ? inkRaw : 'serif';
+  const focusMinutes = Math.max(0, Math.min(1440, Math.round(Number(params.focusMinutes || 0))));
+  const questionsSolved = Math.max(0, Math.min(2000, Math.round(Number(params.questionsSolved || 0))));
+  const tasksDone = Math.max(0, Math.min(500, Math.round(Number(params.tasksDone || 0))));
+  const wordCount = Math.min(
+    3000,
+    body.trim() ? body.trim().split(/\s+/).length : 0,
+  );
+  const nowMs = Date.now();
+  const entryRef = doc(db, 'players', fbUser.uid, 'diary', dateKey);
+  const docPath = `players/${fbUser.uid}/diary/${dateKey}`;
+
+  try {
+    const savedRaw = await runTransaction(db, async (tx) => {
+      const snap = await tx.get(entryRef);
+      if (snap.exists()) {
+        const existing = snap.data() as Record<string, unknown>;
+        const updatePayload = {
+          title,
+          body,
+          highlight,
+          tomorrowGoal,
+          mood,
+          paperStyle,
+          inkStyle,
+          focusMinutes,
+          questionsSolved,
+          tasksDone,
+          wordCount,
+          updatedAtMs: nowMs,
+          updatedAt: serverTimestamp(),
+        };
+        tx.update(entryRef, updatePayload);
+        return {
+          ...existing,
+          ...updatePayload,
+          uid: fbUser.uid,
+          dateKey,
+          createdAtMs: Number(existing.createdAtMs || nowMs),
+          updatedAtMs: nowMs,
+        };
+      } else {
+        const createPayload = {
+          uid: fbUser.uid,
+          dateKey,
+          title,
+          body,
+          highlight,
+          tomorrowGoal,
+          mood,
+          paperStyle,
+          inkStyle,
+          focusMinutes,
+          questionsSolved,
+          tasksDone,
+          wordCount,
+          createdAtMs: nowMs,
+          updatedAtMs: nowMs,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        };
+        tx.set(entryRef, createPayload);
+        return createPayload;
+      }
+    });
+    return toDiaryEntryView(fbUser.uid, dateKey, savedRaw);
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, docPath);
+  }
+}
+
+export async function deleteDiaryEntry(dateKey: string): Promise<void> {
+  const fbUser = auth.currentUser;
+  if (!fbUser) throw new Error('Sign in required.');
+  const cleanDate = sanitizeDiaryDateKey(dateKey);
+  const docPath = `players/${fbUser.uid}/diary/${cleanDate}`;
+  try {
+    await deleteDoc(doc(db, 'players', fbUser.uid, 'diary', cleanDate));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, docPath);
+  }
+}
+
+export async function importGuestDiaryEntries(
+  entries: Array<{
+    dateKey: string;
+    title?: string;
+    body: string;
+    highlight?: string;
+    tomorrowGoal?: string;
+    mood?: DiaryMood;
+    paperStyle?: DiaryPaperStyle;
+    inkStyle?: DiaryInkStyle;
+    focusMinutes?: number;
+    questionsSolved?: number;
+    tasksDone?: number;
+  }>,
+): Promise<number> {
+  const fbUser = auth.currentUser;
+  if (!fbUser || !Array.isArray(entries) || entries.length === 0) return 0;
+  await ensurePlayerProfile(fbUser);
+  let imported = 0;
+  for (const item of entries.slice(0, 60)) {
+    if (!item || !DIARY_DATE_RE.test(String(item.dateKey || ''))) continue;
+    const hasContent =
+      Boolean(String(item.body || '').trim()) ||
+      Boolean(String(item.title || '').trim()) ||
+      Boolean(String(item.highlight || '').trim()) ||
+      Boolean(String(item.tomorrowGoal || '').trim());
+    if (!hasContent) continue;
+    const cleanDate = String(item.dateKey).trim();
+    const entryRef = doc(db, 'players', fbUser.uid, 'diary', cleanDate);
+    try {
+      const snap = await getDoc(entryRef);
+      if (snap.exists()) continue;
+      await saveDiaryEntry({ ...item, dateKey: cleanDate });
+      imported++;
+    } catch {
+      // Skip failing individual guest import item without aborting rest
+    }
+  }
+  return imported;
+}
+
 export const firebaseArenaBridge = {
   signInWithGoogle: signInArenaWithGoogle,
   sendEmailSignInLink,
@@ -3169,6 +3451,10 @@ export const firebaseArenaBridge = {
   subscribeStoryViews,
   reactToStory,
   subscribeStoryReactions,
+  subscribeDiaryEntries,
+  saveDiaryEntry,
+  deleteDiaryEntry,
+  importGuestDiaryEntries,
   getDiagnostics: () => ({
     logs: getArenaLogs(),
     online: typeof navigator !== 'undefined' ? navigator.onLine : true,

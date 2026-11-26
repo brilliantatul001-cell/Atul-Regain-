@@ -385,6 +385,40 @@ service cloud.firestore {
       data.createdAt is timestamp;
     }
 
+    function isValidDiaryDateKey(k) {
+      return k is string && k.size() == 10 && k.matches('^20[2-9][0-9]-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$');
+    }
+
+    function isValidDiaryEntry(data) {
+      return data.keys().hasAll([
+        'uid', 'dateKey', 'title', 'body', 'highlight', 'tomorrowGoal',
+        'mood', 'paperStyle', 'inkStyle', 'focusMinutes', 'questionsSolved',
+        'tasksDone', 'wordCount', 'createdAtMs', 'updatedAtMs', 'createdAt', 'updatedAt'
+      ]) &&
+      data.keys().hasOnly([
+        'uid', 'dateKey', 'title', 'body', 'highlight', 'tomorrowGoal',
+        'mood', 'paperStyle', 'inkStyle', 'focusMinutes', 'questionsSolved',
+        'tasksDone', 'wordCount', 'createdAtMs', 'updatedAtMs', 'createdAt', 'updatedAt'
+      ]) &&
+      isValidId(data.uid) &&
+      isValidDiaryDateKey(data.dateKey) &&
+      data.title is string && data.title.size() <= 80 &&
+      data.body is string && data.body.size() <= 8000 &&
+      data.highlight is string && data.highlight.size() <= 240 &&
+      data.tomorrowGoal is string && data.tomorrowGoal.size() <= 240 &&
+      data.mood in ['', 'calm', 'focused', 'proud', 'tired', 'grateful', 'stressed'] &&
+      data.paperStyle in ['ruled-yellow', 'plain-cream', 'ruled-white', 'plain-white', 'plain-night'] &&
+      data.inkStyle in ['serif', 'sans', 'mono'] &&
+      data.focusMinutes is number && data.focusMinutes >= 0 && data.focusMinutes <= 1440 &&
+      data.questionsSolved is number && data.questionsSolved >= 0 && data.questionsSolved <= 2000 &&
+      data.tasksDone is number && data.tasksDone >= 0 && data.tasksDone <= 500 &&
+      data.wordCount is number && data.wordCount >= 0 && data.wordCount <= 3000 &&
+      data.createdAtMs is number && data.createdAtMs >= 0 && data.createdAtMs <= 9999999999999 &&
+      data.updatedAtMs is number && data.updatedAtMs >= 0 && data.updatedAtMs <= 9999999999999 &&
+      data.createdAt is timestamp &&
+      data.updatedAt is timestamp;
+    }
+
     match /players/{userId} {
       allow get: if isVerifiedUser() && isValidId(userId);
       allow list: if isVerifiedUser() && (resource.data.xp >= 0 || resource.data.username is string);
@@ -501,6 +535,40 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/players/$(userId));
 
         allow delete: if false;
+      }
+
+      match /diary/{entryId} {
+        allow get: if isOwner(userId) && isValidId(userId) && isValidDiaryDateKey(entryId);
+        allow list: if isOwner(userId) && isValidId(userId) && resource.data.uid == request.auth.uid;
+
+        allow create: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidDiaryDateKey(entryId) &&
+          isValidDiaryEntry(incoming()) &&
+          incoming().uid == request.auth.uid &&
+          incoming().dateKey == entryId &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time &&
+          exists(/databases/$(database)/documents/players/$(userId));
+
+        allow update: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidDiaryDateKey(entryId) &&
+          isValidDiaryEntry(incoming()) &&
+          incoming().uid == existing().uid &&
+          incoming().dateKey == existing().dateKey &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'title', 'body', 'highlight', 'tomorrowGoal', 'mood',
+            'paperStyle', 'inkStyle', 'focusMinutes', 'questionsSolved',
+            'tasksDone', 'wordCount', 'updatedAtMs', 'updatedAt'
+          ]) &&
+          exists(/databases/$(database)/documents/players/$(userId));
+
+        allow delete: if isOwner(userId) &&
+          isValidId(userId) &&
+          isValidDiaryDateKey(entryId);
       }
     }
 

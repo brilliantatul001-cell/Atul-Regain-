@@ -192,6 +192,22 @@ export const DIRTY_DOZEN_CASES: RuleAssertionCase[] = [
     expected: 'PERMISSION_DENIED',
     reason: 'create enforces senderUid == request.auth.uid and viewerUids membership',
   },
+  {
+    id: 23,
+    name: 'Cross-User Private Diary Access',
+    path: '/players/victim_uid/diary/2026-11-26',
+    operation: 'get',
+    expected: 'PERMISSION_DENIED',
+    reason: 'diary subcollection requires isOwner(userId) and verified email',
+  },
+  {
+    id: 24,
+    name: 'Diary Entry Oversize or Bad Date Key',
+    path: '/players/attacker_uid/diary/bad_key',
+    operation: 'create',
+    expected: 'PERMISSION_DENIED',
+    reason: 'isValidDiaryDateKey and isValidDiaryEntry strictly validate dateKey and bounds',
+  },
 ];
 
 // Static structural verification when running without local Firestore emulator
@@ -212,6 +228,7 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('isValidStory('), 'Must define isValidStory');
   assert.ok(rulesText.includes('isValidStoryView('), 'Must define isValidStoryView');
   assert.ok(rulesText.includes('isValidStoryReaction('), 'Must define isValidStoryReaction');
+  assert.ok(rulesText.includes('isValidDiaryEntry('), 'Must define isValidDiaryEntry');
   assert.ok(rulesText.includes("existing().status != 'finished'"), 'Must lock finished rooms');
   assert.ok(rulesText.includes("'task_completed'"), 'Must allow task_completed activity kind');
   assert.ok(rulesText.includes('activeTaskTitle.size() <= 60'), 'Must bound activeTaskTitle length');
@@ -220,6 +237,8 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('data.dailyGoalMin <= 720'), 'Must bound dailyGoalMin');
   assert.ok(rulesText.includes("'isOnline'") && rulesText.includes("'lastSeenAtMs'"), 'Must support bounded presence fields');
   assert.ok(rulesText.includes('match /stories/{storyId}'), 'Must secure stories collection and subcollections');
+  assert.ok(rulesText.includes('match /diary/{entryId}'), 'Must secure owner-only diary subcollection');
   assert.ok(rulesText.includes('data.captionX >= 5 && data.captionX <= 95'), 'Must bound story overlay coordinates');
 }
+
 

@@ -3952,7 +3952,8 @@ let previousOverflow='',previousFocus=null;
   if(o){previousOverflow=document.body.style.overflow;previousFocus=document.activeElement;document.body.style.overflow='hidden';hx.classList.add('on');hx.setAttribute('aria-hidden','false');requestAnimationFrame(()=>{draw();document.getElementById('hxQ').focus({preventScroll:true})})}
   else{hx.classList.remove('on');hx.setAttribute('aria-hidden','true');document.body.style.overflow=previousOverflow;if(previousFocus&&previousFocus.focus)previousFocus.focus({preventScroll:true})}
  }
-document.getElementById('focusBtn').insertAdjacentHTML('beforebegin','<button class="chip" id="dyBtn" aria-label="Daily Diary" title="Daily Diary">📓</button><button class="chip" id="hxBtn" aria-label="History" title="History">🕘</button>');
+document.getElementById('focusBtn').insertAdjacentHTML('beforebegin','<button class="chip" id="lilyBtn" aria-label="AI Coach Lily" title="Lily · AI Study Coach">✨ Lily</button><button class="chip" id="dyBtn" aria-label="Daily Diary" title="Daily Diary">📓</button><button class="chip" id="hxBtn" aria-label="History" title="History">🕘</button>');
+document.getElementById('lilyBtn').onclick=()=>{if(window.LeaveItLily)window.LeaveItLily.open()};
 document.getElementById('dyBtn').onclick=()=>{if(window.LeaveItDiary)window.LeaveItDiary.open()};
 document.getElementById('hxBtn').onclick=()=>show(true);
 hx.addEventListener('click',e=>{if(e.target===hx){show(false);return}const b=e.target.closest('button');if(!b)return;const d=b.dataset;
@@ -7223,7 +7224,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     'leaveit','leaveit_h','leaveit_m','leaveit_mkr','leaveit_mkch',
     'leaveit_x','leaveit_t','leaveit_u','leaveit_bk','leaveit_pl',
     'leaveit_rg','leaveit_hx','leaveit_activity_v38','leaveit_study_context_v38',
-    'leaveit_times_v86','leaveit_ext'
+    'leaveit_times_v86','leaveit_ext','leaveit_lily_v1'
   ];
   const PREF_KEYS=[
     'leaveit_ui','leaveit_um','leaveit_bat','leaveit_batv','leaveit_experience_mode'
@@ -7234,7 +7235,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     'leaveit','leaveit_h','leaveit_m','leaveit_mkr','leaveit_mkch',
     'leaveit_x','leaveit_t','leaveit_u','leaveit_bk','leaveit_pl',
     'leaveit_rg','leaveit_hx','leaveit_activity_v38','leaveit_study_context_v38',
-    'leaveit_times_v86','leaveit_ext'
+    'leaveit_times_v86','leaveit_ext','leaveit_lily_v1'
   ]);
 
   let syncApplying=false,syncInFlight=false,syncDebounce=null,syncedUidThisBoot=null;
@@ -7552,6 +7553,11 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
         cap:Object.assign({},gt.cap||{},ct.cap||{})
       };
     }
+    if(c.leaveit_lily_v1||g.leaveit_lily_v1){
+      const cl=Array.isArray(c.leaveit_lily_v1)?c.leaveit_lily_v1:[];
+      const gl=Array.isArray(g.leaveit_lily_v1)?g.leaveit_lily_v1:[];
+      out.leaveit_lily_v1=cl.length>=gl.length?cl.slice(-40):gl.slice(-40);
+    }
     PREF_KEYS.forEach(k=>{
       if(c[k]!==undefined)out[k]=c[k];
       else if(g[k]!==undefined)out[k]=g[k];
@@ -7808,6 +7814,9 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
       }
       if(window.LeaveItDiary&&typeof window.LeaveItDiary.onAuthUser==='function'){
         window.LeaveItDiary.onAuthUser(ST.user);
+      }
+      if(window.LeaveItLily&&typeof window.LeaveItLily.onAuthUser==='function'){
+        window.LeaveItLily.onAuthUser(ST.user);
       }
       if(typeof refreshTopLeftProfile==='function')refreshTopLeftProfile();
       if(isArenaVisible())renderArena();
@@ -12358,7 +12367,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const rgS=document.getElementById('rgS');
     if(rgS&&rgS.classList.contains('on'))return true;
     if(window.LeaveItStrictBlocker&&window.LeaveItStrictBlocker.isLocked&&window.LeaveItStrictBlocker.isLocked())return true;
-    for(const id of ['rgSh','hx','ts','gm','pf','arProfModal','arPlayerModal','dyModal','dyEodModal']){
+    for(const id of ['rgSh','hx','ts','gm','pf','arProfModal','arPlayerModal','dyModal','dyEodModal','lilyModal']){
       const el=document.getElementById(id);
       if(el&&el.classList.contains('on'))return true;
     }
@@ -18922,6 +18931,1608 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) setTimeout(() => checkEndOfDayTrigger(true), 1200);
   });
+})();
+</script>
+
+<!-- v112: Real-Time AI Study Coach "Lily" -->
+<style id="v112-lily-css">
+  #lilyBtn {
+    background: linear-gradient(135deg, color-mix(in srgb, #6366f1 24%, var(--card)), color-mix(in srgb, #10b981 18%, var(--card)));
+    border: 1px solid color-mix(in srgb, #818cf8 45%, var(--track));
+    color: var(--text);
+    font-weight: 800;
+    padding: 6px 11px;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+  @media (max-width: 390px) {
+    #lilyBtn { padding: 6px 8px; font-size: 12px; }
+  }
+
+  .lily-stats-cta {
+    margin-top: 12px;
+    width: 100%;
+    border: 1px solid color-mix(in srgb, #818cf8 42%, var(--track));
+    background: linear-gradient(135deg, color-mix(in srgb, #6366f1 16%, var(--card)), color-mix(in srgb, #10b981 12%, var(--card)));
+    color: var(--text);
+    border-radius: 15px;
+    padding: 11px 14px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    cursor: pointer;
+    text-align: left;
+  }
+  .lily-stats-cta small {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-top: 2px;
+  }
+
+  #lilyModal {
+    position: fixed;
+    inset: 0;
+    z-index: 99994;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: max(10px, env(safe-area-inset-top, 0px)) max(10px, env(safe-area-inset-right, 0px)) max(10px, env(safe-area-inset-bottom, 0px)) max(10px, env(safe-area-inset-left, 0px));
+    background: rgba(7, 9, 18, 0.78);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+  #lilyModal.on { display: flex; }
+
+  .lily-shell {
+    width: min(820px, 100%);
+    height: min(92dvh, 840px);
+    max-height: 92dvh;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid color-mix(in srgb, #818cf8 26%, var(--track));
+    border-radius: 26px;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.56);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  @media (max-width: 640px) {
+    #lilyModal { padding: 0; }
+    .lily-shell {
+      width: 100%;
+      height: 100dvh;
+      max-height: 100dvh;
+      border-radius: 0;
+      border: 0;
+    }
+  }
+
+  .lily-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: max(12px, env(safe-area-inset-top, 12px)) 14px 12px;
+    background: linear-gradient(135deg, color-mix(in srgb, #4f46e5 18%, var(--card)), color-mix(in srgb, #059669 10%, var(--card)));
+    border-bottom: 1px solid var(--track);
+    flex-shrink: 0;
+  }
+  .lily-id {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+  }
+  .lily-av {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #6366f1, #10b981);
+    color: #fff;
+    font-size: 20px;
+    font-weight: 900;
+    box-shadow: 0 6px 18px rgba(99, 102, 241, 0.35);
+    position: relative;
+  }
+  .lily-av::after {
+    content: "";
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #34d399;
+    border: 2px solid var(--card);
+  }
+  .lily-title-wrap { min-width: 0; }
+  .lily-title-wrap h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 850;
+    letter-spacing: -0.2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .lily-sub {
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 2px;
+  }
+  .lily-live-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #34d399;
+    flex: none;
+  }
+
+  .lily-head-acts {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: none;
+  }
+  .lily-mode-btn, .lily-ic-btn {
+    border: 1px solid var(--track);
+    background: color-mix(in srgb, var(--bg) 55%, var(--card));
+    color: var(--text);
+    border-radius: 12px;
+    padding: 7px 10px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .lily-mode-btn.deep {
+    border-color: color-mix(in srgb, #818cf8 55%, var(--track));
+    color: #a5b4fc;
+  }
+  .lily-ic-btn {
+    min-width: 34px;
+    padding: 7px 9px;
+  }
+
+  .lily-radar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-bottom: 1px solid var(--track);
+    background: color-mix(in srgb, var(--card) 75%, var(--bg));
+    overflow-x: auto;
+    scrollbar-width: none;
+    flex-shrink: 0;
+  }
+  .lily-radar::-webkit-scrollbar { display: none; }
+  .lily-stat-badge {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 9px;
+    border-radius: 10px;
+    background: var(--track);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .lily-stat-badge b { color: var(--text); font-variant-numeric: tabular-nums; }
+  .lily-stat-badge.ok b { color: var(--ok); }
+  .lily-stat-badge.warn b { color: var(--warn); }
+
+  .lily-thread {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 16px 14px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .lily-thread::-webkit-scrollbar { display: none; }
+
+  .lily-welcome {
+    margin: auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 8px 2px;
+  }
+  .lily-hero-card {
+    background: linear-gradient(145deg, color-mix(in srgb, #6366f1 14%, var(--card)), color-mix(in srgb, #10b981 9%, var(--card)));
+    border: 1px solid color-mix(in srgb, #818cf8 32%, var(--track));
+    border-radius: 20px;
+    padding: 16px;
+  }
+  .lily-hero-card h3 {
+    margin: 0 0 6px;
+    font-size: 17px;
+    font-weight: 850;
+  }
+  .lily-hero-card p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--muted);
+  }
+  .lily-starters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 8px;
+  }
+  .lily-starter {
+    text-align: left;
+    border: 1px solid var(--track);
+    background: var(--card);
+    color: var(--text);
+    border-radius: 16px;
+    padding: 12px 13px;
+    cursor: pointer;
+    font: inherit;
+    transition: border-color 0.15s, transform 0.12s;
+  }
+  .lily-starter:hover {
+    border-color: color-mix(in srgb, #818cf8 60%, var(--track));
+  }
+  .lily-starter:active { transform: scale(0.985); }
+  .lily-starter b {
+    display: block;
+    font-size: 13px;
+    font-weight: 800;
+    margin-bottom: 3px;
+  }
+  .lily-starter small {
+    display: block;
+    font-size: 11.5px;
+    line-height: 1.38;
+    color: var(--muted);
+  }
+
+  .lily-msg-row {
+    display: flex;
+    gap: 9px;
+    align-items: flex-start;
+    max-width: 100%;
+  }
+  .lily-msg-row.user {
+    justify-content: flex-end;
+  }
+  .lily-msg-mini-av {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    flex: none;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #6366f1, #10b981);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 900;
+    margin-top: 2px;
+  }
+  .lily-bubble {
+    max-width: min(640px, 88%);
+    border-radius: 18px;
+    padding: 11px 14px;
+    font-size: 14px;
+    line-height: 1.58;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .lily-msg-row.user .lily-bubble {
+    background: var(--accent);
+    color: #fff;
+    border-bottom-right-radius: 6px;
+    white-space: pre-wrap;
+  }
+  .lily-msg-row.assistant .lily-bubble {
+    background: var(--card);
+    border: 1px solid var(--track);
+    color: var(--text);
+    border-top-left-radius: 6px;
+    flex: 1;
+    max-width: min(680px, calc(100% - 38px));
+  }
+  .lily-msg-row.error .lily-bubble {
+    background: color-mix(in srgb, var(--bad) 14%, var(--card));
+    border: 1px solid color-mix(in srgb, var(--bad) 45%, var(--track));
+  }
+
+  /* Safe Markdown Typography inside Lily replies */
+  .lily-md h1, .lily-md h2, .lily-md h3, .lily-md h4 {
+    margin: 10px 0 5px;
+    font-size: 14.5px;
+    font-weight: 850;
+    color: var(--text);
+    line-height: 1.3;
+  }
+  .lily-md h1:first-child, .lily-md h2:first-child, .lily-md h3:first-child, .lily-md p:first-child {
+    margin-top: 0;
+  }
+  .lily-md p { margin: 0 0 8px; }
+  .lily-md p:last-child { margin-bottom: 0; }
+  .lily-md ul, .lily-md ol {
+    margin: 4px 0 9px;
+    padding-left: 19px;
+  }
+  .lily-md li { margin-bottom: 4px; }
+  .lily-md strong { color: var(--text); font-weight: 800; }
+  .lily-md code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 12.5px;
+    padding: 1px 5px;
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--track) 80%, transparent);
+  }
+  .lily-md pre {
+    margin: 8px 0;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--bg) 75%, #000);
+    border: 1px solid var(--track);
+    overflow-x: auto;
+    scrollbar-width: none;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .lily-md pre code { background: none; padding: 0; }
+  .lily-md blockquote {
+    margin: 6px 0 8px;
+    padding: 6px 10px;
+    border-left: 3px solid #818cf8;
+    background: color-mix(in srgb, #6366f1 9%, transparent);
+    border-radius: 0 10px 10px 0;
+    color: var(--text);
+  }
+  .lily-md table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 8px 0;
+    font-size: 12.5px;
+    display: block;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .lily-md th, .lily-md td {
+    border: 1px solid var(--track);
+    padding: 6px 8px;
+    text-align: left;
+  }
+  .lily-md th {
+    background: color-mix(in srgb, var(--track) 65%, transparent);
+    font-weight: 800;
+  }
+
+  .lily-msg-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid color-mix(in srgb, var(--track) 60%, transparent);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .lily-copy-btn {
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 6px;
+    border-radius: 7px;
+  }
+  .lily-copy-btn:hover { background: var(--track); color: var(--text); }
+
+  .lily-cursor {
+    display: inline-block;
+    width: 7px;
+    height: 14px;
+    margin-left: 3px;
+    vertical-align: text-bottom;
+    border-radius: 2px;
+    background: #818cf8;
+    animation: lilyBlink 0.9s steps(2, start) infinite;
+  }
+  @keyframes lilyBlink { to { opacity: 0.15; } }
+
+  .lily-dock {
+    flex-shrink: 0;
+    border-top: 1px solid var(--track);
+    background: var(--card);
+    padding: 8px 12px max(10px, env(safe-area-inset-bottom, 10px));
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .lily-quick-strip {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .lily-quick-strip::-webkit-scrollbar { display: none; }
+  .lily-qchip {
+    flex: none;
+    border: 1px solid var(--track);
+    background: var(--bg);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 6px 10px;
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .lily-qchip:hover { border-color: #818cf8; }
+
+  .lily-composer {
+    display: flex;
+    align-items: flex-end;
+    gap: 8px;
+    background: var(--bg);
+    border: 1.5px solid var(--track);
+    border-radius: 18px;
+    padding: 6px 8px 6px 12px;
+  }
+  .lily-composer:focus-within {
+    border-color: #818cf8;
+  }
+  .lily-composer textarea {
+    flex: 1;
+    min-width: 0;
+    max-height: 120px;
+    min-height: 24px;
+    resize: none;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    line-height: 1.45;
+    padding: 4px 0;
+    outline: none;
+    scrollbar-width: none;
+  }
+  .lily-composer textarea::-webkit-scrollbar { display: none; }
+  .lily-send-btn {
+    flex: none;
+    border: 0;
+    border-radius: 13px;
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    background: linear-gradient(135deg, #6366f1, #10b981);
+    color: #fff;
+    white-space: nowrap;
+  }
+  .lily-send-btn.stop {
+    background: var(--bad);
+  }
+  .lily-send-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+</style>
+
+<script id="v112-lily-js">
+(function () {
+  const CHAT_KEY = 'leaveit_lily_v1';
+  const MODE_KEY = 'leaveit_lily_mode_v1';
+
+  const SUBJECT_NAMES = {
+    P: 'Physics',
+    C: 'Chemistry',
+    M: 'Maths',
+    B: 'Biology',
+    E: 'English',
+    CS: 'Computer Science',
+    G: 'General',
+    O: 'Other',
+  };
+
+  const QUICK_PROMPTS = [
+    {
+      id: 'skips',
+      chip: '🔍 Audit skips & overtime',
+      title: 'Audit my skips & overtime',
+      desc: 'Pinpoint when you hold on too long vs leave cleanly on time.',
+      prompt: 'Audit my practice sessions, left-on-time discipline, and overtime/late skips. Where am I bleeding seconds or hitting ego traps, and what exact timer rule should I set?',
+    },
+    {
+      id: 'diagnosis',
+      chip: '📊 Full data diagnosis',
+      title: 'Full performance diagnosis',
+      desc: 'Deep read across questions, focus blocks, distractions & planner.',
+      prompt: 'Do a complete, honest performance diagnosis across all my live study data (questions, skips, focus minutes, app distractions, subjects, and planner completion). Highlight my #1 bottleneck and fix.',
+    },
+    {
+      id: 'pacing',
+      chip: '⏱️ Fix pacing & checkpoints',
+      title: 'Optimize my question timers',
+      desc: 'Compare your subject/chapter speeds against your clock limits.',
+      prompt: 'Analyze my subject-wise speed and chapter pacing samples against my question time limits. Which subjects or chapters need tighter or adjusted checkpoints?',
+    },
+    {
+      id: 'mocks',
+      chip: '📝 Mocks & weak chapters',
+      title: 'Mocks & upcoming exam prep',
+      desc: 'Review mock trends, test scores, slow chapters & deadlines.',
+      prompt: 'Review my mock papers, test scores, slowest chapters, and upcoming tests. Build a targeted attack plan for the next few days.',
+    },
+    {
+      id: 'today',
+      chip: '🎯 Today’s game plan',
+      title: 'Build today’s game plan',
+      desc: 'Uses today’s stats, remaining planner tasks & diary mood.',
+      prompt: 'Based on my progress so far today, pending planner tasks, distraction count, and recent diary reflection, give me a concrete block-by-block plan for the rest of today.',
+    },
+  ];
+
+  function readJson(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      return raw ? JSON.parse(raw) : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  function writeJson(key, val) {
+    try {
+      localStorage.setItem(key, JSON.stringify(val));
+    } catch (e) {}
+  }
+
+  function localDayKey(offsetDays) {
+    const dt = new Date();
+    if (offsetDays) dt.setDate(dt.getDate() - offsetDays);
+    return (
+      dt.getFullYear() +
+      '-' +
+      String(dt.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(dt.getDate()).padStart(2, '0')
+    );
+  }
+
+  function escHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;',
+    }[c]));
+  }
+
+  function daysBetweenKeys(fromKey, toKey) {
+    if (!fromKey || !toKey) return 0;
+    const a = new Date(fromKey + 'T00:00:00');
+    const b = new Date(toKey + 'T00:00:00');
+    if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 0;
+    return Math.round((b.getTime() - a.getTime()) / 86400000);
+  }
+
+  function computeLocalStreak(histMap, rgDaysMap) {
+    const active = new Set();
+    Object.entries(histMap || {}).forEach(([d, o]) => {
+      if (o && (o.q || o.s || o.l || o.k)) active.add(d);
+    });
+    Object.entries(rgDaysMap || {}).forEach(([d, o]) => {
+      if (o && Number(o.m || 0) > 0) active.add(d);
+    });
+    let streak = 0;
+    let offset = active.has(localDayKey(0)) ? 0 : 1;
+    while (active.has(localDayKey(offset)) && streak < 1000) {
+      streak++;
+      offset++;
+    }
+    return streak;
+  }
+
+  function collectLilySnapshot() {
+    const S = readJson('leaveit', {});
+    const H = readJson('leaveit_h', {});
+    const RG = readJson('leaveit_rg', {});
+    const M = readJson('leaveit_m', []);
+    const T = readJson('leaveit_t', []);
+    const U = readJson('leaveit_u', []);
+    const PL = readJson('leaveit_pl', {});
+    const BK = readJson('leaveit_bk', {});
+    const TM = readJson('leaveit_times_v86', {});
+    const HX = readJson('leaveit_hx', {});
+    const ACT = readJson('leaveit_activity_v38', []);
+    const DY = readJson('leaveit_diary_v1', {});
+    const X = readJson('leaveit_x', {});
+
+    const todayKey = localDayKey(0);
+    const weekAgoKey = localDayKey(6);
+    const monthAgoKey = localDayKey(29);
+    const rgDays = (RG && RG.days && typeof RG.days === 'object') ? RG.days : {};
+
+    // Today stats
+    const hToday = H[todayKey] || {};
+    const rgToday = rgDays[todayKey] || {};
+    const tAttempted = Number(hToday.q || 0);
+    const tSolved = Number(hToday.s || 0);
+    const tLeft = Number(hToday.l || 0);
+    const tSkip = Number(hToday.k || 0);
+    const tTimeout = Number(hToday.n || 0);
+    const tSec = Number(hToday.sec || 0);
+    const leaveDenom = tLeft + tSkip + tTimeout;
+
+    let activeTimerState = 'Idle';
+    try {
+      const rgSessionOn = document.getElementById('rgS')?.classList.contains('on');
+      const fmOn = document.body.classList.contains('focus');
+      if (rgSessionOn) {
+        const tm = document.getElementById('rgTm')?.textContent || '';
+        const ph = document.getElementById('rgPh')?.textContent || '';
+        activeTimerState = `Regain Focus Overlay (${ph} · ${tm})`;
+      } else if (fmOn) {
+        const tm = document.getElementById('fmT')?.textContent || '';
+        activeTimerState = `Classic Focus Mode (${tm})`;
+      } else if (document.getElementById('time')?.textContent) {
+        activeTimerState = `Ready (${document.getElementById('time').textContent.trim()} per Q)`;
+      }
+    } catch (e) {}
+
+    // 7d & 30d rollups + subject totals
+    const sum7 = { attempted: 0, solved: 0, leftOnTime: 0, overtimeSkips: 0, timedOut: 0, sec: 0, focusMin: 0, distractions: 0, awaySec: 0, activeDaysSet: new Set() };
+    const sum30 = { attempted: 0, solved: 0, leftOnTime: 0, overtimeSkips: 0, timedOut: 0, sec: 0, focusMin: 0, distractions: 0, awaySec: 0, activeDaysSet: new Set() };
+    const subjAgg = {};
+
+    const dursMap = (S && S.durs && typeof S.durs === 'object') ? S.durs : {};
+    const defaultDur = Number(S.dur || 90);
+
+    Object.entries(H || {}).forEach(([d, o]) => {
+      if (!o || typeof o !== 'object') return;
+      const q = Number(o.q || 0), s = Number(o.s || 0), l = Number(o.l || 0), k = Number(o.k || 0), n = Number(o.n || 0), sec = Number(o.sec || 0);
+      if (d >= weekAgoKey) {
+        sum7.attempted += q; sum7.solved += s; sum7.leftOnTime += l; sum7.overtimeSkips += k; sum7.timedOut += n; sum7.sec += sec;
+        if (q > 0 || sec > 0) sum7.activeDaysSet.add(d);
+      }
+      if (d >= monthAgoKey) {
+        sum30.attempted += q; sum30.solved += s; sum30.leftOnTime += l; sum30.overtimeSkips += k; sum30.timedOut += n; sum30.sec += sec;
+        if (q > 0 || sec > 0) sum30.activeDaysSet.add(d);
+        if (o.b && typeof o.b === 'object') {
+          Object.entries(o.b).forEach(([code, bVal]) => {
+            if (!bVal || typeof bVal !== 'object') return;
+            if (!subjAgg[code]) subjAgg[code] = { code, name: SUBJECT_NAMES[code] || code, attempted: 0, solved: 0, leftOnTime: 0, overtimeSkips: 0, sec: 0 };
+            subjAgg[code].attempted += Number(bVal.q || 0);
+            subjAgg[code].solved += Number(bVal.s || 0);
+            subjAgg[code].leftOnTime += Number(bVal.l || 0);
+            subjAgg[code].overtimeSkips += Number(bVal.k || 0) + Number(bVal.n || 0);
+            subjAgg[code].sec += Number(bVal.sec || 0);
+          });
+        }
+      }
+    });
+
+    Object.entries(rgDays).forEach(([d, o]) => {
+      if (!o || typeof o !== 'object') return;
+      const m = Number(o.m || 0), a = Number(o.a || 0), as = Number(o.as || 0);
+      if (d >= weekAgoKey) {
+        sum7.focusMin += m; sum7.distractions += a; sum7.awaySec += as;
+        if (m > 0) sum7.activeDaysSet.add(d);
+      }
+      if (d >= monthAgoKey) {
+        sum30.focusMin += m; sum30.distractions += a; sum30.awaySec += as;
+        if (m > 0) sum30.activeDaysSet.add(d);
+      }
+    });
+
+    const subjects = Object.values(subjAgg)
+      .filter((x) => x.attempted > 0)
+      .sort((a, b) => b.attempted - a.attempted)
+      .map((x) => ({
+        code: x.code,
+        name: x.name,
+        attempted: x.attempted,
+        solved: x.solved,
+        solvePct: x.attempted ? Math.round((x.solved / x.attempted) * 100) : 0,
+        leftOnTime: x.leftOnTime,
+        overtimeSkips: x.overtimeSkips,
+        avgSec: x.attempted ? Math.round(x.sec / x.attempted) : 0,
+        targetSec: Number(dursMap[x.code] || defaultDur),
+      }));
+
+    // Daily trend (last 14 active days)
+    const allDateKeys = Array.from(new Set([...Object.keys(H || {}), ...Object.keys(rgDays)]))
+      .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+      .sort()
+      .reverse()
+      .slice(0, 14);
+
+    const dailyTrend = allDateKeys.map((d) => {
+      const ho = H[d] || {};
+      const ro = rgDays[d] || {};
+      return {
+        date: d,
+        q: Number(ho.q || 0),
+        s: Number(ho.s || 0),
+        l: Number(ho.l || 0),
+        k: Number(ho.k || 0),
+        n: Number(ho.n || 0),
+        qMin: Math.round(Number(ho.sec || 0) / 60),
+        focusMin: Math.round(Number(ro.m || 0)),
+        distractions: Number(ro.a || 0),
+      };
+    });
+
+    // Recent events (questions, skips, focus, mocks, distractions)
+    const rawHx = Array.isArray(HX && HX.ev) ? HX.ev : [];
+    const recentEvents = [];
+    rawHx.slice(-45).reverse().forEach((ev) => {
+      if (!ev || typeof ev !== 'object') return;
+      const ts = Number(ev.ts || 0);
+      const atStr = ts ? new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : (ev.d || '');
+      recentEvents.push({
+        at: atStr,
+        kind: String(ev.k || 'event'),
+        outcome: String(ev.a || ev.t || ''),
+        subject: ev.b ? (SUBJECT_NAMES[ev.b] || ev.b) : '',
+        chapter: String(ev.ch || ''),
+        sec: Number(ev.sec || ev.dur || 0),
+        min: Number(ev.m || 0),
+        note: ev.t && ev.a ? String(ev.t) : '',
+      });
+    });
+    if (!recentEvents.length && Array.isArray(ACT)) {
+      ACT.slice(0, 25).forEach((ev) => {
+        if (!ev || typeof ev !== 'object') return;
+        recentEvents.push({
+          at: String(ev.at || '').slice(0, 19).replace('T', ' '),
+          kind: String(ev.type || 'activity'),
+          outcome: String(ev.title || ''),
+          note: String(ev.detail || ''),
+        });
+      });
+    }
+
+    // Chapter timing telemetry
+    const samplesMap = (TM && TM.samples && typeof TM.samples === 'object') ? TM.samples : {};
+    const capMap = (TM && TM.cap && typeof TM.cap === 'object') ? TM.cap : {};
+    const chapterTimes = Object.entries(samplesMap)
+      .map(([key, arr]) => {
+        const list = Array.isArray(arr) ? arr.map(Number).filter((x) => Number.isFinite(x) && x > 0) : [];
+        if (!list.length) return null;
+        const avg = Math.round(list.reduce((a, b) => a + b, 0) / list.length);
+        const parts = key.split('::');
+        const subjCode = parts.length > 1 ? parts[0] : '';
+        const chName = parts.length > 1 ? parts.slice(1).join('::') : key;
+        return {
+          subject: SUBJECT_NAMES[subjCode] || subjCode || 'General',
+          chapter: chName,
+          avgSec: avg,
+          count: list.length,
+          capSec: Number(capMap[key] || dursMap[subjCode] || defaultDur),
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.avgSec - a.avgSec)
+      .slice(0, 20);
+
+    // Mocks, tests, upcoming tests
+    const mocks = (Array.isArray(M) ? M : []).slice(0, 10).map((m) => ({
+      date: m.d || '',
+      subject: SUBJECT_NAMES[m.subj] || m.subj || 'Mixed',
+      totalQ: Number(m.n || 0),
+      done: Number(m.done || 0),
+      limitMin: Math.round(Number(m.T || 0) / 60),
+      usedMin: Math.round(Number(m.used || 0) / 60),
+      solved: Number(m.s || 0),
+      leftOnTime: Number(m.l || 0),
+      overtime: Number(m.k || 0),
+      chapters: Array.isArray(m.ch) ? m.ch.join(', ') : String(m.ch || ''),
+    }));
+
+    const tests = (Array.isArray(T) ? T : [])
+      .slice()
+      .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')))
+      .slice(0, 10)
+      .map((t) => {
+        const score = Number(t.score || t.got || 0);
+        const maxScore = Number(t.max || t.total || 100);
+        return {
+          date: t.date || '',
+          name: t.name || t.exam || 'Test',
+          score,
+          maxScore,
+          pct: maxScore > 0 ? Math.round((score / maxScore) * 100) : 0,
+          breakdown: t.note || t.ch || '',
+        };
+      });
+
+    const upcomingTests = (Array.isArray(U) ? U : [])
+      .filter((u) => u && u.date && u.date >= todayKey)
+      .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+      .slice(0, 8)
+      .map((u) => ({
+        date: u.date,
+        daysLeft: daysBetweenKeys(todayKey, u.date),
+        name: u.name || u.exam || 'Upcoming Exam',
+        chapters: Array.isArray(u.ch) ? u.ch.join(', ') : String(u.ch || ''),
+      }));
+
+    // Planner today & 7d execution
+    const plannerTodayArr = Array.isArray(PL && PL[todayKey]) ? PL[todayKey] : [];
+    const plannerToday = plannerTodayArr.map((t) => ({
+      title: String((t && t.t) || ''),
+      plannedMin: Number((t && t.m) || 0),
+      done: Boolean(t && t.d),
+      subject: String((t && t.s) || ''),
+    }));
+    let total7d = 0, done7d = 0;
+    for (let i = 0; i < 7; i++) {
+      const k = localDayKey(i);
+      const arr = Array.isArray(PL && PL[k]) ? PL[k] : [];
+      total7d += arr.length;
+      done7d += arr.filter((x) => x && x.d).length;
+    }
+
+    // Books
+    const bkList = Array.isArray(BK && BK.list) ? BK.list : [];
+    const bkPos = (BK && BK.pos && typeof BK.pos === 'object') ? BK.pos : {};
+    const books = bkList.slice(0, 8).map((b) => {
+      const nm = typeof b === 'string' ? b : String((b && (b.name || b.t)) || 'Book');
+      const pos = bkPos[nm] != null ? `Q/Page #${bkPos[nm]}` : 'In library';
+      return { name: nm, progress: pos };
+    });
+
+    // Diary reflections (recent 5)
+    const diaryEntries = Object.values(DY || {})
+      .filter((e) => e && e.dateKey && (e.body || e.highlight || e.tomorrowGoal || e.mood))
+      .sort((a, b) => String(b.dateKey).localeCompare(String(a.dateKey)))
+      .slice(0, 5)
+      .map((e) => ({
+        dateKey: e.dateKey,
+        mood: e.mood || '',
+        title: e.title || '',
+        highlight: e.highlight || '',
+        tomorrowGoal: e.tomorrowGoal || '',
+        body: String(e.body || '').slice(0, 280),
+      }));
+
+    // Arena user info
+    let arenaUser = null;
+    try {
+      if (window.LeaveItArenaSync && typeof window.LeaveItArenaSync.getUser === 'function') {
+        arenaUser = window.LeaveItArenaSync.getUser();
+      }
+    } catch (e) {}
+
+    const prof = (S && S.prof) || {};
+    const targetDate = prof.date || '';
+    const daysToExam = targetDate ? daysBetweenKeys(todayKey, targetDate) : 0;
+    const streakDays = (arenaUser && Number(arenaUser.streakDays)) || computeLocalStreak(H, rgDays);
+
+    return {
+      localDate: todayKey,
+      localTime: new Date().toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }),
+      profile: {
+        name: S.name || (arenaUser && arenaUser.displayName) || 'Student',
+        exam: prof.exam || prof.goal || 'Competitive Exam / Self-Study',
+        targetDate,
+        daysToExam,
+        questionLimitSec: defaultDur,
+        dailyFocusGoalMin: Number(RG.goal || 120),
+        strictMode: Boolean(RG.strict),
+        blockedApps: Array.isArray(RG.sel) ? RG.sel.slice(0, 12) : [],
+        xp: (arenaUser && Number(arenaUser.xp)) || Number(X.xp || 0),
+        rank: (arenaUser && arenaUser.rank) || '',
+        streakDays,
+        duelWins: (arenaUser && Number(arenaUser.duelWins)) || 0,
+        duelLosses: (arenaUser && Number(arenaUser.duelLosses)) || 0,
+      },
+      today: {
+        attempted: tAttempted,
+        solved: tSolved,
+        leftOnTime: tLeft,
+        overtimeSkips: tSkip,
+        timedOut: tTimeout,
+        practiceMin: Math.round(tSec / 60),
+        avgSecPerQ: tAttempted ? Math.round(tSec / tAttempted) : 0,
+        disciplinePct: leaveDenom > 0 ? Math.round((tLeft / leaveDenom) * 100) : (tAttempted > 0 ? 100 : 0),
+        focusMin: Math.round(Number(rgToday.m || 0)),
+        focusSessions: Number(rgToday.s || 0),
+        distractions: Number(rgToday.a || 0),
+        awaySec: Number(rgToday.as || 0),
+        activeTimerState,
+      },
+      summary7d: {
+        attempted: sum7.attempted,
+        solved: sum7.solved,
+        leftOnTime: sum7.leftOnTime,
+        overtimeSkips: sum7.overtimeSkips,
+        timedOut: sum7.timedOut,
+        practiceMin: Math.round(sum7.sec / 60),
+        focusMin: Math.round(sum7.focusMin),
+        distractions: sum7.distractions,
+        awaySec: sum7.awaySec,
+        activeDays: sum7.activeDaysSet.size,
+      },
+      summary30d: {
+        attempted: sum30.attempted,
+        solved: sum30.solved,
+        leftOnTime: sum30.leftOnTime,
+        overtimeSkips: sum30.overtimeSkips,
+        practiceMin: Math.round(sum30.sec / 60),
+        focusMin: Math.round(sum30.focusMin),
+        distractions: sum30.distractions,
+        activeDays: sum30.activeDaysSet.size,
+      },
+      subjects,
+      dailyTrend,
+      recentEvents,
+      chapterTimes,
+      mocks,
+      tests,
+      upcomingTests,
+      plannerToday,
+      plannerSummary: {
+        done7d,
+        total7d,
+        pct7d: total7d ? Math.round((done7d / total7d) * 100) : 0,
+      },
+      focusSessions: Array.isArray(RG.log) ? RG.log.slice(-10).reverse().map((x) => ({ at: x.t, min: x.m })) : [],
+      books,
+      diaryEntries,
+    };
+  }
+
+  // Strictly safe Markdown -> HTML renderer: escapes HTML FIRST, then applies inline/block formatting.
+  function formatInlineMd(escapedText) {
+    let out = escapedText;
+    const codes = [];
+    out = out.replace(/`([^`\n]+)`/g, (_, code) => {
+      codes.push(`<code>${code}</code>`);
+      return `\u0000CODE${codes.length - 1}\u0000`;
+    });
+    out = out.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+    out = out.replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>');
+    out = out.replace(/\u0000CODE(\d+)\u0000/g, (_, idx) => codes[Number(idx)] || '');
+    return out;
+  }
+
+  function renderSafeMarkdown(raw) {
+    const text = String(raw || '').replace(/\r\n/g, '\n');
+    const lines = text.split('\n');
+    const html = [];
+    let i = 0;
+
+    while (i < lines.length) {
+      const line = lines[i];
+
+      // Fenced code blocks
+      if (/^\s*```/.test(line)) {
+        i++;
+        const codeLines = [];
+        while (i < lines.length && !/^\s*```/.test(lines[i])) {
+          codeLines.push(escHtml(lines[i]));
+          i++;
+        }
+        if (i < lines.length) i++;
+        html.push(`<pre><code>${codeLines.join('\n')}</code></pre>`);
+        continue;
+      }
+
+      if (!line.trim()) {
+        i++;
+        continue;
+      }
+
+      // Headings
+      const hMatch = line.match(/^\s*(#{1,4})\s+(.+)$/);
+      if (hMatch) {
+        const level = Math.min(4, hMatch[1].length);
+        html.push(`<h${level}>${formatInlineMd(escHtml(hMatch[2].trim()))}</h${level}>`);
+        i++;
+        continue;
+      }
+
+      // Blockquotes
+      if (/^\s*>\s?/.test(line)) {
+        const qLines = [];
+        while (i < lines.length && /^\s*>\s?/.test(lines[i])) {
+          qLines.push(formatInlineMd(escHtml(lines[i].replace(/^\s*>\s?/, ''))));
+          i++;
+        }
+        html.push(`<blockquote>${qLines.join('<br>')}</blockquote>`);
+        continue;
+      }
+
+      // Markdown table
+      if (line.includes('|') && i + 1 < lines.length && /^\s*\|?[\s:-]+\|[\s|:-]*$/.test(lines[i + 1])) {
+        const parseRow = (r) => r.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map((c) => formatInlineMd(escHtml(c.trim())));
+        const headers = parseRow(line);
+        i += 2;
+        const rows = [];
+        while (i < lines.length && lines[i].includes('|') && lines[i].trim()) {
+          rows.push(parseRow(lines[i]));
+          i++;
+        }
+        html.push(
+          `<table><thead><tr>${headers.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows
+            .map((r) => `<tr>${headers.map((_, idx) => `<td>${r[idx] || ''}</td>`).join('')}</tr>`)
+            .join('')}</tbody></table>`,
+        );
+        continue;
+      }
+
+      // Unordered list
+      if (/^\s*[-*•]\s+/.test(line)) {
+        const items = [];
+        while (i < lines.length && /^\s*[-*•]\s+/.test(lines[i])) {
+          items.push(`<li>${formatInlineMd(escHtml(lines[i].replace(/^\s*[-*•]\s+/, '')))}</li>`);
+          i++;
+        }
+        html.push(`<ul>${items.join('')}</ul>`);
+        continue;
+      }
+
+      // Ordered list
+      if (/^\s*\d+\.\s+/.test(line)) {
+        const items = [];
+        while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+          items.push(`<li>${formatInlineMd(escHtml(lines[i].replace(/^\s*\d+\.\s+/, '')))}</li>`);
+          i++;
+        }
+        html.push(`<ol>${items.join('')}</ol>`);
+        continue;
+      }
+
+      // Paragraph
+      const pLines = [];
+      while (
+        i < lines.length &&
+        lines[i].trim() &&
+        !/^\s*```/.test(lines[i]) &&
+        !/^\s*#{1,4}\s+/.test(lines[i]) &&
+        !/^\s*>\s?/.test(lines[i]) &&
+        !/^\s*[-*•]\s+/.test(lines[i]) &&
+        !/^\s*\d+\.\s+/.test(lines[i])
+      ) {
+        pLines.push(formatInlineMd(escHtml(lines[i])));
+        i++;
+      }
+      html.push(`<p>${pLines.join('<br>')}</p>`);
+    }
+
+    return html.join('');
+  }
+
+  const STATE = {
+    open: false,
+    mode: localStorage.getItem(MODE_KEY) === 'quick' ? 'quick' : 'deep',
+    messages: (() => {
+      const saved = readJson(CHAT_KEY, []);
+      return Array.isArray(saved) ? saved.filter((m) => m && m.role && typeof m.text === 'string').slice(-40) : [];
+    })(),
+    streaming: false,
+    abortCtrl: null,
+    user: null,
+    autoScroll: true,
+    configured: null,
+  };
+
+  function persistMessages() {
+    writeJson(CHAT_KEY, STATE.messages.slice(-40));
+    try {
+      if (window.LeaveItArenaSync && typeof window.LeaveItArenaSync.notifyStateChange === 'function') {
+        window.LeaveItArenaSync.notifyStateChange(false);
+      }
+    } catch (e) {}
+  }
+
+  const modal = document.createElement('section');
+  modal.id = 'lilyModal';
+  modal.setAttribute('role', 'dialog');
+  modal.setAttribute('aria-modal', 'true');
+  modal.setAttribute('aria-hidden', 'true');
+  modal.setAttribute('aria-label', 'AI Coach Lily');
+  modal.innerHTML = `
+    <div class="lily-shell">
+      <header class="lily-head">
+        <div class="lily-id">
+          <div class="lily-av" aria-hidden="true">✦</div>
+          <div class="lily-title-wrap">
+            <h2>Lily · AI Study Coach</h2>
+            <div class="lily-sub"><i class="lily-live-dot"></i><span id="lilySubTxt">Live telemetry &amp; real-time analysis</span></div>
+          </div>
+        </div>
+        <div class="lily-head-acts">
+          <button type="button" class="lily-mode-btn deep" id="lilyModeBtn" title="Toggle Deep Analysis vs Quick Drill">🧠 Deep</button>
+          <button type="button" class="lily-ic-btn" id="lilyResetBtn" title="New coaching session" aria-label="New session">↺</button>
+          <button type="button" class="lily-ic-btn" id="lilyCloseBtn" title="Close Lily" aria-label="Close">✕</button>
+        </div>
+      </header>
+
+      <div class="lily-radar" id="lilyRadar"></div>
+      <div class="lily-thread" id="lilyThread"></div>
+
+      <footer class="lily-dock">
+        <div class="lily-quick-strip" id="lilyQuickStrip"></div>
+        <div class="lily-composer">
+          <textarea id="lilyInput" rows="1" maxlength="4000" placeholder="Ask Lily anything about your solves, skips, speed, mocks, or plan…"></textarea>
+          <button type="button" class="lily-send-btn" id="lilySendBtn">Send ↑</button>
+        </div>
+      </footer>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const threadEl = document.getElementById('lilyThread');
+  const radarEl = document.getElementById('lilyRadar');
+  const quickStripEl = document.getElementById('lilyQuickStrip');
+  const inputEl = document.getElementById('lilyInput');
+  const sendBtn = document.getElementById('lilySendBtn');
+  const modeBtn = document.getElementById('lilyModeBtn');
+  const subTxtEl = document.getElementById('lilySubTxt');
+
+  function renderRadar() {
+    const snap = collectLilySnapshot();
+    const t = snap.today;
+    const p = snap.profile;
+    const s7 = snap.summary7d;
+    const totalPending = (snap.plannerToday || []).filter((x) => !x.done).length;
+    radarEl.innerHTML = `
+      <span class="lily-stat-badge ok">Today <b>${t.solved}/${t.attempted} Q</b></span>
+      <span class="lily-stat-badge ${t.overtimeSkips > t.leftOnTime ? 'warn' : ''}">Leaves <b>${t.leftOnTime}</b> · Skips <b>${t.overtimeSkips}</b></span>
+      <span class="lily-stat-badge">Focus <b>${t.focusMin}m</b></span>
+      <span class="lily-stat-badge ${t.distractions > 2 ? 'warn' : ''}">Distractions <b>${t.distractions}</b></span>
+      <span class="lily-stat-badge">7d <b>${s7.attempted} Q · ${s7.focusMin}m</b></span>
+      <span class="lily-stat-badge">Tasks Left <b>${totalPending}</b></span>
+      <span class="lily-stat-badge">Streak <b>${p.streakDays}d</b></span>
+    `;
+  }
+
+  function renderQuickChips() {
+    quickStripEl.innerHTML = QUICK_PROMPTS.map(
+      (q) => `<button type="button" class="lily-qchip" data-lily-q="${escHtml(q.id)}">${escHtml(q.chip)}</button>`,
+    ).join('');
+  }
+
+  function renderModeButton() {
+    const isDeep = STATE.mode !== 'quick';
+    modeBtn.classList.toggle('deep', isDeep);
+    modeBtn.textContent = isDeep ? '🧠 Deep' : '⚡ Quick';
+    modeBtn.title = isDeep ? 'Deep Reasoning Mode (tap for Quick Drill)' : 'Quick Drill Mode (tap for Deep Analysis)';
+  }
+
+  function scrollToBottom(force) {
+    if (!force && !STATE.autoScroll) return;
+    threadEl.scrollTop = threadEl.scrollHeight;
+  }
+
+  function renderThread() {
+    if (!STATE.messages.length) {
+      const snap = collectLilySnapshot();
+      const firstName = escHtml((snap.profile.name || 'champ').split(' ')[0]);
+      threadEl.innerHTML = `
+        <div class="lily-welcome">
+          <div class="lily-hero-card">
+            <h3>Hey ${firstName} — I’m Lily, your live performance coach.</h3>
+            <p>I read your real Hour study telemetry in real time: question solves, <b>left-on-time</b> discipline vs overtime skips, chapter pacing, focus blocks, app distractions, mocks, planner tasks, and diary reflections.</p>
+          </div>
+          <div class="lily-starters">
+            ${QUICK_PROMPTS.map(
+              (q) => `
+              <button type="button" class="lily-starter" data-lily-q="${escHtml(q.id)}">
+                <b>${escHtml(q.title)}</b>
+                <small>${escHtml(q.desc)}</small>
+              </button>
+            `,
+            ).join('')}
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    threadEl.innerHTML = STATE.messages
+      .map((m, idx) => {
+        const isLast = idx === STATE.messages.length - 1;
+        if (m.role === 'user') {
+          return `
+            <div class="lily-msg-row user">
+              <div class="lily-bubble">${escHtml(m.text)}</div>
+            </div>
+          `;
+        }
+        const isErr = Boolean(m.error);
+        const bodyHtml = isErr
+          ? `<p><b>Coach connection note:</b> ${escHtml(m.text)}</p>`
+          : renderSafeMarkdown(m.text) || '<p>Analyzing your telemetry…</p>';
+        const cursor = STATE.streaming && isLast && !isErr ? '<span class="lily-cursor"></span>' : '';
+        return `
+          <div class="lily-msg-row assistant${isErr ? ' error' : ''}">
+            <div class="lily-msg-mini-av" aria-hidden="true">✦</div>
+            <div class="lily-bubble">
+              <div class="lily-md">${bodyHtml}${cursor}</div>
+              ${
+                !STATE.streaming || !isLast
+                  ? `<div class="lily-msg-foot">
+                      <span>${isErr ? 'Unable to respond' : 'Grounded in your live Hour telemetry'}</span>
+                      ${
+                        !isErr && m.text
+                          ? `<button type="button" class="lily-copy-btn" data-lily-copy="${idx}">Copy</button>`
+                          : `<button type="button" class="lily-copy-btn" data-lily-retry="1">Retry</button>`
+                      }
+                    </div>`
+                  : ''
+              }
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    scrollToBottom(false);
+  }
+
+  function syncComposerState() {
+    sendBtn.textContent = STATE.streaming ? '⏹ Stop' : 'Send ↑';
+    sendBtn.classList.toggle('stop', STATE.streaming);
+    sendBtn.disabled = false;
+    inputEl.disabled = false;
+  }
+
+  async function checkStatus() {
+    try {
+      const resp = await fetch('/api/lily/status', { cache: 'no-store' });
+      const data = await resp.json();
+      if (data && data.ok) {
+        STATE.configured = Boolean(data.configured);
+        subTxtEl.textContent = STATE.configured
+          ? 'Live study telemetry synced · Ready'
+          : 'Server GEMINI_API_KEY missing';
+      }
+    } catch (e) {}
+  }
+
+  async function sendMessage(rawText) {
+    const text = String(rawText || '').trim();
+    if (!text || STATE.streaming) return;
+
+    renderRadar();
+    STATE.messages.push({ role: 'user', text });
+    const assistantMsg = { role: 'assistant', text: '', error: false };
+    STATE.messages.push(assistantMsg);
+    STATE.streaming = true;
+    STATE.autoScroll = true;
+    STATE.abortCtrl = new AbortController();
+
+    inputEl.value = '';
+    inputEl.style.height = 'auto';
+    syncComposerState();
+    renderThread();
+    scrollToBottom(true);
+
+    const payloadMessages = STATE.messages
+      .slice(0, -1)
+      .filter((m) => !m.error && (m.role === 'user' || m.role === 'assistant') && m.text.trim())
+      .slice(-24)
+      .map((m) => ({ role: m.role, text: m.text }));
+
+    let pendingFrame = 0;
+    const schedulePaint = () => {
+      if (pendingFrame) return;
+      pendingFrame = requestAnimationFrame(() => {
+        pendingFrame = 0;
+        renderThread();
+      });
+    };
+
+    try {
+      const resp = await fetch('/api/lily/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: payloadMessages,
+          mode: STATE.mode,
+          studyContext: collectLilySnapshot(),
+          stream: true,
+        }),
+        signal: STATE.abortCtrl.signal,
+      });
+
+      const contentType = (resp.headers.get('content-type') || '').toLowerCase();
+
+      if (!resp.ok) {
+        let errText = `Server error (${resp.status})`;
+        try {
+          const j = await resp.json();
+          if (j && j.error) errText = j.error;
+        } catch (e) {}
+        throw new Error(errText);
+      }
+
+      if (contentType.includes('text/event-stream') && resp.body) {
+        const reader = resp.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const frames = buffer.split('\n\n');
+          buffer = frames.pop() || '';
+          for (const frame of frames) {
+            const dataLines = frame
+              .split('\n')
+              .filter((ln) => ln.startsWith('data:'))
+              .map((ln) => ln.slice(5).trim());
+            for (const rawLine of dataLines) {
+              if (!rawLine) continue;
+              let ev = null;
+              try {
+                ev = JSON.parse(rawLine);
+              } catch (e) {
+                continue;
+              }
+              if (ev.error) {
+                throw new Error(ev.error);
+              }
+              if (typeof ev.delta === 'string' && ev.delta) {
+                assistantMsg.text += ev.delta;
+                schedulePaint();
+              }
+            }
+          }
+        }
+      } else {
+        const data = await resp.json();
+        if (!data || !data.ok) {
+          throw new Error((data && data.error) || 'Failed to get response from Lily.');
+        }
+        assistantMsg.text = String(data.reply || '');
+      }
+
+      if (!assistantMsg.text.trim()) {
+        assistantMsg.text = 'No response returned. Try asking again.';
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') {
+        if (!assistantMsg.text.trim()) {
+          STATE.messages.pop();
+        }
+      } else {
+        assistantMsg.error = true;
+        assistantMsg.text = err instanceof Error ? err.message : 'Could not reach Lily right now.';
+      }
+    } finally {
+      if (pendingFrame) cancelAnimationFrame(pendingFrame);
+      STATE.streaming = false;
+      STATE.abortCtrl = null;
+      syncComposerState();
+      persistMessages();
+      renderThread();
+      scrollToBottom(false);
+    }
+  }
+
+  function openLily(initialPrompt) {
+    STATE.open = true;
+    renderModeButton();
+    renderRadar();
+    renderQuickChips();
+    renderThread();
+    syncComposerState();
+    modal.classList.add('on');
+    modal.setAttribute('aria-hidden', 'false');
+    void checkStatus();
+    if (initialPrompt) {
+      setTimeout(() => void sendMessage(initialPrompt), 60);
+    } else {
+      setTimeout(() => {
+        try { inputEl.focus({ preventScroll: true }); } catch (e) {}
+      }, 90);
+    }
+  }
+
+  function closeLily() {
+    if (STATE.abortCtrl) {
+      try { STATE.abortCtrl.abort(); } catch (e) {}
+    }
+    STATE.open = false;
+    modal.classList.remove('on');
+    modal.setAttribute('aria-hidden', 'true');
+  }
+
+  function injectEntryPoints() {
+    // 1. Regain Home item
+    const rgMain = document.getElementById('rgMain');
+    if (rgMain && !document.getElementById('rgLilyBtn')) {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'it';
+      btn.id = 'rgLilyBtn';
+      btn.innerHTML = `<span class="l"><span class="ic">✨</span><span>Lily · AI Study Coach<small>Real-time analysis of your solves, skips, mocks &amp; focus</small></span></span><span>›</span>`;
+      btn.onclick = () => openLily();
+      const diaryBtn = document.getElementById('rgDiaryBtn');
+      if (diaryBtn) {
+        diaryBtn.insertAdjacentElement('afterend', btn);
+      } else {
+        const items = rgMain.querySelectorAll('.it');
+        const lastIt = items[items.length - 1];
+        if (lastIt) lastIt.insertAdjacentElement('afterend', btn);
+        else rgMain.appendChild(btn);
+      }
+    }
+
+    // 2. Regain "More" bottom sheet item
+    const rgShB = document.getElementById('rgShB');
+    if (rgShB) {
+      const h3 = rgShB.querySelector('h3');
+      if (h3 && h3.textContent.trim() === 'More' && !rgShB.querySelector('.lily-more-btn')) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ln lily-more-btn';
+        btn.innerHTML = '<span>✨</span>Lily AI Coach';
+        btn.onclick = () => {
+          const sh = document.getElementById('rgSh');
+          if (sh) sh.classList.remove('on');
+          setTimeout(() => openLily(), 120);
+        };
+        rgShB.appendChild(btn);
+      }
+    }
+
+    // 3. Stats tab CTA button inside Classic progress card
+    const insightEl = document.getElementById('insight');
+    if (insightEl && !document.getElementById('lilyStatsCta')) {
+      const cta = document.createElement('button');
+      cta.type = 'button';
+      cta.id = 'lilyStatsCta';
+      cta.className = 'lily-stats-cta';
+      cta.innerHTML = `<span><b>✨ Ask Lily to audit my stats &amp; skips</b><small>Real-time AI coaching using your sessions, focus &amp; mock history</small></span><span>›</span>`;
+      cta.onclick = () => openLily(QUICK_PROMPTS[0].prompt);
+      insightEl.insertAdjacentElement('afterend', cta);
+    }
+  }
+
+  // Event listeners
+  document.getElementById('lilyCloseBtn').onclick = closeLily;
+  document.getElementById('lilyResetBtn').onclick = () => {
+    if (STATE.streaming && STATE.abortCtrl) {
+      try { STATE.abortCtrl.abort(); } catch (e) {}
+    }
+    STATE.messages = [];
+    persistMessages();
+    renderRadar();
+    renderThread();
+  };
+  modeBtn.onclick = () => {
+    STATE.mode = STATE.mode === 'quick' ? 'deep' : 'quick';
+    try { localStorage.setItem(MODE_KEY, STATE.mode); } catch (e) {}
+    renderModeButton();
+  };
+  sendBtn.onclick = () => {
+    if (STATE.streaming) {
+      if (STATE.abortCtrl) {
+        try { STATE.abortCtrl.abort(); } catch (e) {}
+      }
+      return;
+    }
+    void sendMessage(inputEl.value);
+  };
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(120, inputEl.scrollHeight) + 'px';
+  });
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!STATE.streaming) void sendMessage(inputEl.value);
+    }
+  });
+  threadEl.addEventListener('scroll', () => {
+    const distFromBottom = threadEl.scrollHeight - threadEl.scrollTop - threadEl.clientHeight;
+    STATE.autoScroll = distFromBottom < 48;
+  });
+
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeLily();
+      return;
+    }
+    const qBtn = e.target.closest('[data-lily-q]');
+    if (qBtn) {
+      const qObj = QUICK_PROMPTS.find((x) => x.id === qBtn.dataset.lilyQ);
+      if (qObj && !STATE.streaming) {
+        void sendMessage(qObj.prompt);
+      }
+      return;
+    }
+    const copyBtn = e.target.closest('[data-lily-copy]');
+    if (copyBtn) {
+      const msg = STATE.messages[Number(copyBtn.dataset.lilyCopy)];
+      if (msg && msg.text && navigator.clipboard) {
+        navigator.clipboard.writeText(msg.text).then(() => {
+          copyBtn.textContent = 'Copied ✓';
+          setTimeout(() => { copyBtn.textContent = 'Copy'; }, 1400);
+        }).catch(() => {});
+      }
+      return;
+    }
+    if (e.target.closest('[data-lily-retry]')) {
+      const lastUser = [...STATE.messages].reverse().find((m) => m.role === 'user' && m.text);
+      if (lastUser && !STATE.streaming) {
+        // Drop trailing error bubble and previous duplicate user turn cleanly before resending
+        while (STATE.messages.length && (STATE.messages[STATE.messages.length - 1].error || STATE.messages[STATE.messages.length - 1] === lastUser)) {
+          STATE.messages.pop();
+        }
+        void sendMessage(lastUser.text);
+      }
+    }
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && STATE.open) closeLily();
+  });
+
+  function onAuthUser(user) {
+    STATE.user = user || null;
+    const saved = readJson(CHAT_KEY, []);
+    STATE.messages = Array.isArray(saved) ? saved.filter((m) => m && m.role && typeof m.text === 'string').slice(-40) : [];
+    if (STATE.open) {
+      renderRadar();
+      renderThread();
+    }
+  }
+
+  if (typeof MutationObserver !== 'undefined') {
+    const rgMain = document.getElementById('rgMain');
+    if (rgMain) {
+      new MutationObserver(() => injectEntryPoints()).observe(rgMain, { childList: true });
+    }
+    const rgShB = document.getElementById('rgShB');
+    if (rgShB) {
+      new MutationObserver(() => injectEntryPoints()).observe(rgShB, { childList: true });
+    }
+  }
+
+  window.LeaveItLily = {
+    open: openLily,
+    close: closeLily,
+    onAuthUser,
+    collectSnapshot: collectLilySnapshot,
+    refreshEntryPoints: injectEntryPoints,
+  };
+
+  injectEntryPoints();
 })();
 </script>
 </body>

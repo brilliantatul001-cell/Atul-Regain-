@@ -182,9 +182,14 @@ export type DiaryPaperStyle =
   | 'plain-cream'
   | 'ruled-white'
   | 'plain-white'
-  | 'plain-night';
+  | 'plain-night'
+  | 'dot-cream'
+  | 'grid-sage'
+  | 'ruled-parchment';
 
 export type DiaryInkStyle = 'serif' | 'sans' | 'mono';
+export type DiaryFontSize = 'sm' | 'md' | 'lg';
+export type DiaryTemplateKind = '' | 'free' | 'debrief' | 'wins' | 'reset';
 
 export interface DiaryEntryView {
   uid: string;
@@ -196,8 +201,19 @@ export interface DiaryEntryView {
   mood: DiaryMood;
   paperStyle: DiaryPaperStyle;
   inkStyle: DiaryInkStyle;
+  fontSize: DiaryFontSize;
+  template: DiaryTemplateKind;
+  starred: boolean;
+  energy: number;
+  dayRating: number;
+  tags: string[];
+  gratitude: string[];
+  promptQ: string;
+  promptA: string;
   focusMinutes: number;
   questionsSolved: number;
+  leftOnTime: number;
+  overtimeSkips: number;
   tasksDone: number;
   wordCount: number;
   createdAtMs: number;
@@ -3177,8 +3193,13 @@ const DIARY_PAPERS = new Set<DiaryPaperStyle>([
   'ruled-white',
   'plain-white',
   'plain-night',
+  'dot-cream',
+  'grid-sage',
+  'ruled-parchment',
 ]);
 const DIARY_INKS = new Set<DiaryInkStyle>(['serif', 'sans', 'mono']);
+const DIARY_FONT_SIZES = new Set<DiaryFontSize>(['sm', 'md', 'lg']);
+const DIARY_TEMPLATES = new Set<DiaryTemplateKind>(['', 'free', 'debrief', 'wins', 'reset']);
 
 function sanitizeDiaryDateKey(raw: string): string {
   const s = String(raw || '').trim();
@@ -3195,6 +3216,36 @@ function sanitizeDiaryBody(raw: unknown, maxLen: number): string {
     .slice(0, maxLen);
 }
 
+function sanitizeDiaryTags(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    const clean = String(item ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/^#+/, '')
+      .replace(/[^a-z0-9_-]/g, '')
+      .slice(0, 24);
+    if (!clean || seen.has(clean)) continue;
+    seen.add(clean);
+    out.push(clean);
+    if (out.length >= 5) break;
+  }
+  return out;
+}
+
+function sanitizeDiaryGratitude(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const out: string[] = [];
+  for (const item of raw) {
+    const clean = sanitizeTextField(item, 120);
+    if (clean) out.push(clean);
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
 function toDiaryEntryView(
   uidFallback: string,
   docId: string,
@@ -3203,6 +3254,8 @@ function toDiaryEntryView(
   const moodRaw = String(raw.mood || '') as DiaryMood;
   const paperRaw = String(raw.paperStyle || 'ruled-yellow') as DiaryPaperStyle;
   const inkRaw = String(raw.inkStyle || 'serif') as DiaryInkStyle;
+  const fontSizeRaw = String(raw.fontSize || 'md') as DiaryFontSize;
+  const templateRaw = String(raw.template || '') as DiaryTemplateKind;
   const body = sanitizeDiaryBody(raw.body, 8000);
   const words = body.trim() ? body.trim().split(/\s+/).length : 0;
   return {
@@ -3215,8 +3268,19 @@ function toDiaryEntryView(
     mood: DIARY_MOODS.has(moodRaw) ? moodRaw : '',
     paperStyle: DIARY_PAPERS.has(paperRaw) ? paperRaw : 'ruled-yellow',
     inkStyle: DIARY_INKS.has(inkRaw) ? inkRaw : 'serif',
+    fontSize: DIARY_FONT_SIZES.has(fontSizeRaw) ? fontSizeRaw : 'md',
+    template: DIARY_TEMPLATES.has(templateRaw) ? templateRaw : '',
+    starred: Boolean(raw.starred),
+    energy: Math.max(0, Math.min(5, Math.round(Number(raw.energy || 0)))),
+    dayRating: Math.max(0, Math.min(5, Math.round(Number(raw.dayRating || 0)))),
+    tags: sanitizeDiaryTags(raw.tags),
+    gratitude: sanitizeDiaryGratitude(raw.gratitude),
+    promptQ: sanitizeTextField(raw.promptQ, 160),
+    promptA: sanitizeDiaryBody(raw.promptA, 500),
     focusMinutes: Math.max(0, Math.min(1440, Math.round(Number(raw.focusMinutes || 0)))),
     questionsSolved: Math.max(0, Math.min(2000, Math.round(Number(raw.questionsSolved || 0)))),
+    leftOnTime: Math.max(0, Math.min(2000, Math.round(Number(raw.leftOnTime || 0)))),
+    overtimeSkips: Math.max(0, Math.min(2000, Math.round(Number(raw.overtimeSkips || 0)))),
     tasksDone: Math.max(0, Math.min(500, Math.round(Number(raw.tasksDone || 0)))),
     wordCount: Math.max(0, Math.min(3000, Math.round(Number(raw.wordCount ?? words)))),
     createdAtMs: Math.max(0, Number(raw.createdAtMs || 0)),
@@ -3264,8 +3328,19 @@ export async function saveDiaryEntry(params: {
   mood?: DiaryMood;
   paperStyle?: DiaryPaperStyle;
   inkStyle?: DiaryInkStyle;
+  fontSize?: DiaryFontSize;
+  template?: DiaryTemplateKind;
+  starred?: boolean;
+  energy?: number;
+  dayRating?: number;
+  tags?: string[];
+  gratitude?: string[];
+  promptQ?: string;
+  promptA?: string;
   focusMinutes?: number;
   questionsSolved?: number;
+  leftOnTime?: number;
+  overtimeSkips?: number;
   tasksDone?: number;
 }): Promise<DiaryEntryView> {
   const fbUser = auth.currentUser;
@@ -3282,8 +3357,21 @@ export async function saveDiaryEntry(params: {
   const paperStyle: DiaryPaperStyle = DIARY_PAPERS.has(paperRaw) ? paperRaw : 'ruled-yellow';
   const inkRaw = String(params.inkStyle || 'serif') as DiaryInkStyle;
   const inkStyle: DiaryInkStyle = DIARY_INKS.has(inkRaw) ? inkRaw : 'serif';
+  const fontSizeRaw = String(params.fontSize || 'md') as DiaryFontSize;
+  const fontSize: DiaryFontSize = DIARY_FONT_SIZES.has(fontSizeRaw) ? fontSizeRaw : 'md';
+  const templateRaw = String(params.template || '') as DiaryTemplateKind;
+  const template: DiaryTemplateKind = DIARY_TEMPLATES.has(templateRaw) ? templateRaw : '';
+  const starred = Boolean(params.starred);
+  const energy = Math.max(0, Math.min(5, Math.round(Number(params.energy || 0))));
+  const dayRating = Math.max(0, Math.min(5, Math.round(Number(params.dayRating || 0))));
+  const tags = sanitizeDiaryTags(params.tags);
+  const gratitude = sanitizeDiaryGratitude(params.gratitude);
+  const promptQ = sanitizeTextField(params.promptQ, 160);
+  const promptA = sanitizeDiaryBody(params.promptA, 500);
   const focusMinutes = Math.max(0, Math.min(1440, Math.round(Number(params.focusMinutes || 0))));
   const questionsSolved = Math.max(0, Math.min(2000, Math.round(Number(params.questionsSolved || 0))));
+  const leftOnTime = Math.max(0, Math.min(2000, Math.round(Number(params.leftOnTime || 0))));
+  const overtimeSkips = Math.max(0, Math.min(2000, Math.round(Number(params.overtimeSkips || 0))));
   const tasksDone = Math.max(0, Math.min(500, Math.round(Number(params.tasksDone || 0))));
   const wordCount = Math.min(
     3000,
@@ -3306,8 +3394,19 @@ export async function saveDiaryEntry(params: {
           mood,
           paperStyle,
           inkStyle,
+          fontSize,
+          template,
+          starred,
+          energy,
+          dayRating,
+          tags,
+          gratitude,
+          promptQ,
+          promptA,
           focusMinutes,
           questionsSolved,
+          leftOnTime,
+          overtimeSkips,
           tasksDone,
           wordCount,
           updatedAtMs: nowMs,
@@ -3333,8 +3432,19 @@ export async function saveDiaryEntry(params: {
           mood,
           paperStyle,
           inkStyle,
+          fontSize,
+          template,
+          starred,
+          energy,
+          dayRating,
+          tags,
+          gratitude,
+          promptQ,
+          promptA,
           focusMinutes,
           questionsSolved,
+          leftOnTime,
+          overtimeSkips,
           tasksDone,
           wordCount,
           createdAtMs: nowMs,
@@ -3374,8 +3484,19 @@ export async function importGuestDiaryEntries(
     mood?: DiaryMood;
     paperStyle?: DiaryPaperStyle;
     inkStyle?: DiaryInkStyle;
+    fontSize?: DiaryFontSize;
+    template?: DiaryTemplateKind;
+    starred?: boolean;
+    energy?: number;
+    dayRating?: number;
+    tags?: string[];
+    gratitude?: string[];
+    promptQ?: string;
+    promptA?: string;
     focusMinutes?: number;
     questionsSolved?: number;
+    leftOnTime?: number;
+    overtimeSkips?: number;
     tasksDone?: number;
   }>,
 ): Promise<number> {
@@ -3389,7 +3510,9 @@ export async function importGuestDiaryEntries(
       Boolean(String(item.body || '').trim()) ||
       Boolean(String(item.title || '').trim()) ||
       Boolean(String(item.highlight || '').trim()) ||
-      Boolean(String(item.tomorrowGoal || '').trim());
+      Boolean(String(item.tomorrowGoal || '').trim()) ||
+      Boolean(String(item.promptA || '').trim()) ||
+      (Array.isArray(item.gratitude) && item.gratitude.some((g) => String(g || '').trim()));
     if (!hasContent) continue;
     const cleanDate = String(item.dateKey).trim();
     const entryRef = doc(db, 'players', fbUser.uid, 'diary', cleanDate);

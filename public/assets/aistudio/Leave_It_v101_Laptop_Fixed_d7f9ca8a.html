@@ -18157,7 +18157,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 })();
 </script>
 
-<!-- v111: End-of-Day & Anytime Tactile Daily Diary Pad (Account-Synced) -->
+<!-- v111: End-of-Day & Anytime Tactile Daily Diary Studio (Account-Synced) -->
 <style id="v111-diary-css">
   #dyBtn {
     padding: 6px 10px;
@@ -18209,21 +18209,22 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     flex-shrink: 0;
   }
   .dy-eod-banner .dy-eb-go {
-    padding: 9px 14px;
+    min-height: 40px;
+    padding: 9px 15px;
     border-radius: 99px;
     border: 0;
     background: #f5d27a;
     color: #2b1d0c;
-    font-size: 12px;
+    font-size: 12.5px;
     font-weight: 800;
     cursor: pointer;
     white-space: nowrap;
   }
   .dy-eod-banner .dy-eb-x {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
     border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.14);
     background: transparent;
     color: var(--muted);
     font-size: 14px;
@@ -18239,12 +18240,12 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     align-items: center;
     justify-content: center;
     padding: 18px;
-    background: rgba(8, 10, 16, 0.72);
-    backdrop-filter: blur(8px);
+    background: rgba(8, 10, 16, 0.74);
+    backdrop-filter: blur(10px);
   }
   #dyEodModal.on { display: flex; }
   .dy-eod-card {
-    width: min(440px, 100%);
+    width: min(460px, 100%);
     border-radius: 26px;
     background: var(--card, #171a24);
     border: 1px solid rgba(250, 204, 107, 0.3);
@@ -18266,8 +18267,9 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
   .dy-eod-top h3 {
     margin: 5px 0 4px;
-    font-size: 20px;
-    font-weight: 800;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 22px;
+    font-weight: 700;
   }
   .dy-eod-top p {
     margin: 0;
@@ -18290,6 +18292,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     border-radius: 16px;
     background: rgba(255, 255, 255, 0.04);
     border: 1px solid rgba(255, 255, 255, 0.07);
+    font-variant-numeric: tabular-nums;
   }
   .dy-eod-stats b {
     display: block;
@@ -18300,22 +18303,40 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     font-size: 11px;
     color: var(--muted);
   }
+  .dy-eod-prompt-preview {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(245, 200, 95, 0.08);
+    border: 1px solid rgba(245, 200, 95, 0.2);
+    font-size: 12.5px;
+    line-height: 1.45;
+  }
+  .dy-eod-prompt-preview small {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #f4c86a;
+    margin-bottom: 3px;
+  }
   .dy-eod-choices {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 9px;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
   .dy-eod-pad-btn {
-    padding: 13px 12px;
+    min-height: 56px;
+    padding: 11px 10px;
     border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.12);
-    font-size: 13px;
+    border: 1px solid rgba(0, 0, 0, 0.14);
+    font-size: 12.5px;
     font-weight: 800;
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: 3px;
+    gap: 2px;
     text-align: left;
   }
   .dy-eod-pad-btn.yellow {
@@ -18326,13 +18347,20 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     background: #fbf8f1;
     color: #22201d;
   }
+  .dy-eod-pad-btn.dot {
+    background: #faf5e8;
+    color: #2a241b;
+    background-image: radial-gradient(rgba(120, 100, 70, 0.3) 1px, transparent 1px);
+    background-size: 10px 10px;
+  }
   .dy-eod-pad-btn small {
-    font-size: 11px;
+    font-size: 10.5px;
     font-weight: 600;
     opacity: 0.72;
   }
   .dy-eod-later {
     width: 100%;
+    min-height: 44px;
     padding: 11px;
     border-radius: 14px;
     border: 1px solid var(--track, rgba(255,255,255,0.12));
@@ -18343,7 +18371,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     cursor: pointer;
   }
 
-  /* Main Tactile Daily Diary Pad Modal */
+  /* Main Tactile Daily Diary Studio Modal */
   #dyModal {
     position: fixed;
     inset: 0;
@@ -18354,13 +18382,14 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     color: var(--text, #eef2ff);
     padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
     overflow: hidden;
+    font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   }
   #dyModal.on { display: flex; }
   #dyModal ::-webkit-scrollbar { display: none; }
   #dyModal * { scrollbar-width: none; box-sizing: border-box; }
 
   .dy-shell {
-    width: min(1040px, 100%);
+    width: min(1140px, 100%);
     height: 100%;
     margin: 0 auto;
     display: flex;
@@ -18372,7 +18401,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 12px 16px 10px;
+    padding: 10px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     flex-shrink: 0;
   }
@@ -18384,36 +18413,32 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
   .dy-top-l h2 {
     margin: 0;
-    font-size: 18px;
-    font-weight: 800;
+    font-family: "Playfair Display", Georgia, serif;
+    font-size: 20px;
+    font-weight: 700;
     white-space: nowrap;
   }
-  .dy-acct-chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 5px 10px;
-    border-radius: 99px;
-    font-size: 11.5px;
-    font-weight: 700;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.05);
+  .dy-acct-meta {
+    font-size: 12px;
+    font-weight: 600;
     color: var(--muted);
     white-space: nowrap;
-    max-width: 210px;
     overflow: hidden;
     text-overflow: ellipsis;
   }
-  .dy-acct-chip.synced {
-    background: rgba(34, 197, 94, 0.14);
-    border-color: rgba(34, 197, 94, 0.34);
-    color: #86efac;
-  }
-  .dy-acct-chip.guest {
-    cursor: pointer;
-    background: rgba(245, 198, 92, 0.14);
-    border-color: rgba(245, 198, 92, 0.34);
+  .dy-acct-meta.synced { color: #86efac; }
+  .dy-acct-link-btn {
+    border: 0;
+    background: transparent;
+    padding: 4px 2px;
     color: #fcd34d;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    white-space: nowrap;
   }
   .dy-top-r {
     display: flex;
@@ -18422,14 +18447,14 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     flex-shrink: 0;
   }
   .dy-ic-btn {
-    height: 36px;
-    min-width: 36px;
+    height: 38px;
+    min-width: 38px;
     padding: 0 11px;
     border-radius: 12px;
     border: 1px solid var(--track, rgba(255,255,255,0.12));
     background: var(--card, rgba(255,255,255,0.05));
     color: var(--text);
-    font-size: 13px;
+    font-size: 12.5px;
     font-weight: 700;
     cursor: pointer;
     display: inline-flex;
@@ -18442,6 +18467,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     background: color-mix(in srgb, var(--accent, #7ed957) 20%, transparent);
     border-color: var(--accent, #7ed957);
     color: var(--accent, #7ed957);
+  }
+  @media (max-width: 640px) {
+    .dy-ic-btn { height: 42px; min-width: 42px; padding: 0 10px; }
+    .dy-hide-sm { display: none; }
   }
 
   .dy-controls {
@@ -18460,7 +18489,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     gap: 6px;
   }
   .dy-date-btn {
-    height: 34px;
+    height: 36px;
+    min-width: 36px;
     padding: 0 11px;
     border-radius: 10px;
     border: 1px solid var(--track, rgba(255,255,255,0.12));
@@ -18469,13 +18499,14 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     font-size: 13px;
     font-weight: 700;
     cursor: pointer;
+    white-space: nowrap;
   }
   .dy-date-btn:disabled {
     opacity: 0.35;
     cursor: default;
   }
   .dy-date-input {
-    height: 34px;
+    height: 36px;
     padding: 0 10px;
     border-radius: 10px;
     border: 1px solid var(--track, rgba(255,255,255,0.14));
@@ -18515,16 +18546,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     color: var(--accent, #7ed957);
   }
   .dy-swatch {
-    width: 11px;
-    height: 11px;
+    width: 12px;
+    height: 12px;
     border-radius: 3px;
     border: 1px solid rgba(0, 0, 0, 0.25);
     display: inline-block;
     flex: none;
   }
   .dy-swatch.ruled-yellow { background: linear-gradient(180deg, #fef3c2 50%, #d8c074 51%, #fef3c2 56%); }
-  .dy-swatch.plain-cream { background: #fbf6e8; }
+  .dy-swatch.ruled-parchment { background: linear-gradient(180deg, #f6ead4 50%, #c7a97b 51%, #f6ead4 56%); }
   .dy-swatch.ruled-white { background: linear-gradient(180deg, #ffffff 50%, #93c5fd 51%, #ffffff 56%); }
+  .dy-swatch.dot-cream { background: #fbf5e6 radial-gradient(#a08b65 1px, transparent 1px); background-size: 4px 4px; }
+  .dy-swatch.grid-sage { background: #f2f6ef; border-color: #82a27d; }
+  .dy-swatch.plain-cream { background: #fbf6e8; }
   .dy-swatch.plain-white { background: #ffffff; }
   .dy-swatch.plain-night { background: #181c24; border-color: rgba(255,255,255,0.28); }
   .dy-sep {
@@ -18535,18 +18569,24 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     margin: 0 2px;
   }
 
+  /* Diary Settings & Tools Drawer */
   .dy-prefs-panel {
-    padding: 10px 16px;
+    padding: 12px 16px;
     background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: none;
+    flex-direction: column;
+    gap: 10px;
+    flex-shrink: 0;
+  }
+  .dy-prefs-panel.on { display: flex; }
+  .dy-prefs-row {
+    display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
-    flex-shrink: 0;
   }
-  .dy-prefs-panel.on { display: flex; }
   .dy-prefs-panel label {
     display: inline-flex;
     align-items: center;
@@ -18566,7 +18606,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     margin-right: 4px;
   }
   .dy-hr-chip {
-    padding: 5px 10px;
+    min-height: 32px;
+    padding: 5px 11px;
     border-radius: 99px;
     border: 1px solid var(--track, rgba(255,255,255,0.14));
     background: transparent;
@@ -18574,19 +18615,62 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
+    white-space: nowrap;
   }
   .dy-hr-chip.on {
     background: var(--accent, #7ed957);
     border-color: var(--accent, #7ed957);
     color: #06241a;
   }
+  .dy-pin-setup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .dy-pin-in {
+    width: 112px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 10px;
+    border: 1px solid var(--track, rgba(255,255,255,0.16));
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    font-family: "JetBrains Mono", monospace;
+    font-size: 14px;
+    letter-spacing: 0.25em;
+    text-align: center;
+  }
+
+  /* Zen / Distraction-Free Focus Writing Mode */
+  #dyModal.dy-zen .dy-topbar,
+  #dyModal.dy-zen .dy-controls,
+  #dyModal.dy-zen .dy-prefs-panel,
+  #dyModal.dy-zen .dy-archive-col {
+    display: none !important;
+  }
+  #dyModal.dy-zen .dy-shell {
+    width: min(820px, 100%);
+  }
+  #dyModal.dy-zen .dy-workspace {
+    padding: 18px 16px 24px;
+  }
+  .dy-zen-bar {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 18px 4px;
+    flex-shrink: 0;
+  }
+  #dyModal.dy-zen .dy-zen-bar { display: flex; }
 
   .dy-workspace {
     flex: 1;
     min-height: 0;
     display: flex;
     gap: 16px;
-    padding: 14px 16px 18px;
+    padding: 14px 16px 20px;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -18597,7 +18681,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     flex-direction: column;
   }
   .dy-archive-col {
-    width: 310px;
+    width: 340px;
     flex: none;
     display: none;
     flex-direction: column;
@@ -18612,12 +18696,12 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   .dy-workspace.show-archive .dy-archive-col {
     display: flex;
   }
-  @media (max-width: 820px) {
+  @media (max-width: 860px) {
     .dy-workspace.show-archive .dy-pad-col { display: none; }
-    .dy-workspace.show-archive .dy-archive-col { width: 100%; min-height: 360px; }
+    .dy-workspace.show-archive .dy-archive-col { width: 100%; min-height: 420px; }
   }
 
-  /* Physical Notepad Styling */
+  /* Physical Stationery Notepad */
   .dy-pad {
     position: relative;
     border-radius: 18px;
@@ -18627,20 +18711,61 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     flex-direction: column;
     transition: background-color 0.22s ease, color 0.22s ease;
     --dy-lh: 30px;
+    --dy-fz: 16px;
     --dy-paper: #fdf3c7;
     --dy-paper-2: #faebb2;
     --dy-ink: #24190e;
     --dy-muted: #6c5738;
-    --dy-rule: rgba(143, 118, 62, 0.26);
-    --dy-margin: rgba(196, 67, 54, 0.34);
+    --dy-rule: rgba(143, 118, 62, 0.27);
+    --dy-margin: rgba(196, 67, 54, 0.36);
     --dy-head: linear-gradient(135deg, #5e3820, #3f2414);
     --dy-head-line: rgba(246, 212, 134, 0.42);
     --dy-subbox: rgba(132, 98, 38, 0.08);
     --dy-subborder: rgba(132, 98, 38, 0.22);
-    --dy-font: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --dy-font: "Playfair Display", "Iowan Old Style", Georgia, serif;
     background: linear-gradient(180deg, var(--dy-paper) 0%, var(--dy-paper-2) 100%);
     color: var(--dy-ink);
     font-family: var(--dy-font);
+  }
+  .dy-pad[data-fsize="sm"] { --dy-fz: 14.5px; --dy-lh: 26px; }
+  .dy-pad[data-fsize="md"] { --dy-fz: 16px; --dy-lh: 30px; }
+  .dy-pad[data-fsize="lg"] { --dy-fz: 18px; --dy-lh: 34px; }
+
+  .dy-pad[data-paper="ruled-parchment"] {
+    --dy-paper: #f7ebd3;
+    --dy-paper-2: #efe0c1;
+    --dy-ink: #2b1d12;
+    --dy-muted: #705843;
+    --dy-rule: rgba(128, 95, 58, 0.25);
+    --dy-margin: rgba(154, 52, 52, 0.34);
+    --dy-head: linear-gradient(135deg, #4b2f21, #2c1910);
+    --dy-head-line: rgba(238, 200, 146, 0.4);
+    --dy-subbox: rgba(112, 78, 42, 0.07);
+    --dy-subborder: rgba(112, 78, 42, 0.22);
+  }
+  .dy-pad[data-paper="dot-cream"] {
+    --dy-paper: #fbf7ec;
+    --dy-paper-2: #f6efe0;
+    --dy-ink: #252019;
+    --dy-muted: #726656;
+    --dy-rule: rgba(130, 114, 86, 0.28);
+    --dy-margin: transparent;
+    --dy-head: linear-gradient(135deg, #3e382e, #242019);
+    --dy-head-line: rgba(242, 224, 188, 0.32);
+    --dy-subbox: rgba(94, 82, 62, 0.06);
+    --dy-subborder: rgba(94, 82, 62, 0.17);
+  }
+  .dy-pad[data-paper="grid-sage"] {
+    --dy-paper: #f3f7f1;
+    --dy-paper-2: #ebf2e7;
+    --dy-ink: #1b281c;
+    --dy-muted: #526854;
+    --dy-rule: rgba(84, 128, 92, 0.17);
+    --dy-margin: transparent;
+    --dy-head: linear-gradient(135deg, #273e2c, #18291c);
+    --dy-head-line: rgba(186, 230, 194, 0.32);
+    --dy-subbox: rgba(46, 94, 58, 0.06);
+    --dy-subborder: rgba(46, 94, 58, 0.18);
   }
   .dy-pad[data-paper="plain-cream"] {
     --dy-paper: #fcf8ee;
@@ -18691,10 +18816,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     --dy-subborder: rgba(255, 255, 255, 0.12);
   }
   .dy-pad[data-ink="sans"] {
-    --dy-font: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --dy-font: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   }
   .dy-pad[data-ink="mono"] {
-    --dy-font: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --dy-font: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   }
 
   .dy-pad-binding {
@@ -18736,11 +18861,14 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
   .dy-pad[data-paper="plain-cream"] .dy-page-head,
   .dy-pad[data-paper="plain-white"] .dy-page-head,
-  .dy-pad[data-paper="plain-night"] .dy-page-head {
+  .dy-pad[data-paper="plain-night"] .dy-page-head,
+  .dy-pad[data-paper="dot-cream"] .dy-page-head,
+  .dy-pad[data-paper="grid-sage"] .dy-page-head {
     padding-left: 24px;
     border-bottom: 1px solid var(--dy-subborder);
   }
   .dy-pad[data-paper="ruled-yellow"] .dy-page-head::before,
+  .dy-pad[data-paper="ruled-parchment"] .dy-page-head::before,
   .dy-pad[data-paper="ruled-white"] .dy-page-head::before {
     content: "";
     position: absolute;
@@ -18756,7 +18884,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 10.5px;
     font-weight: 800;
     letter-spacing: 0.12em;
@@ -18765,38 +18893,66 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
   .dy-date-title {
     margin: 3px 0 0;
-    font-size: clamp(18px, 3vw, 22px);
+    font-size: clamp(19px, 3vw, 24px);
     font-weight: 700;
     color: var(--dy-ink);
-    line-height: 1.25;
+    line-height: 1.2;
   }
-  .dy-day-summary {
-    font-family: system-ui, -apple-system, sans-serif;
-    font-size: 12px;
+  .dy-head-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .dy-day-telemetry {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 11.5px;
     font-weight: 600;
     color: var(--dy-muted);
-    padding: 6px 11px;
-    border-radius: 10px;
-    background: var(--dy-subbox);
-    border: 1px solid var(--dy-subborder);
-    white-space: nowrap;
-  }
-
-  .dy-mood-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 10px 22px 6px 62px;
-    overflow-x: auto;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .dy-star-btn {
+    min-height: 36px;
+    padding: 0 11px;
+    border-radius: 99px;
+    border: 1px solid var(--dy-subborder);
+    background: var(--dy-subbox);
+    color: var(--dy-muted);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    white-space: nowrap;
+  }
+  .dy-star-btn.on {
+    background: #d97706;
+    border-color: #d97706;
+    color: #fff;
+  }
+
+  /* Margin-aware horizontal rows on the sheet */
+  .dy-sheet-row {
+    padding: 8px 22px 6px 62px;
     position: relative;
   }
-  .dy-pad[data-paper="plain-cream"] .dy-mood-row,
-  .dy-pad[data-paper="plain-white"] .dy-mood-row,
-  .dy-pad[data-paper="plain-night"] .dy-mood-row {
+  .dy-pad[data-paper="plain-cream"] .dy-sheet-row,
+  .dy-pad[data-paper="plain-white"] .dy-sheet-row,
+  .dy-pad[data-paper="plain-night"] .dy-sheet-row,
+  .dy-pad[data-paper="dot-cream"] .dy-sheet-row,
+  .dy-pad[data-paper="grid-sage"] .dy-sheet-row {
     padding-left: 24px;
   }
-  .dy-pad[data-paper="ruled-yellow"] .dy-mood-row::before,
-  .dy-pad[data-paper="ruled-white"] .dy-mood-row::before {
+  .dy-pad[data-paper="ruled-yellow"] .dy-sheet-row::before,
+  .dy-pad[data-paper="ruled-parchment"] .dy-sheet-row::before,
+  .dy-pad[data-paper="ruled-white"] .dy-sheet-row::before {
     content: "";
     position: absolute;
     top: 0;
@@ -18807,17 +18963,27 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     border-right: 1px solid var(--dy-margin);
     pointer-events: none;
   }
+
+  .dy-mood-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+    padding-top: 10px;
+  }
   .dy-mood-chip {
     flex: none;
-    padding: 5px 10px;
+    min-height: 32px;
+    padding: 4px 11px;
     border-radius: 99px;
     border: 1px solid var(--dy-subborder);
     background: transparent;
     color: var(--dy-muted);
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 12px;
     font-weight: 700;
     cursor: pointer;
+    white-space: nowrap;
   }
   .dy-mood-chip.on {
     background: var(--dy-ink);
@@ -18825,27 +18991,146 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     color: var(--dy-paper);
   }
 
-  .dy-title-wrap {
-    padding: 6px 22px 2px 62px;
-    position: relative;
+  /* Energy + Day Rating + Font Size inline bar */
+  .dy-meters-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-size: 12px;
+    color: var(--dy-muted);
   }
-  .dy-pad[data-paper="plain-cream"] .dy-title-wrap,
-  .dy-pad[data-paper="plain-white"] .dy-title-wrap,
-  .dy-pad[data-paper="plain-night"] .dy-title-wrap {
-    padding-left: 24px;
+  .dy-meter-grp {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: wrap;
   }
-  .dy-pad[data-paper="ruled-yellow"] .dy-title-wrap::before,
-  .dy-pad[data-paper="ruled-white"] .dy-title-wrap::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 46px;
-    width: 4px;
-    border-left: 1.5px solid var(--dy-margin);
-    border-right: 1px solid var(--dy-margin);
-    pointer-events: none;
+  .dy-meter-lbl {
+    font-weight: 700;
+    margin-right: 2px;
   }
+  .dy-step-btn {
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border-radius: 8px;
+    border: 1px solid var(--dy-subborder);
+    background: transparent;
+    color: var(--dy-muted);
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .dy-step-btn.on {
+    background: var(--dy-ink);
+    border-color: var(--dy-ink);
+    color: var(--dy-paper);
+  }
+
+  /* Templates & Daily Reflection Prompt */
+  .dy-tpl-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow-x: auto;
+  }
+  .dy-tpl-lbl {
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--dy-muted);
+    flex: none;
+  }
+  .dy-tpl-btn {
+    flex: none;
+    min-height: 30px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px dashed var(--dy-subborder);
+    background: var(--dy-subbox);
+    color: var(--dy-ink);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dy-tpl-btn.on {
+    border-style: solid;
+    border-color: var(--dy-ink);
+  }
+
+  .dy-prompt-card {
+    margin: 4px 0 2px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: var(--dy-subbox);
+    border: 1px solid var(--dy-subborder);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+  .dy-prompt-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .dy-prompt-q {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--dy-ink);
+    line-height: 1.4;
+  }
+  .dy-prompt-q small {
+    display: block;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--dy-muted);
+    margin-bottom: 2px;
+  }
+  .dy-prompt-acts {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .dy-mini-paper-btn {
+    min-height: 28px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    border: 1px solid var(--dy-subborder);
+    background: transparent;
+    color: var(--dy-ink);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .dy-prompt-ans {
+    width: 100%;
+    margin-top: 6px;
+    border: 0;
+    border-bottom: 1px solid var(--dy-subborder);
+    background: transparent;
+    color: var(--dy-ink);
+    font-family: var(--dy-font);
+    font-size: 14px;
+    padding: 4px 0;
+    outline: none;
+  }
+  .dy-prompt-ans::placeholder {
+    color: var(--dy-muted);
+    opacity: 0.65;
+  }
+
   .dy-title-in {
     width: 100%;
     border: 0;
@@ -18853,7 +19138,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     background: transparent;
     color: var(--dy-ink);
     font-family: inherit;
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
     padding: 6px 0 8px;
     outline: none;
@@ -18864,20 +19149,22 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
   .dy-pad[data-paper="plain-cream"] .dy-title-in,
   .dy-pad[data-paper="plain-white"] .dy-title-in,
-  .dy-pad[data-paper="plain-night"] .dy-title-in {
+  .dy-pad[data-paper="plain-night"] .dy-title-in,
+  .dy-pad[data-paper="dot-cream"] .dy-title-in,
+  .dy-pad[data-paper="grid-sage"] .dy-title-in {
     border-bottom-color: var(--dy-subborder);
   }
 
-  /* Ruled Yellowish / White & Plain Page Writing Area with Scroll-Locked Lines */
+  /* Scroll-Locked Writing Area across Ruled, Dot, Grid & Plain Sheets */
   .dy-body-in {
     width: 100%;
-    min-height: clamp(270px, 42vh, 420px);
+    min-height: clamp(250px, 38vh, 420px);
     border: 0;
     outline: none;
     resize: vertical;
     color: var(--dy-ink);
     font-family: inherit;
-    font-size: 16px;
+    font-size: var(--dy-fz);
     line-height: var(--dy-lh);
     padding: 8px 22px 28px 62px;
     background-color: transparent;
@@ -18896,112 +19183,107 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       repeating-linear-gradient(
         to bottom,
         transparent 0px,
-        transparent 29px,
-        var(--dy-rule) 29px,
-        var(--dy-rule) 30px
+        transparent calc(var(--dy-lh) - 1px),
+        var(--dy-rule) calc(var(--dy-lh) - 1px),
+        var(--dy-rule) var(--dy-lh)
       );
     background-attachment: local, local;
     background-position: 0 0, 0 8px;
     background-repeat: no-repeat, repeat;
+  }
+  .dy-pad[data-paper="dot-cream"] .dy-body-in {
+    padding: 12px 24px 28px 24px;
+    line-height: 1.75;
+    background-image: radial-gradient(var(--dy-rule) 1.3px, transparent 1.3px);
+    background-size: 22px 22px;
+    background-position: 12px 12px;
+    background-repeat: repeat;
+    background-attachment: local;
+  }
+  .dy-pad[data-paper="grid-sage"] .dy-body-in {
+    padding: 12px 24px 28px 24px;
+    line-height: 1.75;
+    background-image:
+      linear-gradient(to right, var(--dy-rule) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--dy-rule) 1px, transparent 1px);
+    background-size: 24px 24px;
+    background-position: 0 0;
+    background-repeat: repeat;
+    background-attachment: local;
   }
   .dy-pad[data-paper="plain-cream"] .dy-body-in,
   .dy-pad[data-paper="plain-white"] .dy-body-in,
   .dy-pad[data-paper="plain-night"] .dy-body-in {
     padding: 12px 24px 28px 24px;
     background-image: none;
-    line-height: 1.7;
+    line-height: 1.75;
   }
   .dy-body-in::placeholder {
     color: var(--dy-muted);
     opacity: 0.62;
   }
 
-  .dy-prompts {
+  /* Tags Strip */
+  .dy-tags-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+    padding-top: 6px;
+    padding-bottom: 8px;
+    border-top: 1px solid var(--dy-subborder);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+  .dy-tag-chip {
+    min-height: 28px;
+    padding: 3px 9px;
+    border-radius: 99px;
+    border: 1px solid var(--dy-subborder);
+    background: transparent;
+    color: var(--dy-muted);
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .dy-tag-chip.on {
+    background: var(--dy-ink);
+    border-color: var(--dy-ink);
+    color: var(--dy-paper);
+  }
+  .dy-tag-add {
+    width: 112px;
+    border: 0;
+    border-bottom: 1px dashed var(--dy-subborder);
+    background: transparent;
+    color: var(--dy-ink);
+    font: inherit;
+    font-size: 12px;
+    padding: 3px 2px;
+    outline: none;
+  }
+
+  /* Gratitude Trio + Win / Tomorrow Intention */
+  .dy-closing-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    padding: 12px 22px 14px 62px;
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 14px;
     border-top: 1px solid var(--dy-subborder);
     background: var(--dy-subbox);
-    position: relative;
   }
-  .dy-pad[data-paper="plain-cream"] .dy-prompts,
-  .dy-pad[data-paper="plain-white"] .dy-prompts,
-  .dy-pad[data-paper="plain-night"] .dy-prompts {
-    padding-left: 24px;
-  }
-  .dy-pad[data-paper="ruled-yellow"] .dy-prompts::before,
-  .dy-pad[data-paper="ruled-white"] .dy-prompts::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 46px;
-    width: 4px;
-    border-left: 1.5px solid var(--dy-margin);
-    border-right: 1px solid var(--dy-margin);
-    pointer-events: none;
-  }
-  @media (max-width: 640px) {
-    .dy-prompts { grid-template-columns: 1fr; }
-    .dy-page-head, .dy-mood-row, .dy-title-wrap, .dy-prompts {
-      padding-left: 52px;
-      padding-right: 14px;
-    }
-    .dy-body-in { padding-left: 52px; padding-right: 14px; }
-    .dy-pad[data-paper="ruled-yellow"] .dy-page-head::before,
-    .dy-pad[data-paper="ruled-white"] .dy-page-head::before,
-    .dy-pad[data-paper="ruled-yellow"] .dy-mood-row::before,
-    .dy-pad[data-paper="ruled-white"] .dy-mood-row::before,
-    .dy-pad[data-paper="ruled-yellow"] .dy-title-wrap::before,
-    .dy-pad[data-paper="ruled-white"] .dy-title-wrap::before,
-    .dy-pad[data-paper="ruled-yellow"] .dy-prompts::before,
-    .dy-pad[data-paper="ruled-white"] .dy-prompts::before {
-      left: 38px;
-    }
-    .dy-body-in {
-      background-image:
-        linear-gradient(
-          90deg,
-          transparent 38px,
-          var(--dy-margin) 38px,
-          var(--dy-margin) 39.5px,
-          transparent 39.5px,
-          transparent 42px,
-          var(--dy-margin) 42px,
-          var(--dy-margin) 43.2px,
-          transparent 43.2px
-        ),
-        repeating-linear-gradient(
-          to bottom,
-          transparent 0px,
-          transparent 29px,
-          var(--dy-rule) 29px,
-          var(--dy-rule) 30px
-        );
-    }
-    .dy-pad[data-paper="plain-cream"] .dy-page-head,
-    .dy-pad[data-paper="plain-white"] .dy-page-head,
-    .dy-pad[data-paper="plain-night"] .dy-page-head,
-    .dy-pad[data-paper="plain-cream"] .dy-mood-row,
-    .dy-pad[data-paper="plain-white"] .dy-mood-row,
-    .dy-pad[data-paper="plain-night"] .dy-mood-row,
-    .dy-pad[data-paper="plain-cream"] .dy-title-wrap,
-    .dy-pad[data-paper="plain-white"] .dy-title-wrap,
-    .dy-pad[data-paper="plain-night"] .dy-title-wrap,
-    .dy-pad[data-paper="plain-cream"] .dy-prompts,
-    .dy-pad[data-paper="plain-white"] .dy-prompts,
-    .dy-pad[data-paper="plain-night"] .dy-prompts,
-    .dy-pad[data-paper="plain-cream"] .dy-body-in,
-    .dy-pad[data-paper="plain-white"] .dy-body-in,
-    .dy-pad[data-paper="plain-night"] .dy-body-in {
-      padding-left: 18px;
-      padding-right: 18px;
-    }
+  .dy-grat-box {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
   }
   .dy-prompt-box label {
-    display: block;
-    font-family: system-ui, -apple-system, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     font-size: 11px;
     font-weight: 800;
     color: var(--dy-muted);
@@ -19023,6 +19305,65 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     opacity: 0.65;
   }
 
+  @media (max-width: 640px) {
+    .dy-closing-grid { grid-template-columns: 1fr; }
+    .dy-grat-box { grid-template-columns: 1fr; }
+    .dy-page-head, .dy-sheet-row {
+      padding-left: 52px;
+      padding-right: 14px;
+    }
+    .dy-body-in { padding-left: 52px; padding-right: 14px; }
+    .dy-pad[data-paper="ruled-yellow"] .dy-page-head::before,
+    .dy-pad[data-paper="ruled-parchment"] .dy-page-head::before,
+    .dy-pad[data-paper="ruled-white"] .dy-page-head::before,
+    .dy-pad[data-paper="ruled-yellow"] .dy-sheet-row::before,
+    .dy-pad[data-paper="ruled-parchment"] .dy-sheet-row::before,
+    .dy-pad[data-paper="ruled-white"] .dy-sheet-row::before {
+      left: 38px;
+    }
+    .dy-pad[data-paper="ruled-yellow"] .dy-body-in,
+    .dy-pad[data-paper="ruled-parchment"] .dy-body-in,
+    .dy-pad[data-paper="ruled-white"] .dy-body-in {
+      background-image:
+        linear-gradient(
+          90deg,
+          transparent 38px,
+          var(--dy-margin) 38px,
+          var(--dy-margin) 39.5px,
+          transparent 39.5px,
+          transparent 42px,
+          var(--dy-margin) 42px,
+          var(--dy-margin) 43.2px,
+          transparent 43.2px
+        ),
+        repeating-linear-gradient(
+          to bottom,
+          transparent 0px,
+          transparent calc(var(--dy-lh) - 1px),
+          var(--dy-rule) calc(var(--dy-lh) - 1px),
+          var(--dy-rule) var(--dy-lh)
+        );
+    }
+    .dy-pad[data-paper="plain-cream"] .dy-page-head,
+    .dy-pad[data-paper="plain-white"] .dy-page-head,
+    .dy-pad[data-paper="plain-night"] .dy-page-head,
+    .dy-pad[data-paper="dot-cream"] .dy-page-head,
+    .dy-pad[data-paper="grid-sage"] .dy-page-head,
+    .dy-pad[data-paper="plain-cream"] .dy-sheet-row,
+    .dy-pad[data-paper="plain-white"] .dy-sheet-row,
+    .dy-pad[data-paper="plain-night"] .dy-sheet-row,
+    .dy-pad[data-paper="dot-cream"] .dy-sheet-row,
+    .dy-pad[data-paper="grid-sage"] .dy-sheet-row,
+    .dy-pad[data-paper="plain-cream"] .dy-body-in,
+    .dy-pad[data-paper="plain-white"] .dy-body-in,
+    .dy-pad[data-paper="plain-night"] .dy-body-in,
+    .dy-pad[data-paper="dot-cream"] .dy-body-in,
+    .dy-pad[data-paper="grid-sage"] .dy-body-in {
+      padding-left: 16px;
+      padding-right: 16px;
+    }
+  }
+
   .dy-pad-foot {
     display: flex;
     align-items: center;
@@ -19030,21 +19371,35 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     gap: 10px;
     padding: 11px 18px;
     border-top: 1px solid var(--dy-subborder);
-    font-family: system-ui, -apple-system, sans-serif;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
     flex-wrap: wrap;
   }
   .dy-meta-txt {
     font-size: 12px;
     font-weight: 600;
     color: var(--dy-muted);
+    font-variant-numeric: tabular-nums;
   }
   .dy-foot-btns {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 7px;
+    flex-wrap: wrap;
+  }
+  .dy-foot-sec-btn {
+    min-height: 38px;
+    padding: 0 11px;
+    border-radius: 12px;
+    border: 1px solid var(--dy-subborder);
+    background: transparent;
+    color: var(--dy-ink);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
   }
   .dy-del-btn {
-    height: 38px;
+    min-height: 38px;
     padding: 0 12px;
     border-radius: 12px;
     border: 1px solid rgba(220, 38, 38, 0.35);
@@ -19058,7 +19413,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     color: #fca5a5;
   }
   .dy-save-btn {
-    height: 38px;
+    min-height: 38px;
     padding: 0 16px;
     border-radius: 12px;
     border: 0;
@@ -19067,23 +19422,42 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     font-size: 13px;
     font-weight: 800;
     cursor: pointer;
+    white-space: nowrap;
   }
 
-  /* Archive Sidebar */
+  /* Archive Sidebar: Entries | Calendar | Insights */
   .dy-arch-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
   }
-  .dy-arch-head h3 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 800;
+  .dy-arch-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 3px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .dy-arch-tab {
+    min-height: 32px;
+    border: 0;
+    border-radius: 9px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .dy-arch-tab.on {
+    background: var(--accent, #7ed957);
+    color: #06241a;
   }
   .dy-arch-search {
     width: 100%;
-    padding: 9px 12px;
+    min-height: 38px;
+    padding: 8px 12px;
     border-radius: 12px;
     border: 1px solid var(--track, rgba(255,255,255,0.14));
     background: rgba(255, 255, 255, 0.04);
@@ -19121,11 +19495,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     align-items: center;
     justify-content: space-between;
     gap: 6px;
-    font-size: 12px;
-    font-weight: 800;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
   }
   .dy-arch-item-title {
-    font-size: 13px;
+    font-size: 13.5px;
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
@@ -19138,12 +19514,154 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    line-height: 1.4;
   }
   .dy-arch-empty {
     text-align: center;
     padding: 28px 12px;
     font-size: 13px;
     color: var(--muted);
+  }
+
+  /* Mini Calendar */
+  .dy-cal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 13.5px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .dy-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    text-align: center;
+  }
+  .dy-cal-wd {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--muted);
+    padding: 4px 0;
+  }
+  .dy-cal-day {
+    min-height: 38px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text);
+    font-size: 12px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 2px;
+  }
+  .dy-cal-day.empty { background: transparent; cursor: default; }
+  .dy-cal-day.future { opacity: 0.3; cursor: default; }
+  .dy-cal-day.has {
+    background: color-mix(in srgb, var(--accent, #7ed957) 14%, transparent);
+    border-color: color-mix(in srgb, var(--accent, #7ed957) 35%, transparent);
+  }
+  .dy-cal-day.on {
+    border-color: var(--accent, #7ed957);
+    box-shadow: inset 0 0 0 1px var(--accent, #7ed957);
+  }
+  .dy-cal-dot {
+    font-size: 9px;
+    line-height: 1;
+  }
+
+  /* Insights View */
+  .dy-ins-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  .dy-ins-stat {
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+    font-variant-numeric: tabular-nums;
+  }
+  .dy-ins-stat b {
+    display: block;
+    font-size: 18px;
+    font-weight: 800;
+  }
+  .dy-ins-stat small {
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .dy-ins-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 2px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* PIN Lock Screen */
+  .dy-lock-wrap {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 18px;
+    gap: 14px;
+    text-align: center;
+  }
+  .dy-lock-dots {
+    display: flex;
+    gap: 12px;
+    margin: 4px 0;
+  }
+  .dy-lock-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--muted);
+  }
+  .dy-lock-dot.on {
+    background: var(--accent, #7ed957);
+    border-color: var(--accent, #7ed957);
+  }
+  .dy-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 68px);
+    gap: 10px;
+  }
+  .dy-key-btn {
+    height: 56px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text);
+    font-size: 20px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  @media print {
+    body > *:not(#dyModal) { display: none !important; }
+    #dyModal {
+      position: static !important;
+      display: block !important;
+      background: #fff !important;
+      overflow: visible !important;
+    }
+    .dy-topbar, .dy-controls, .dy-prefs-panel, .dy-archive-col, .dy-zen-bar, .dy-pad-foot, .dy-foot-sec-btn {
+      display: none !important;
+    }
+    .dy-pad { box-shadow: none !important; }
   }
 </style>
 
@@ -19161,8 +19679,11 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   ];
   const PAPERS = [
     { id: 'ruled-yellow', label: 'Ruled Yellow' },
-    { id: 'plain-cream', label: 'Plain Page' },
+    { id: 'ruled-parchment', label: 'Parchment' },
     { id: 'ruled-white', label: 'Ruled White' },
+    { id: 'dot-cream', label: 'Dot Grid' },
+    { id: 'grid-sage', label: 'Study Grid' },
+    { id: 'plain-cream', label: 'Plain Page' },
     { id: 'plain-white', label: 'Plain White' },
     { id: 'plain-night', label: 'Night Pad' },
   ];
@@ -19171,6 +19692,46 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     { id: 'sans', label: 'Clean' },
     { id: 'mono', label: 'Mono' },
   ];
+  const FONT_SIZES = [
+    { id: 'sm', label: 'S' },
+    { id: 'md', label: 'M' },
+    { id: 'lg', label: 'L' },
+  ];
+  const TEMPLATES = [
+    { id: 'free', label: 'Free Write', body: '' },
+    {
+      id: 'debrief',
+      label: 'Exam Debrief',
+      body: '• What clicked clearly today:\n\n• Where I lost focus or went overtime:\n\n• One mistake I will fix tomorrow:\n',
+    },
+    {
+      id: 'wins',
+      label: 'Win & Lesson',
+      body: '• Today’s hardest win:\n\n• Toughest test of patience:\n\n• Lesson I’m taking forward:\n',
+    },
+    {
+      id: 'reset',
+      label: 'Evening Reset',
+      body: '• Brain dump (everything still on my mind):\n\n• What I can let go of tonight:\n\n• How I want tomorrow morning to start:\n',
+    },
+  ];
+  const QUICK_TAGS = ['study', 'breakthrough', 'mock', 'gratitude', 'mindset', 'life'];
+  const PROMPTS = [
+    'What topic or question finally made sense today?',
+    'Where did you notice your focus slipping, and what helped you pull it back?',
+    'What decision today are you quietly proud of?',
+    'If you could replay one study hour today, what would you do differently?',
+    'Who or what made today noticeably easier?',
+    'What felt overwhelming this morning that looks smaller tonight?',
+    'Which habit protected your momentum today?',
+    'What is the single most important problem to solve tomorrow morning?',
+    'When did you walk away on time instead of getting stuck in an ego trap?',
+    'What did your energy curve look like today — morning, afternoon, night?',
+    'Write two encouraging sentences to tomorrow-morning you.',
+    'What small discipline win happened today that nobody else saw?',
+    'What distraction cost you the most focus, and how can you block it tomorrow?',
+    'What are you genuinely grateful for as you close today?',
+  ];
   const PROMPT_HOURS = [19, 20, 21, 22, 23];
 
   const defaultPrefs = () => ({
@@ -19178,9 +19739,21 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     promptHour: 21,
     paperStyle: 'ruled-yellow',
     inkStyle: 'serif',
+    fontSize: 'md',
     dismissedDate: '',
     notifiedDate: '',
+    pinHash: '',
   });
+
+  function hashPin(pin) {
+    let h = 2166136261;
+    const s = 'hour_dy_' + String(pin || '');
+    for (let i = 0; i < s.length; i++) {
+      h ^= s.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return 'h_' + (h >>> 0).toString(36);
+  }
 
   function readJson(k, fallback) {
     try {
@@ -19212,6 +19785,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const dt = new Date(pts[0], (pts[1] || 1) - 1, pts[2] || 1);
     dt.setDate(dt.getDate() + delta);
     return todayKey(dt);
+  }
+
+  function promptForDate(dateKeyStr) {
+    let sum = 0;
+    const s = String(dateKeyStr || todayKey());
+    for (let i = 0; i < s.length; i++) sum = (sum * 31 + s.charCodeAt(i)) % 997;
+    return PROMPTS[sum % PROMPTS.length];
   }
 
   function formatFullDate(dateKeyStr) {
@@ -19259,15 +19839,31 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     } catch (e) {}
   }
 
+  const SUBJ_NAMES = { P: 'Physics', C: 'Chemistry', M: 'Maths', B: 'Biology', E: 'English', CS: 'CS', G: 'General', O: 'Other' };
+
   function getDayStudyStats(dateKeyStr) {
     const rg = readJson('leaveit_rg', {});
     const hist = readJson('leaveit_h', {});
     const plan = readJson('leaveit_pl', {});
+    const hDay = hist[dateKeyStr] || {};
     const focusMinutes = Math.max(0, Math.round(Number(((rg.days || {})[dateKeyStr] || {}).m || 0)));
-    const questionsSolved = Math.max(0, Math.round(Number((hist[dateKeyStr] || {}).s || 0)));
+    const questionsSolved = Math.max(0, Math.round(Number(hDay.s || 0)));
+    const leftOnTime = Math.max(0, Math.round(Number(hDay.l || 0)));
+    const overtimeSkips = Math.max(0, Math.round(Number(hDay.k || 0) + Number(hDay.n || 0)));
     const dayTasks = Array.isArray(plan[dateKeyStr]) ? plan[dateKeyStr] : [];
     const tasksDone = dayTasks.filter((t) => t && t.d).length;
-    return { focusMinutes, questionsSolved, tasksDone };
+    let topSubject = '';
+    if (hDay.b && typeof hDay.b === 'object') {
+      let bestQ = 0;
+      Object.entries(hDay.b).forEach(([code, obj]) => {
+        const q = Number((obj && obj.q) || 0);
+        if (q > bestQ) {
+          bestQ = q;
+          topSubject = SUBJ_NAMES[code] || code;
+        }
+      });
+    }
+    return { focusMinutes, questionsSolved, leftOnTime, overtimeSkips, tasksDone, topSubject };
   }
 
   function entryHasContent(entry) {
@@ -19277,8 +19873,31 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       String(entry.title || '').trim() ||
       String(entry.highlight || '').trim() ||
       String(entry.tomorrowGoal || '').trim() ||
-      String(entry.mood || '').trim()
+      String(entry.promptA || '').trim() ||
+      String(entry.mood || '').trim() ||
+      Number(entry.energy || 0) > 0 ||
+      Number(entry.dayRating || 0) > 0 ||
+      (Array.isArray(entry.gratitude) && entry.gratitude.some((g) => String(g || '').trim()))
     );
+  }
+
+  function normalizeTags(arr) {
+    if (!Array.isArray(arr)) return [];
+    const out = [];
+    const seen = new Set();
+    arr.forEach((t) => {
+      const clean = String(t || '').trim().toLowerCase().replace(/^#+/, '').replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+      if (clean && !seen.has(clean) && out.length < 5) {
+        seen.add(clean);
+        out.push(clean);
+      }
+    });
+    return out;
+  }
+
+  function normalizeGratitude(arr) {
+    const base = Array.isArray(arr) ? arr.slice(0, 3) : [];
+    return [0, 1, 2].map((i) => String(base[i] || '').slice(0, 120));
   }
 
   const STATE = {
@@ -19286,6 +19905,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     eodOpen: false,
     prefsOpen: false,
     archiveOpen: false,
+    archiveTab: 'list',
+    zenMode: false,
+    locked: false,
+    pinBuffer: '',
+    pinError: '',
+    pinFeedback: '',
+    calMonth: todayKey().slice(0, 7),
     selectedDate: todayKey(),
     user: null,
     uidSynced: null,
@@ -19301,6 +19927,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     deleteArmed: false,
     searchQuery: '',
     moodFilter: '',
+    starOnly: false,
   };
 
   function getFB() {
@@ -19327,6 +19954,18 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     return all[dateKeyStr] || null;
   }
 
+  function computeDiaryStreak() {
+    const all = getAllEntriesMap();
+    let streak = 0;
+    const tk = todayKey();
+    let cur = entryHasContent(all[tk]) ? tk : addDays(tk, -1);
+    while (entryHasContent(all[cur]) && streak < 1000) {
+      streak++;
+      cur = addDays(cur, -1);
+    }
+    return streak;
+  }
+
   function buildDraftForDate(dateKeyStr) {
     const existing = getEntryForDate(dateKeyStr);
     if (existing) {
@@ -19339,6 +19978,15 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         mood: String(existing.mood || ''),
         paperStyle: existing.paperStyle || STATE.prefs.paperStyle || 'ruled-yellow',
         inkStyle: existing.inkStyle || STATE.prefs.inkStyle || 'serif',
+        fontSize: existing.fontSize || STATE.prefs.fontSize || 'md',
+        template: String(existing.template || ''),
+        starred: Boolean(existing.starred),
+        energy: Math.max(0, Math.min(5, Number(existing.energy || 0))),
+        dayRating: Math.max(0, Math.min(5, Number(existing.dayRating || 0))),
+        tags: normalizeTags(existing.tags),
+        gratitude: normalizeGratitude(existing.gratitude),
+        promptQ: String(existing.promptQ || promptForDate(dateKeyStr)),
+        promptA: String(existing.promptA || ''),
         updatedAtMs: Number(existing.updatedAtMs || 0),
       };
     }
@@ -19351,6 +19999,15 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       mood: '',
       paperStyle: STATE.prefs.paperStyle || 'ruled-yellow',
       inkStyle: STATE.prefs.inkStyle || 'serif',
+      fontSize: STATE.prefs.fontSize || 'md',
+      template: '',
+      starred: false,
+      energy: 0,
+      dayRating: 0,
+      tags: [],
+      gratitude: ['', '', ''],
+      promptQ: promptForDate(dateKeyStr),
+      promptA: '',
       updatedAtMs: 0,
     };
   }
@@ -19366,11 +20023,9 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const hr = new Date().getHours();
     if (hr < (Number(STATE.prefs.promptHour) || 21)) return false;
     if (STATE.prefs.dismissedDate === tk) return false;
-    const todayEntry = getEntryForDate(tk);
-    return !entryHasContent(todayEntry);
+    return !entryHasContent(getEntryForDate(tk));
   }
 
-  // Create Modals
   const eodModal = document.createElement('section');
   eodModal.id = 'dyEodModal';
   eodModal.setAttribute('role', 'dialog');
@@ -19382,7 +20037,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   modal.id = 'dyModal';
   modal.setAttribute('role', 'dialog');
   modal.setAttribute('aria-modal', 'true');
-  modal.setAttribute('aria-label', 'Daily Diary Pad');
+  modal.setAttribute('aria-label', 'Daily Diary Studio');
   document.body.appendChild(modal);
 
   function renderEodModal() {
@@ -19392,12 +20047,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     }
     const tk = todayKey();
     const st = getDayStudyStats(tk);
+    const streak = computeDiaryStreak();
     eodModal.innerHTML = `
       <div class="dy-eod-card">
         <div class="dy-eod-top">
-          <span>🌙 End of Day Check-In</span>
+          <span>🌙 End of Day Check-In${streak > 0 ? ' · ' + streak + 'd streak' : ''}</span>
           <h3>Ready to close the day?</h3>
-          <p>Take 2 quiet minutes to capture how today went, save your wins, and set tomorrow’s #1 intention${STATE.user ? ' (saved directly to @' + escHtml(STATE.user.username) + ')' : ''}.</p>
+          <p>Capture how today felt, log your gratitude &amp; wins, and send tomorrow’s #1 task straight to your planner${STATE.user ? ' (synced to @' + escHtml(STATE.user.username) + ')' : ''}.</p>
         </div>
         <div class="dy-eod-body">
           <div class="dy-eod-stats">
@@ -19405,14 +20061,22 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
             <div><b>${st.questionsSolved}</b><small>Solved</small></div>
             <div><b>${st.tasksDone}</b><small>Tasks done</small></div>
           </div>
+          <div class="dy-eod-prompt-preview">
+            <small>Tonight’s reflection prompt</small>
+            ${escHtml(promptForDate(tk))}
+          </div>
           <div class="dy-eod-choices">
             <button type="button" class="dy-eod-pad-btn yellow" data-eod-paper="ruled-yellow">
-              <span>🟨 Ruled Yellow Pad</span>
-              <small>Classic lined legal sheet</small>
+              <span>Ruled Yellow</span>
+              <small>Classic legal sheet</small>
+            </button>
+            <button type="button" class="dy-eod-pad-btn dot" data-eod-paper="dot-cream">
+              <span>Dot Grid</span>
+              <small>Bullet stationery</small>
             </button>
             <button type="button" class="dy-eod-pad-btn plain" data-eod-paper="plain-cream">
-              <span>⬜ Plain Clean Page</span>
-              <small>Open unruled stationery</small>
+              <span>Plain Page</span>
+              <small>Open unruled</small>
             </button>
           </div>
           <button type="button" class="dy-eod-later" data-eod-later="1">Maybe later tonight</button>
@@ -19423,7 +20087,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   }
 
   function renderHomeHooks() {
-    // 1. Classic header button indicator
     const dyBtn = document.getElementById('dyBtn');
     const due = isEndOfDayDue();
     if (dyBtn) {
@@ -19433,7 +20096,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       dyBtn.title = due ? 'Closing of the day · Tap to write your diary' : 'Daily Diary';
     }
 
-    // 2. Regain Home item + End-of-Day banner
     const rgMain = document.getElementById('rgMain');
     if (rgMain) {
       let banner = document.getElementById('dyRgEodBanner');
@@ -19478,16 +20140,17 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         const tk = todayKey();
         const hasToday = entryHasContent(getEntryForDate(tk));
         const total = Object.values(getAllEntriesMap()).filter(entryHasContent).length;
+        const streak = computeDiaryStreak();
+        const streakNote = streak > 1 ? ` · 🔥 ${streak}d streak` : '';
         const subTxt = hasToday
-          ? `Today logged ✓ · ${total} saved entr${total === 1 ? 'y' : 'ies'}`
+          ? `Today logged ✓ · ${total} entr${total === 1 ? 'y' : 'ies'}${streakNote}`
           : due
             ? 'End of day ready · Tap to reflect on today'
-            : `Ruled yellow &amp; plain pad · ${total} entr${total === 1 ? 'y' : 'ies'}`;
+            : `Stationery pad & insights · ${total} entr${total === 1 ? 'y' : 'ies'}${streakNote}`;
         rgBtn.innerHTML = `<span class="l"><span class="ic">📓</span><span>Daily Diary<small>${subTxt}</small></span></span><span>›</span>`;
       }
     }
 
-    // 3. Regain "More" bottom sheet item
     const rgShB = document.getElementById('rgShB');
     if (rgShB) {
       const h3 = rgShB.querySelector('h3');
@@ -19512,6 +20175,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const mf = STATE.moodFilter;
     const filtered = all
       .filter((e) => {
+        if (STATE.starOnly && !e.starred) return false;
         if (mf && e.mood !== mf) return false;
         if (!q) return true;
         return (
@@ -19519,39 +20183,176 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           String(e.body || '').toLowerCase().includes(q) ||
           String(e.highlight || '').toLowerCase().includes(q) ||
           String(e.tomorrowGoal || '').toLowerCase().includes(q) ||
+          String(e.promptA || '').toLowerCase().includes(q) ||
+          (Array.isArray(e.tags) && e.tags.some((t) => String(t).includes(q))) ||
           String(e.dateKey || '').includes(q)
         );
       })
       .sort((a, b) => String(b.dateKey).localeCompare(String(a.dateKey)));
 
     if (!filtered.length) {
-      return `<div class="dy-arch-empty">${all.length ? 'No entries match your search.' : 'No saved diary entries yet. Start writing today’s page!'}</div>`;
+      return `<div class="dy-arch-empty">${all.length ? 'No entries match this filter.' : 'No saved diary entries yet. Start writing today’s page!'}</div>`;
     }
     return filtered
       .map((e) => {
         const mObj = MOODS.find((m) => m.id === e.mood);
         const on = e.dateKey === STATE.selectedDate;
-        const snip = String(e.body || e.highlight || e.tomorrowGoal || '').trim().replace(/\s+/g, ' ');
+        const snip = String(e.body || e.promptA || e.highlight || e.tomorrowGoal || '').trim().replace(/\s+/g, ' ');
+        const tagLine = Array.isArray(e.tags) && e.tags.length ? ' · ' + e.tags.map((t) => '#' + t).join(' ') : '';
         return `
           <button type="button" class="dy-arch-item ${on ? 'on' : ''}" data-dy-pick="${escHtml(e.dateKey)}">
             <div class="dy-arch-item-top">
-              <span>${escHtml(formatShortDate(e.dateKey))} · ${escHtml(e.dateKey)}</span>
-              <span>${mObj ? mObj.icon + ' ' : ''}${e.wordCount || countWords(e.body)}w</span>
+              <span>${e.starred ? '★ ' : ''}${escHtml(formatShortDate(e.dateKey))} · ${escHtml(e.dateKey)}</span>
+              <span>${mObj ? mObj.icon + ' ' : ''}${e.focusMinutes ? e.focusMinutes + 'm · ' : ''}${e.wordCount || countWords(e.body)}w</span>
             </div>
             ${e.title ? `<div class="dy-arch-item-title">${escHtml(e.title)}</div>` : ''}
-            <div class="dy-arch-item-snip">${escHtml(snip || 'Mood / check-in logged')}</div>
+            <div class="dy-arch-item-snip">${escHtml((snip || 'Mood / check-in logged') + tagLine)}</div>
           </button>
         `;
       })
       .join('');
   }
 
+  function renderArchiveCalendarHtml() {
+    const tk = todayKey();
+    const ym = STATE.calMonth || tk.slice(0, 7);
+    const [yr, mo] = ym.split('-').map(Number);
+    const firstDt = new Date(yr, mo - 1, 1);
+    const daysInMonth = new Date(yr, mo, 0).getDate();
+    const startOffset = (firstDt.getDay() + 6) % 7; // Monday first
+    const monthLabel = firstDt.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
+    const entries = getAllEntriesMap();
+
+    let cells = '';
+    for (let i = 0; i < startOffset; i++) {
+      cells += '<span class="dy-cal-day empty"></span>';
+    }
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dk = `${yr}-${String(mo).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const ent = entries[dk];
+      const has = entryHasContent(ent);
+      const isFuture = dk > tk;
+      const isOn = dk === STATE.selectedDate;
+      const mObj = has ? MOODS.find((m) => m.id === ent.mood) : null;
+      const marker = has ? (ent.starred ? '★' : mObj ? mObj.icon : '●') : '';
+      cells += `
+        <button type="button" class="dy-cal-day ${has ? 'has' : ''} ${isOn ? 'on' : ''} ${isFuture ? 'future' : ''}" ${isFuture ? 'disabled' : `data-dy-pick="${dk}"`}>
+          <span>${day}</span>
+          ${marker ? `<span class="dy-cal-dot">${marker}</span>` : ''}
+        </button>
+      `;
+    }
+
+    return `
+      <div>
+        <div class="dy-cal-head">
+          <button type="button" class="dy-date-btn" data-dy-cal-step="-1" aria-label="Previous month">‹</button>
+          <span>${escHtml(monthLabel)}</span>
+          <button type="button" class="dy-date-btn" data-dy-cal-step="1" ${ym >= tk.slice(0, 7) ? 'disabled' : ''} aria-label="Next month">›</button>
+        </div>
+        <div class="dy-cal-grid">
+          <span class="dy-cal-wd">M</span><span class="dy-cal-wd">T</span><span class="dy-cal-wd">W</span>
+          <span class="dy-cal-wd">T</span><span class="dy-cal-wd">F</span><span class="dy-cal-wd">S</span><span class="dy-cal-wd">S</span>
+          ${cells}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderArchiveInsightsHtml() {
+    const all = Object.values(getAllEntriesMap()).filter(entryHasContent);
+    if (!all.length) {
+      return '<div class="dy-arch-empty">Log a few diary pages to unlock your journaling streak and mood-focus insights.</div>';
+    }
+    const streak = computeDiaryStreak();
+    const totalWords = all.reduce((acc, e) => acc + (e.wordCount || countWords(e.body)), 0);
+    const starredCount = all.filter((e) => e.starred).length;
+    const rated = all.filter((e) => Number(e.dayRating || 0) > 0);
+    const avgRating = rated.length ? (rated.reduce((a, e) => a + Number(e.dayRating), 0) / rated.length).toFixed(1) : '—';
+
+    const byMood = {};
+    all.forEach((e) => {
+      if (!e.mood) return;
+      if (!byMood[e.mood]) byMood[e.mood] = { count: 0, focusSum: 0, qSum: 0 };
+      byMood[e.mood].count++;
+      byMood[e.mood].focusSum += Number(e.focusMinutes || 0);
+      byMood[e.mood].qSum += Number(e.questionsSolved || 0);
+    });
+    const moodRows = Object.entries(byMood)
+      .sort((a, b) => b[1].count - a[1].count)
+      .map(([mid, data]) => {
+        const mObj = MOODS.find((m) => m.id === mid);
+        const avgF = Math.round(data.focusSum / data.count);
+        const avgQ = Math.round(data.qSum / data.count);
+        return `
+          <div class="dy-ins-row">
+            <span>${mObj ? mObj.icon + ' ' + mObj.label : mid} (${data.count})</span>
+            <span>${avgF}m focus · ${avgQ} Q avg</span>
+          </div>
+        `;
+      })
+      .join('');
+
+    return `
+      <div style="display:flex;flex-direction:column;gap:12px;overflow-y:auto">
+        <div class="dy-ins-stats">
+          <div class="dy-ins-stat"><b>🔥 ${streak}d</b><small>Writing streak</small></div>
+          <div class="dy-ins-stat"><b>${all.length}</b><small>Saved pages</small></div>
+          <div class="dy-ins-stat"><b>${totalWords.toLocaleString()}</b><small>Total words</small></div>
+          <div class="dy-ins-stat"><b>${avgRating}${avgRating === '—' ? '' : ' / 5'}</b><small>Avg rating · ★ ${starredCount}</small></div>
+        </div>
+        <div>
+          <div style="font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:4px">Mood × Study Output</div>
+          ${moodRows || '<div style="font-size:12.5px;color:var(--muted)">Pick moods on your pages to see how focus correlates with mood.</div>'}
+        </div>
+        <button type="button" class="dy-ic-btn" data-dy-act="exportAll" style="width:100%">⬇ Export Full Journal (.md)</button>
+      </div>
+    `;
+  }
+
+  function renderLockHtml() {
+    const dots = [0, 1, 2, 3]
+      .map((i) => `<span class="dy-lock-dot ${STATE.pinBuffer.length > i ? 'on' : ''}"></span>`)
+      .join('');
+    return `
+      <div class="dy-shell">
+        <div class="dy-topbar">
+          <div class="dy-top-l"><h2>📓 Private Diary</h2></div>
+          <div class="dy-top-r">
+            <button type="button" class="dy-ic-btn" data-dy-act="close" aria-label="Close Diary">✕</button>
+          </div>
+        </div>
+        <div class="dy-lock-wrap">
+          <div style="font-size:30px">🔒</div>
+          <h3 style="margin:0;font-family:'Playfair Display',serif;font-size:22px">Enter Diary PIN</h3>
+          <p style="margin:0;font-size:13px;color:var(--muted);max-width:290px">Your pages are protected on this device with a 4-digit privacy lock.</p>
+          <div class="dy-lock-dots">${dots}</div>
+          ${STATE.pinError ? `<div style="font-size:12.5px;color:#fca5a5;font-weight:700">${escHtml(STATE.pinError)}</div>` : ''}
+          <div class="dy-keypad">
+            ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button type="button" class="dy-key-btn" data-dy-pin-digit="${n}">${n}</button>`).join('')}
+            <button type="button" class="dy-key-btn" data-dy-pin-clear="1" style="font-size:14px">Clear</button>
+            <button type="button" class="dy-key-btn" data-dy-pin-digit="0">0</button>
+            <button type="button" class="dy-key-btn" data-dy-pin-back="1" style="font-size:16px">⌫</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderModal() {
     if (!STATE.open) {
-      modal.classList.remove('on');
+      modal.classList.remove('on', 'dy-zen');
       modal.setAttribute('aria-hidden', 'true');
       return;
     }
+    if (STATE.locked && STATE.prefs.pinHash) {
+      modal.classList.remove('dy-zen');
+      modal.innerHTML = renderLockHtml();
+      modal.classList.add('on');
+      modal.setAttribute('aria-hidden', 'false');
+      return;
+    }
+
     if (!STATE.draft || STATE.draft.dateKey !== STATE.selectedDate) {
       STATE.draft = buildDraftForDate(STATE.selectedDate);
     }
@@ -19561,28 +20362,42 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const isFuture = d.dateKey > tk;
     const stats = getDayStudyStats(d.dateKey);
     const allCount = Object.values(getAllEntriesMap()).filter(entryHasContent).length;
+    const streak = computeDiaryStreak();
     const words = countWords(d.body);
+    const readMin = Math.max(1, Math.ceil(words / 180));
     const hasExisting = entryHasContent(getEntryForDate(d.dateKey));
     const saveBadge = STATE.saving
       ? 'Saving…'
       : STATE.dirty
       ? 'Unsaved edits'
-      : STATE.saveNote || (hasExisting ? (STATE.user ? 'Saved to account ✓' : 'Saved on device ✓') : 'Ready to write');
+      : STATE.saveNote || (hasExisting ? (STATE.user ? 'Synced to account ✓' : 'Saved on device ✓') : 'Ready to write');
 
+    const availableTags = Array.from(new Set([...QUICK_TAGS, ...(d.tags || [])]));
+
+    modal.classList.toggle('dy-zen', Boolean(STATE.zenMode));
     modal.innerHTML = `
       <div class="dy-shell">
+        <div class="dy-zen-bar">
+          <span style="font-size:13px;font-weight:700;color:var(--muted)">${escHtml(formatShortDate(d.dateKey))} · ${words} words</span>
+          <div style="display:flex;gap:8px">
+            <button type="button" class="dy-ic-btn" data-dy-act="save">Save</button>
+            <button type="button" class="dy-ic-btn on" data-dy-act="toggleZen">Exit Focus</button>
+          </div>
+        </div>
+
         <div class="dy-topbar">
           <div class="dy-top-l">
             <h2>📓 Daily Diary</h2>
             ${
               STATE.user
-                ? `<span class="dy-acct-chip synced" title="Synced privately to your signed-in account">☁️ @${escHtml(STATE.user.username)}</span>`
-                : `<button type="button" class="dy-acct-chip guest" data-dy-act="login" title="Sign in to sync diary across devices">📱 Local · Link account</button>`
+                ? `<span class="dy-acct-meta synced">☁️ @${escHtml(STATE.user.username)}${streak > 1 ? ' · 🔥 ' + streak + 'd' : ''}</span>`
+                : `<button type="button" class="dy-acct-link-btn" data-dy-act="login" title="Sign in to sync diary across devices">Link account to sync</button>`
             }
           </div>
           <div class="dy-top-r">
-            <button type="button" class="dy-ic-btn ${STATE.archiveOpen ? 'on' : ''}" data-dy-act="toggleArchive">📚 Entries (${allCount})</button>
-            <button type="button" class="dy-ic-btn ${STATE.prefsOpen ? 'on' : ''}" data-dy-act="togglePrefs" aria-label="Diary reminder settings" title="Closing time settings">⚙</button>
+            <button type="button" class="dy-ic-btn ${STATE.zenMode ? 'on' : ''}" data-dy-act="toggleZen" title="Distraction-free writing">⛶ <span class="dy-hide-sm">Focus</span></button>
+            <button type="button" class="dy-ic-btn ${STATE.archiveOpen ? 'on' : ''}" data-dy-act="toggleArchive">📚 <span class="dy-hide-sm">Entries</span> (${allCount})</button>
+            <button type="button" class="dy-ic-btn ${STATE.prefsOpen ? 'on' : ''}" data-dy-act="togglePrefs" aria-label="Diary settings" title="Reminder &amp; Privacy PIN">⚙</button>
             <button type="button" class="dy-ic-btn" data-dy-act="close" aria-label="Close Diary">✕</button>
           </div>
         </div>
@@ -19606,76 +20421,175 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
         </div>
 
         <div class="dy-prefs-panel ${STATE.prefsOpen ? 'on' : ''}">
-          <label>
-            <input type="checkbox" class="sw" id="dyPromptSw" ${STATE.prefs.promptEnabled ? 'checked' : ''}>
-            <span>🌙 Prompt me at close of day</span>
-          </label>
-          <div class="dy-prefs-hours">
-            <span>Closing time:</span>
-            ${PROMPT_HOURS.map(
-              (hr) => `<button type="button" class="dy-hr-chip ${Number(STATE.prefs.promptHour) === hr ? 'on' : ''}" data-dy-hr="${hr}">${formatHourLabel(hr)}</button>`
-            ).join('')}
+          <div class="dy-prefs-row">
+            <label>
+              <input type="checkbox" class="sw" id="dyPromptSw" ${STATE.prefs.promptEnabled ? 'checked' : ''}>
+              <span>🌙 Prompt me at close of day</span>
+            </label>
+            <div class="dy-prefs-hours">
+              <span>Closing time:</span>
+              ${PROMPT_HOURS.map(
+                (hr) => `<button type="button" class="dy-hr-chip ${Number(STATE.prefs.promptHour) === hr ? 'on' : ''}" data-dy-hr="${hr}">${formatHourLabel(hr)}</button>`
+              ).join('')}
+            </div>
+          </div>
+          <div class="dy-prefs-row">
+            <div class="dy-pin-setup">
+              <span style="font-size:12.5px;font-weight:700">🔒 Privacy Lock:</span>
+              ${
+                STATE.prefs.pinHash
+                  ? `<span style="font-size:12px;color:#86efac;font-weight:700">PIN active</span>
+                     <button type="button" class="dy-hr-chip" data-dy-act="lockNow">Lock Now</button>
+                     <button type="button" class="dy-hr-chip" data-dy-act="clearPin">Remove PIN</button>`
+                  : `<input type="password" inputmode="numeric" maxlength="4" id="dyPinNewIn" class="dy-pin-in" placeholder="4 digits" autocomplete="off">
+                     <button type="button" class="dy-hr-chip on" data-dy-act="setPin">Set 4-Digit PIN</button>`
+              }
+              ${STATE.pinFeedback ? `<span style="font-size:12px;color:var(--muted)">${escHtml(STATE.pinFeedback)}</span>` : ''}
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button type="button" class="dy-hr-chip" data-dy-act="exportAll">⬇ Export All (.md)</button>
+            </div>
           </div>
         </div>
 
         <div class="dy-workspace ${STATE.archiveOpen ? 'show-archive' : ''}">
           <div class="dy-pad-col">
-            <div class="dy-pad" data-paper="${escHtml(d.paperStyle)}" data-ink="${escHtml(d.inkStyle)}">
+            <div class="dy-pad" data-paper="${escHtml(d.paperStyle)}" data-ink="${escHtml(d.inkStyle)}" data-fsize="${escHtml(d.fontSize || 'md')}">
               <div class="dy-pad-binding"><span class="dy-rivet"></span><span class="dy-rivet"></span></div>
+
               <div class="dy-page-head">
                 <div>
                   <span class="dy-stamp-kicker">${isToday ? (new Date().getHours() >= (Number(STATE.prefs.promptHour) || 21) ? '🌙 END OF DAY · CLOSING LOG' : '✦ TODAY’S PAGE') : '📖 JOURNAL ARCHIVE'}</span>
                   <h3 class="dy-date-title">${escHtml(formatFullDate(d.dateKey))}</h3>
                 </div>
-                <div class="dy-day-summary">⏱ ${stats.focusMinutes}m focus · ✍️ ${stats.questionsSolved} Q · ✅ ${stats.tasksDone} tasks</div>
+                <div class="dy-head-actions">
+                  <button type="button" class="dy-star-btn ${d.starred ? 'on' : ''}" data-dy-act="toggleStar">${d.starred ? '★ Milestone' : '☆ Star Page'}</button>
+                  <div class="dy-day-telemetry">
+                    <span>${stats.focusMinutes}m focus</span>
+                    <span>·</span>
+                    <span>${stats.questionsSolved} solved</span>
+                    ${(stats.leftOnTime || stats.overtimeSkips) ? `<span>·</span><span>${stats.leftOnTime} on-time / ${stats.overtimeSkips} OT</span>` : ''}
+                    <span>·</span>
+                    <span>${stats.tasksDone} tasks</span>
+                    ${stats.topSubject ? `<span>·</span><span>${escHtml(stats.topSubject)}</span>` : ''}
+                  </div>
+                </div>
               </div>
 
-              <div class="dy-mood-row" aria-label="Mood check-in">
+              <div class="dy-sheet-row dy-mood-row" aria-label="Mood check-in">
                 ${MOODS.map(
                   (m) => `<button type="button" class="dy-mood-chip ${d.mood === m.id ? 'on' : ''}" data-dy-mood="${m.id}">${m.icon} ${m.label}</button>`
                 ).join('')}
               </div>
 
-              <div class="dy-title-wrap">
+              <div class="dy-sheet-row dy-meters-row">
+                <div class="dy-meter-grp">
+                  <span class="dy-meter-lbl">⚡ Energy:</span>
+                  ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="dy-step-btn ${d.energy >= n ? 'on' : ''}" data-dy-energy="${n}">${n}</button>`).join('')}
+                  <span style="margin:0 4px;opacity:.4">·</span>
+                  <span class="dy-meter-lbl">★ Day:</span>
+                  ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="dy-step-btn ${d.dayRating >= n ? 'on' : ''}" data-dy-rating="${n}">${n}</button>`).join('')}
+                </div>
+                <div class="dy-meter-grp">
+                  <span class="dy-meter-lbl">Text:</span>
+                  ${FONT_SIZES.map((fs) => `<button type="button" class="dy-step-btn ${(d.fontSize || 'md') === fs.id ? 'on' : ''}" data-dy-fsize="${fs.id}">${fs.label}</button>`).join('')}
+                </div>
+              </div>
+
+              <div class="dy-sheet-row dy-tpl-row" aria-label="Guided writing templates">
+                <span class="dy-tpl-lbl">Templates:</span>
+                ${TEMPLATES.map((t) => `<button type="button" class="dy-tpl-btn ${d.template === t.id ? 'on' : ''}" data-dy-tpl="${t.id}">${escHtml(t.label)}</button>`).join('')}
+              </div>
+
+              <div class="dy-sheet-row">
+                <div class="dy-prompt-card">
+                  <div class="dy-prompt-top">
+                    <div class="dy-prompt-q">
+                      <small>Daily Prompt</small>
+                      ${escHtml(d.promptQ || promptForDate(d.dateKey))}
+                    </div>
+                    <div class="dy-prompt-acts">
+                      <button type="button" class="dy-mini-paper-btn" data-dy-act="shufflePrompt" title="Switch prompt">↻ Shuffle</button>
+                      <button type="button" class="dy-mini-paper-btn" data-dy-act="insertPrompt" title="Paste prompt onto page">+ To Page</button>
+                    </div>
+                  </div>
+                  <input type="text" id="dyPromptAIn" class="dy-prompt-ans" maxlength="500" placeholder="Jot a quick answer right here (optional)…" value="${escHtml(d.promptA)}" autocomplete="off">
+                </div>
+              </div>
+
+              <div class="dy-sheet-row">
                 <input type="text" id="dyTitleIn" class="dy-title-in" maxlength="80" placeholder="Give this day a headline (optional)…" value="${escHtml(d.title)}" autocomplete="off">
               </div>
 
-              <textarea id="dyBodyIn" class="dy-body-in" maxlength="8000" placeholder="Write freely about how today went, what you mastered, what tested your patience, and anything on your mind as you close the day…">${escHtml(d.body)}</textarea>
+              <textarea id="dyBodyIn" class="dy-body-in" maxlength="8000" placeholder="Write freely about how today went, what clicked in your study, what tested your patience, and anything on your mind…">${escHtml(d.body)}</textarea>
 
-              <div class="dy-prompts">
-                <div class="dy-prompt-box">
-                  <label for="dyHighlightIn">✨ Best Win Today</label>
-                  <input type="text" id="dyHighlightIn" maxlength="240" placeholder="One moment or breakthrough you're glad happened…" value="${escHtml(d.highlight)}" autocomplete="off">
+              <div class="dy-sheet-row dy-tags-row" aria-label="Entry tags">
+                <span style="font-size:11px;font-weight:800;color:var(--dy-muted);text-transform:uppercase;letter-spacing:.07em">Tags:</span>
+                ${availableTags.map((tag) => `<button type="button" class="dy-tag-chip ${(d.tags || []).includes(tag) ? 'on' : ''}" data-dy-tag="${escHtml(tag)}">#${escHtml(tag)}</button>`).join('')}
+                ${(d.tags || []).length < 5 ? `<input type="text" id="dyTagCustomIn" class="dy-tag-add" maxlength="24" placeholder="+ custom tag" autocomplete="off">` : ''}
+              </div>
+
+              <div class="dy-sheet-row dy-closing-grid">
+                <div class="dy-grat-box">
+                  ${[0, 1, 2].map((idx) => `
+                    <div class="dy-prompt-box">
+                      <label for="dyGrat${idx}">🙏 Gratitude #${idx + 1}</label>
+                      <input type="text" id="dyGrat${idx}" data-dy-grat-idx="${idx}" maxlength="120" placeholder="${idx === 0 ? 'Something good today…' : idx === 1 ? 'Someone or a moment…' : 'One small win…'}" value="${escHtml((d.gratitude && d.gratitude[idx]) || '')}" autocomplete="off">
+                    </div>
+                  `).join('')}
                 </div>
                 <div class="dy-prompt-box">
-                  <label for="dyTomorrowIn">📌 Tomorrow's #1 Intention</label>
-                  <input type="text" id="dyTomorrowIn" maxlength="240" placeholder="If you only nail one thing tomorrow, what is it?" value="${escHtml(d.tomorrowGoal)}" autocomplete="off">
+                  <label for="dyHighlightIn">✨ Best Win Today</label>
+                  <input type="text" id="dyHighlightIn" maxlength="240" placeholder="One breakthrough you're glad happened…" value="${escHtml(d.highlight)}" autocomplete="off">
+                </div>
+                <div class="dy-prompt-box">
+                  <label for="dyTomorrowIn">
+                    <span>📌 Tomorrow's #1 Intention</span>
+                    <button type="button" class="dy-mini-paper-btn" data-dy-act="pushPlanner">+ Add to Planner</button>
+                  </label>
+                  <input type="text" id="dyTomorrowIn" maxlength="240" placeholder="If you nail one thing tomorrow, what is it?" value="${escHtml(d.tomorrowGoal)}" autocomplete="off">
                 </div>
               </div>
 
               <div class="dy-pad-foot">
-                <span class="dy-meta-txt" id="dyStatusTxt">${words} word${words === 1 ? '' : 's'} · ${escHtml(saveBadge)}</span>
+                <span class="dy-meta-txt" id="dyStatusTxt">${words} word${words === 1 ? '' : 's'}${words > 0 ? ' · ~' + readMin + 'm read' : ''} · ${escHtml(saveBadge)}</span>
                 <div class="dy-foot-btns">
-                  ${hasExisting ? `<button type="button" class="dy-del-btn" data-dy-act="delete">${STATE.deleteArmed ? 'Confirm Delete' : '🗑 Delete'}</button>` : ''}
-                  <button type="button" class="dy-save-btn" data-dy-act="save">${STATE.saving ? 'Saving…' : isToday ? '🌙 Save Entry' : '✓ Save Changes'}</button>
+                  <button type="button" class="dy-foot-sec-btn" data-dy-act="askLily" title="Ask AI Coach Lily to reflect on this diary entry">✨ Reflect w/ Lily</button>
+                  <button type="button" class="dy-foot-sec-btn" data-dy-act="exportEntry" title="Download this page as Markdown">⬇ .md</button>
+                  <button type="button" class="dy-foot-sec-btn" data-dy-act="printEntry" title="Print page">🖨</button>
+                  ${hasExisting ? `<button type="button" class="dy-del-btn" data-dy-act="delete">${STATE.deleteArmed ? 'Confirm Delete' : '🗑'}</button>` : ''}
+                  <button type="button" class="dy-save-btn" data-dy-act="save">${STATE.saving ? 'Saving…' : isToday ? '🌙 Save Entry' : '✓ Save'}</button>
                 </div>
               </div>
             </div>
           </div>
 
-          <aside class="dy-archive-col" aria-label="Past diary entries">
+          <aside class="dy-archive-col" aria-label="Diary Archive, Calendar & Insights">
             <div class="dy-arch-head">
-              <h3>Past Entries</h3>
-              <button type="button" class="dy-ic-btn" data-dy-act="toggleArchive" style="height:28px;min-width:28px;padding:0 8px">✕</button>
+              <div class="dy-arch-tabs" style="flex:1">
+                <button type="button" class="dy-arch-tab ${STATE.archiveTab === 'list' ? 'on' : ''}" data-dy-arch-tab="list">Entries</button>
+                <button type="button" class="dy-arch-tab ${STATE.archiveTab === 'calendar' ? 'on' : ''}" data-dy-arch-tab="calendar">Calendar</button>
+                <button type="button" class="dy-arch-tab ${STATE.archiveTab === 'insights' ? 'on' : ''}" data-dy-arch-tab="insights">Insights</button>
+              </div>
+              <button type="button" class="dy-ic-btn" data-dy-act="toggleArchive" style="height:32px;min-width:32px;padding:0 8px">✕</button>
             </div>
-            <input type="search" id="dyArchSearch" class="dy-arch-search" placeholder="Search notes, headlines, wins…" value="${escHtml(STATE.searchQuery)}" autocomplete="off">
-            <div style="display:flex;gap:5px;overflow-x:auto;flex-shrink:0">
-              <button type="button" class="dy-hr-chip ${!STATE.moodFilter ? 'on' : ''}" data-dy-mfilter="">All</button>
-              ${MOODS.map(
-                (m) => `<button type="button" class="dy-hr-chip ${STATE.moodFilter === m.id ? 'on' : ''}" data-dy-mfilter="${m.id}">${m.icon}</button>`
-              ).join('')}
-            </div>
-            <div class="dy-arch-list" id="dyArchList">${renderArchiveListHtml()}</div>
+            ${
+              STATE.archiveTab === 'list'
+                ? `
+                  <input type="search" id="dyArchSearch" class="dy-arch-search" placeholder="Search notes, headlines, #tags…" value="${escHtml(STATE.searchQuery)}" autocomplete="off">
+                  <div style="display:flex;gap:5px;overflow-x:auto;flex-shrink:0">
+                    <button type="button" class="dy-hr-chip ${!STATE.moodFilter && !STATE.starOnly ? 'on' : ''}" data-dy-mfilter="">All</button>
+                    <button type="button" class="dy-hr-chip ${STATE.starOnly ? 'on' : ''}" data-dy-starfilter="1">★</button>
+                    ${MOODS.map(
+                      (m) => `<button type="button" class="dy-hr-chip ${STATE.moodFilter === m.id ? 'on' : ''}" data-dy-mfilter="${m.id}">${m.icon}</button>`
+                    ).join('')}
+                  </div>
+                  <div class="dy-arch-list" id="dyArchList">${renderArchiveListHtml()}</div>
+                `
+                : STATE.archiveTab === 'calendar'
+                  ? renderArchiveCalendarHtml()
+                  : renderArchiveInsightsHtml()
+            }
           </aside>
         </div>
       </div>
@@ -19688,13 +20602,14 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const el = document.getElementById('dyStatusTxt');
     if (!el || !STATE.draft) return;
     const words = countWords(STATE.draft.body);
+    const readMin = Math.max(1, Math.ceil(words / 180));
     const hasExisting = entryHasContent(getEntryForDate(STATE.draft.dateKey));
     const saveBadge = STATE.saving
       ? 'Saving…'
       : STATE.dirty
       ? 'Unsaved edits'
-      : STATE.saveNote || (hasExisting ? (STATE.user ? 'Saved to account ✓' : 'Saved on device ✓') : 'Ready to write');
-    el.textContent = `${words} word${words === 1 ? '' : 's'} · ${saveBadge}`;
+      : STATE.saveNote || (hasExisting ? (STATE.user ? 'Synced to account ✓' : 'Saved on device ✓') : 'Ready to write');
+    el.textContent = `${words} word${words === 1 ? '' : 's'}${words > 0 ? ' · ~' + readMin + 'm read' : ''} · ${saveBadge}`;
   }
 
   async function persistCurrentDraft(showSuccessToast) {
@@ -19715,8 +20630,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       mood: d.mood || '',
       paperStyle: d.paperStyle || 'ruled-yellow',
       inkStyle: d.inkStyle || 'serif',
+      fontSize: d.fontSize || 'md',
+      template: d.template || '',
+      starred: Boolean(d.starred),
+      energy: Math.max(0, Math.min(5, Math.round(Number(d.energy || 0)))),
+      dayRating: Math.max(0, Math.min(5, Math.round(Number(d.dayRating || 0)))),
+      tags: normalizeTags(d.tags),
+      gratitude: (d.gratitude || []).map((g) => String(g || '').trim().slice(0, 120)).filter(Boolean).slice(0, 3),
+      promptQ: String(d.promptQ || '').trim().slice(0, 160),
+      promptA: String(d.promptA || '').replace(/\r\n/g, '\n').slice(0, 500),
       focusMinutes: stats.focusMinutes,
       questionsSolved: stats.questionsSolved,
+      leftOnTime: stats.leftOnTime,
+      overtimeSkips: stats.overtimeSkips,
       tasksDone: stats.tasksDone,
       wordCount: words,
       createdAtMs: (getEntryForDate(dateKey) && getEntryForDate(dateKey).createdAtMs) || nowMs,
@@ -19745,7 +20671,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       try {
         const saved = await fb.saveDiaryEntry(record);
         STATE.cloudEntries[dateKey] = saved;
-        STATE.saveNote = 'Saved to account ✓';
+        STATE.saveNote = 'Synced to account ✓';
       } catch (err) {
         STATE.saveNote = 'Saved locally (retry sync)';
       }
@@ -19784,10 +20710,89 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       await persistCurrentDraft(false);
     }
     STATE.selectedDate = clean;
+    STATE.calMonth = clean.slice(0, 7);
     STATE.deleteArmed = false;
     STATE.saveNote = '';
     STATE.draft = buildDraftForDate(clean);
     renderModal();
+  }
+
+  function formatEntryMarkdown(e) {
+    const mObj = MOODS.find((m) => m.id === e.mood);
+    const lines = [
+      `# ${formatFullDate(e.dateKey)} (${e.dateKey})`,
+      '',
+      [
+        mObj ? `Mood: ${mObj.icon} ${mObj.label}` : '',
+        e.energy ? `Energy: ${e.energy}/5` : '',
+        e.dayRating ? `Day Rating: ${e.dayRating}/5` : '',
+        e.starred ? '★ Milestone Page' : '',
+      ].filter(Boolean).join(' · '),
+      `Study: ${e.focusMinutes || 0}m focus · ${e.questionsSolved || 0} solved · ${e.tasksDone || 0} tasks done`,
+      e.tags && e.tags.length ? `Tags: ${e.tags.map((t) => '#' + t).join(' ')}` : '',
+      '',
+    ];
+    if (e.title) lines.push(`## ${e.title}`, '');
+    if (e.promptQ && e.promptA) lines.push(`> **${e.promptQ}**`, `> ${e.promptA}`, '');
+    if (e.body) lines.push(e.body, '');
+    if (Array.isArray(e.gratitude) && e.gratitude.some(Boolean)) {
+      lines.push('### Gratitude');
+      e.gratitude.filter(Boolean).forEach((g) => lines.push(`- ${g}`));
+      lines.push('');
+    }
+    if (e.highlight) lines.push(`**Best Win:** ${e.highlight}`);
+    if (e.tomorrowGoal) lines.push(`**Tomorrow's #1 Intention:** ${e.tomorrowGoal}`);
+    return lines.filter((line, idx, arr) => !(line === '' && arr[idx - 1] === '')).join('\n');
+  }
+
+  function downloadMarkdown(filename, content) {
+    try {
+      const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e) {}
+  }
+
+  function pushTomorrowGoalToPlanner() {
+    if (!STATE.draft) return;
+    const goalText = String(STATE.draft.tomorrowGoal || '').trim();
+    if (!goalText) {
+      toast('Write Tomorrow’s #1 Intention first');
+      const inp = document.getElementById('dyTomorrowIn');
+      if (inp) inp.focus();
+      return;
+    }
+    const targetDay = addDays(STATE.draft.dateKey, 1);
+    const plan = readJson('leaveit_pl', {});
+    const dayArr = Array.isArray(plan[targetDay]) ? plan[targetDay] : [];
+    const duplicate = dayArr.some((t) => t && String(t.t || '').trim().toLowerCase() === goalText.toLowerCase());
+    if (duplicate) {
+      toast('Already in ' + formatShortDate(targetDay) + '’s planner ✓');
+      return;
+    }
+    dayArr.unshift({
+      id: 'dy_' + Date.now(),
+      t: goalText.slice(0, 140),
+      m: 45,
+      s: 'General',
+      d: false,
+      fromDiary: STATE.draft.dateKey,
+    });
+    plan[targetDay] = dayArr;
+    writeJson('leaveit_pl', plan);
+    try {
+      if (typeof renderPlanner === 'function') renderPlanner();
+      if (window.LeaveItArenaSync && typeof window.LeaveItArenaSync.scheduleBackupSync === 'function') {
+        window.LeaveItArenaSync.scheduleBackupSync();
+      }
+    } catch (e) {}
+    toast('📌 Added to ' + formatShortDate(targetDay) + '’s Study Planner ✓');
   }
 
   function openDiary(dateKeyStr, overridePaper) {
@@ -19800,8 +20805,14 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     STATE.eodOpen = false;
     renderEodModal();
     STATE.selectedDate = target;
+    STATE.calMonth = target.slice(0, 7);
     STATE.deleteArmed = false;
     STATE.saveNote = '';
+    STATE.pinError = '';
+    STATE.pinBuffer = '';
+    if (STATE.prefs.pinHash && !STATE.unlockedThisOpen) {
+      STATE.locked = true;
+    }
     STATE.draft = buildDraftForDate(target);
     if (overridePaper) STATE.draft.paperStyle = overridePaper;
     STATE.open = true;
@@ -19812,8 +20823,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     document.body.style.overflow = 'hidden';
     renderModal();
     requestAnimationFrame(() => {
-      const b = document.getElementById('dyBodyIn');
-      if (b && !b.value) b.focus({ preventScroll: true });
+      if (!STATE.locked) {
+        const b = document.getElementById('dyBodyIn');
+        if (b && !b.value) b.focus({ preventScroll: true });
+      }
     });
   }
 
@@ -19823,6 +20836,9 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     }
     STATE.open = false;
     STATE.prefsOpen = false;
+    STATE.zenMode = false;
+    STATE.unlockedThisOpen = false;
+    if (STATE.prefs.pinHash) STATE.locked = true;
     if (STATE._prevOverflowSaved) {
       document.body.style.overflow = STATE._prevOverflow || '';
       STATE._prevOverflowSaved = false;
@@ -19852,7 +20868,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     if (!isEndOfDayDue()) return;
     const tk = todayKey();
 
-    // Optional OS / Web Push notification once per evening
     if (STATE.prefs.notifiedDate !== tk) {
       STATE.prefs.notifiedDate = tk;
       savePrefs();
@@ -19878,7 +20893,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     renderEodModal();
   }
 
-  // Event Listeners on Modal & EOD Prompt
   modal.addEventListener('input', (e) => {
     if (!STATE.draft) return;
     const id = e.target.id;
@@ -19894,10 +20908,29 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     } else if (id === 'dyTomorrowIn') {
       STATE.draft.tomorrowGoal = e.target.value;
       scheduleAutosave();
+    } else if (id === 'dyPromptAIn') {
+      STATE.draft.promptA = e.target.value;
+      scheduleAutosave();
+    } else if (e.target.dataset && e.target.dataset.dyGratIdx !== undefined) {
+      const idx = Number(e.target.dataset.dyGratIdx);
+      STATE.draft.gratitude[idx] = e.target.value;
+      scheduleAutosave();
     } else if (id === 'dyArchSearch') {
       STATE.searchQuery = e.target.value;
       const listEl = document.getElementById('dyArchList');
       if (listEl) listEl.innerHTML = renderArchiveListHtml();
+    }
+  });
+
+  modal.addEventListener('keydown', (e) => {
+    if (e.target && e.target.id === 'dyTagCustomIn' && e.key === 'Enter' && STATE.draft) {
+      e.preventDefault();
+      const val = e.target.value.trim().toLowerCase().replace(/^#+/, '').replace(/[^a-z0-9_-]/g, '').slice(0, 24);
+      if (val && !STATE.draft.tags.includes(val) && STATE.draft.tags.length < 5) {
+        STATE.draft.tags.push(val);
+        scheduleAutosave();
+        renderModal();
+      }
     }
   });
 
@@ -19912,18 +20945,52 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   });
 
   modal.addEventListener('click', async (e) => {
+    const pinDigitBtn = e.target.closest('[data-dy-pin-digit]');
+    if (pinDigitBtn) {
+      if (STATE.pinBuffer.length < 4) {
+        STATE.pinBuffer += pinDigitBtn.dataset.dyPinDigit;
+        STATE.pinError = '';
+        if (STATE.pinBuffer.length === 4) {
+          if (hashPin(STATE.pinBuffer) === STATE.prefs.pinHash) {
+            STATE.locked = false;
+            STATE.unlockedThisOpen = true;
+            STATE.pinBuffer = '';
+            STATE.pinError = '';
+          } else {
+            STATE.pinBuffer = '';
+            STATE.pinError = 'Incorrect PIN · try again';
+          }
+        }
+        renderModal();
+      }
+      return;
+    }
+    if (e.target.closest('[data-dy-pin-clear]')) {
+      STATE.pinBuffer = '';
+      STATE.pinError = '';
+      renderModal();
+      return;
+    }
+    if (e.target.closest('[data-dy-pin-back]')) {
+      STATE.pinBuffer = STATE.pinBuffer.slice(0, -1);
+      renderModal();
+      return;
+    }
+
     const actBtn = e.target.closest('[data-dy-act]');
     if (actBtn) {
       const act = actBtn.dataset.dyAct;
-      if (act === 'close') {
-        await closeDiary();
-        return;
-      }
+      if (act === 'close') { await closeDiary(); return; }
       if (act === 'login') {
         await closeDiary();
         if (window.LeaveItArenaSync && typeof window.LeaveItArenaSync.openArenaTab === 'function') {
           window.LeaveItArenaSync.openArenaTab();
         }
+        return;
+      }
+      if (act === 'toggleZen') {
+        STATE.zenMode = !STATE.zenMode;
+        renderModal();
         return;
       }
       if (act === 'toggleArchive') {
@@ -19933,25 +21000,117 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       }
       if (act === 'togglePrefs') {
         STATE.prefsOpen = !STATE.prefsOpen;
+        STATE.pinFeedback = '';
         renderModal();
         return;
       }
-      if (act === 'prevDay') {
-        await selectDate(addDays(STATE.selectedDate, -1));
+      if (act === 'toggleStar' && STATE.draft) {
+        STATE.draft.starred = !STATE.draft.starred;
+        scheduleAutosave();
+        renderModal();
         return;
       }
+      if (act === 'shufflePrompt' && STATE.draft) {
+        const curIdx = PROMPTS.indexOf(STATE.draft.promptQ);
+        const nextIdx = (curIdx + 1) % PROMPTS.length;
+        STATE.draft.promptQ = PROMPTS[nextIdx];
+        scheduleAutosave();
+        renderModal();
+        return;
+      }
+      if (act === 'insertPrompt' && STATE.draft) {
+        const q = STATE.draft.promptQ || promptForDate(STATE.draft.dateKey);
+        const prefix = STATE.draft.body.trim() ? '\n\n' : '';
+        STATE.draft.body = (STATE.draft.body + prefix + q + '\n').slice(0, 8000);
+        scheduleAutosave();
+        renderModal();
+        const b = document.getElementById('dyBodyIn');
+        if (b) { b.focus(); b.selectionStart = b.selectionEnd = b.value.length; }
+        return;
+      }
+      if (act === 'pushPlanner') {
+        pushTomorrowGoalToPlanner();
+        return;
+      }
+      if (act === 'askLily' && STATE.draft) {
+        await persistCurrentDraft(false);
+        const d = STATE.draft;
+        const mObj = MOODS.find((m) => m.id === d.mood);
+        const summary = [
+          `Please reflect on my diary entry for ${d.dateKey} (${mObj ? mObj.label : 'no mood tagged'}, energy ${d.energy || '?'}/5, rating ${d.dayRating || '?'}/5).`,
+          d.title ? `Headline: "${d.title}".` : '',
+          d.body ? `Notes: "${d.body.slice(0, 600)}".` : '',
+          d.highlight ? `Win: "${d.highlight}".` : '',
+          d.tomorrowGoal ? `Tomorrow's goal: "${d.tomorrowGoal}".` : '',
+          'Give me honest, warm encouragement and 1–2 concrete adjustments for tomorrow based on my study data.',
+        ].filter(Boolean).join(' ');
+        await closeDiary();
+        if (window.LeaveItLily && typeof window.LeaveItLily.open === 'function') {
+          window.LeaveItLily.open(summary);
+        }
+        return;
+      }
+      if (act === 'exportEntry' && STATE.draft) {
+        downloadMarkdown(`diary-${STATE.draft.dateKey}.md`, formatEntryMarkdown(STATE.draft));
+        toast('⬇ Downloaded diary-' + STATE.draft.dateKey + '.md');
+        return;
+      }
+      if (act === 'exportAll') {
+        const all = Object.values(getAllEntriesMap())
+          .filter(entryHasContent)
+          .sort((a, b) => String(b.dateKey).localeCompare(String(a.dateKey)));
+        if (!all.length) { toast('No saved entries to export yet'); return; }
+        const md = all.map(formatEntryMarkdown).join('\n\n---\n\n');
+        downloadMarkdown(`hour-journal-${todayKey()}.md`, md);
+        toast(`⬇ Exported ${all.length} journal page${all.length === 1 ? '' : 's'}`);
+        return;
+      }
+      if (act === 'printEntry') {
+        window.print();
+        return;
+      }
+      if (act === 'setPin') {
+        const inp = document.getElementById('dyPinNewIn');
+        const val = inp ? inp.value.trim() : '';
+        if (!/^\d{4}$/.test(val)) {
+          STATE.pinFeedback = 'Enter 4 numeric digits';
+          renderModal();
+          return;
+        }
+        STATE.prefs.pinHash = hashPin(val);
+        savePrefs();
+        STATE.unlockedThisOpen = true;
+        STATE.pinFeedback = 'PIN saved ✓';
+        renderModal();
+        return;
+      }
+      if (act === 'clearPin') {
+        STATE.prefs.pinHash = '';
+        STATE.locked = false;
+        savePrefs();
+        STATE.pinFeedback = 'PIN removed';
+        renderModal();
+        return;
+      }
+      if (act === 'lockNow') {
+        if (STATE.dirty) await persistCurrentDraft(false);
+        STATE.locked = true;
+        STATE.unlockedThisOpen = false;
+        STATE.pinBuffer = '';
+        STATE.pinError = '';
+        renderModal();
+        return;
+      }
+      if (act === 'prevDay') { await selectDate(addDays(STATE.selectedDate, -1)); return; }
       if (act === 'nextDay') {
         const next = addDays(STATE.selectedDate, 1);
         if (next <= todayKey()) await selectDate(next);
         return;
       }
-      if (act === 'goToday') {
-        await selectDate(todayKey());
-        return;
-      }
+      if (act === 'goToday') { await selectDate(todayKey()); return; }
       if (act === 'save') {
         const ok = await persistCurrentDraft(true);
-        if (!ok) toast('Write a few words or pick a mood before saving');
+        if (!ok) toast('Write a few words or log a check-in before saving');
         return;
       }
       if (act === 'delete') {
@@ -19989,7 +21148,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       renderModal();
       return;
     }
-
     const inkBtn = e.target.closest('[data-dy-ink]');
     if (inkBtn && STATE.draft) {
       STATE.draft.inkStyle = inkBtn.dataset.dyInk;
@@ -19999,7 +21157,29 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       renderModal();
       return;
     }
-
+    const fsizeBtn = e.target.closest('[data-dy-fsize]');
+    if (fsizeBtn && STATE.draft) {
+      STATE.draft.fontSize = fsizeBtn.dataset.dyFsize;
+      STATE.prefs.fontSize = STATE.draft.fontSize;
+      savePrefs();
+      if (entryHasContent(STATE.draft)) scheduleAutosave();
+      renderModal();
+      return;
+    }
+    const tplBtn = e.target.closest('[data-dy-tpl]');
+    if (tplBtn && STATE.draft) {
+      const tpl = TEMPLATES.find((t) => t.id === tplBtn.dataset.dyTpl);
+      if (tpl) {
+        STATE.draft.template = tpl.id;
+        if (tpl.body) {
+          const cur = STATE.draft.body.trim();
+          STATE.draft.body = cur ? (cur + '\n\n' + tpl.body).slice(0, 8000) : tpl.body;
+          scheduleAutosave();
+        }
+        renderModal();
+      }
+      return;
+    }
     const moodBtn = e.target.closest('[data-dy-mood]');
     if (moodBtn && STATE.draft) {
       const m = moodBtn.dataset.dyMood;
@@ -20008,7 +21188,34 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       renderModal();
       return;
     }
-
+    const enBtn = e.target.closest('[data-dy-energy]');
+    if (enBtn && STATE.draft) {
+      const val = Number(enBtn.dataset.dyEnergy);
+      STATE.draft.energy = STATE.draft.energy === val ? 0 : val;
+      scheduleAutosave();
+      renderModal();
+      return;
+    }
+    const rtBtn = e.target.closest('[data-dy-rating]');
+    if (rtBtn && STATE.draft) {
+      const val = Number(rtBtn.dataset.dyRating);
+      STATE.draft.dayRating = STATE.draft.dayRating === val ? 0 : val;
+      scheduleAutosave();
+      renderModal();
+      return;
+    }
+    const tagBtn = e.target.closest('[data-dy-tag]');
+    if (tagBtn && STATE.draft) {
+      const tag = tagBtn.dataset.dyTag;
+      if (STATE.draft.tags.includes(tag)) {
+        STATE.draft.tags = STATE.draft.tags.filter((t) => t !== tag);
+      } else if (STATE.draft.tags.length < 5) {
+        STATE.draft.tags.push(tag);
+      }
+      scheduleAutosave();
+      renderModal();
+      return;
+    }
     const hrBtn = e.target.closest('[data-dy-hr]');
     if (hrBtn) {
       STATE.prefs.promptHour = Number(hrBtn.dataset.dyHr) || 21;
@@ -20017,20 +21224,39 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       renderHomeHooks();
       return;
     }
-
+    const archTabBtn = e.target.closest('[data-dy-arch-tab]');
+    if (archTabBtn) {
+      STATE.archiveTab = archTabBtn.dataset.dyArchTab || 'list';
+      renderModal();
+      return;
+    }
+    const calStepBtn = e.target.closest('[data-dy-cal-step]');
+    if (calStepBtn) {
+      const delta = Number(calStepBtn.dataset.dyCalStep) || 0;
+      const [y, m] = (STATE.calMonth || todayKey().slice(0, 7)).split('-').map(Number);
+      const dt = new Date(y, m - 1 + delta, 1);
+      STATE.calMonth = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}`;
+      renderModal();
+      return;
+    }
     const pickBtn = e.target.closest('[data-dy-pick]');
     if (pickBtn) {
       await selectDate(pickBtn.dataset.dyPick);
-      if (window.innerWidth <= 820) {
+      if (window.innerWidth <= 860) {
         STATE.archiveOpen = false;
         renderModal();
       }
       return;
     }
-
+    if (e.target.closest('[data-dy-starfilter]')) {
+      STATE.starOnly = !STATE.starOnly;
+      renderModal();
+      return;
+    }
     const mfBtn = e.target.closest('[data-dy-mfilter]');
     if (mfBtn) {
       STATE.moodFilter = mfBtn.dataset.dyMfilter || '';
+      if (!STATE.moodFilter) STATE.starOnly = false;
       renderModal();
     }
   });
@@ -20062,6 +21288,11 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (STATE.zenMode && STATE.open) {
+        STATE.zenMode = false;
+        renderModal();
+        return;
+      }
       if (STATE.open) void closeDiary();
       else if (STATE.eodOpen) {
         STATE.prefs.dismissedDate = todayKey();
@@ -20082,8 +21313,9 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     if (!user) {
       STATE.uidSynced = null;
       STATE.cloudEntries = {};
+      STATE.localEntries = readJson(STORE_KEY, {});
+      STATE.draft = buildDraftForDate(STATE.selectedDate);
       if (STATE.open) {
-        STATE.draft = buildDraftForDate(STATE.selectedDate);
         renderModal();
       }
       renderHomeHooks();
@@ -20093,7 +21325,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const fb = getFB();
     if (!fb || typeof fb.subscribeDiaryEntries !== 'function') return;
 
-    // Link any pre-login local guest diary entries to this verified account once per login
     if (STATE.uidSynced !== user.id) {
       STATE.uidSynced = user.id;
       const guestList = Object.values(STATE.localEntries || {}).filter(entryHasContent);
@@ -20111,7 +21342,6 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
           if (item && item.dateKey) nextMap[item.dateKey] = item;
         });
         STATE.cloudEntries = nextMap;
-        // Keep offline local mirror aligned for current user only (cleared cleanly on sign-out)
         STATE.localEntries = Object.assign({}, nextMap);
         saveLocalEntries();
         if (STATE.open && !STATE.dirty) {
@@ -20142,6 +21372,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     hasEntry(dateKeyStr) {
       return entryHasContent(getEntryForDate(dateKeyStr || todayKey()));
     },
+    getStreak: computeDiaryStreak,
     refreshHooks: renderHomeHooks,
   };
 
@@ -21419,15 +22650,22 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
 
     // Diary reflections (recent 5)
     const diaryEntries = Object.values(DY || {})
-      .filter((e) => e && e.dateKey && (e.body || e.highlight || e.tomorrowGoal || e.mood))
+      .filter((e) => e && e.dateKey && (e.body || e.highlight || e.tomorrowGoal || e.mood || e.promptA))
       .sort((a, b) => String(b.dateKey).localeCompare(String(a.dateKey)))
       .slice(0, 5)
       .map((e) => ({
         dateKey: e.dateKey,
         mood: e.mood || '',
+        energy: Number(e.energy || 0),
+        dayRating: Number(e.dayRating || 0),
+        starred: Boolean(e.starred),
+        tags: Array.isArray(e.tags) ? e.tags : [],
         title: e.title || '',
         highlight: e.highlight || '',
         tomorrowGoal: e.tomorrowGoal || '',
+        gratitude: Array.isArray(e.gratitude) ? e.gratitude : [],
+        promptQ: e.promptQ || '',
+        promptA: String(e.promptA || '').slice(0, 200),
         body: String(e.body || '').slice(0, 280),
       }));
 

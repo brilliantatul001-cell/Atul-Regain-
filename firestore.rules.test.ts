@@ -208,6 +208,14 @@ export const DIRTY_DOZEN_CASES: RuleAssertionCase[] = [
     expected: 'PERMISSION_DENIED',
     reason: 'isValidDiaryDateKey and isValidDiaryEntry strictly validate dateKey and bounds',
   },
+  {
+    id: 25,
+    name: 'Diary Tags / Rating Overflow',
+    path: '/players/attacker_uid/diary/2026-11-27',
+    operation: 'update',
+    expected: 'PERMISSION_DENIED',
+    reason: 'isValidDiaryEntry caps tags <= 5, gratitude <= 3, and energy/dayRating within 0..5',
+  },
 ];
 
 // Static structural verification when running without local Firestore emulator
@@ -239,6 +247,10 @@ if (fs.existsSync(rulesPath)) {
   assert.ok(rulesText.includes('match /stories/{storyId}'), 'Must secure stories collection and subcollections');
   assert.ok(rulesText.includes('match /diary/{entryId}'), 'Must secure owner-only diary subcollection');
   assert.ok(rulesText.includes('data.captionX >= 5 && data.captionX <= 95'), 'Must bound story overlay coordinates');
+  assert.ok(rulesText.includes('data.tags.size() <= 5'), 'Must bound diary tags list');
+  assert.ok(rulesText.includes('data.gratitude.size() <= 3'), 'Must bound diary gratitude list');
+  assert.ok(rulesText.includes('data.energy >= 0 && data.energy <= 5'), 'Must bound diary energy rating');
+  assert.ok(rulesText.includes("'dot-cream'") && rulesText.includes("'grid-sage'"), 'Must allow new diary paper styles');
 }
 
 

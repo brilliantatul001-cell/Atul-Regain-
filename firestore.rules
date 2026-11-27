@@ -397,8 +397,11 @@ service cloud.firestore {
       ]) &&
       data.keys().hasOnly([
         'uid', 'dateKey', 'title', 'body', 'highlight', 'tomorrowGoal',
-        'mood', 'paperStyle', 'inkStyle', 'focusMinutes', 'questionsSolved',
-        'tasksDone', 'wordCount', 'createdAtMs', 'updatedAtMs', 'createdAt', 'updatedAt'
+        'mood', 'paperStyle', 'inkStyle', 'fontSize', 'template',
+        'starred', 'energy', 'dayRating', 'tags', 'gratitude',
+        'promptQ', 'promptA', 'focusMinutes', 'questionsSolved',
+        'leftOnTime', 'overtimeSkips', 'tasksDone', 'wordCount',
+        'createdAtMs', 'updatedAtMs', 'createdAt', 'updatedAt'
       ]) &&
       isValidId(data.uid) &&
       isValidDiaryDateKey(data.dateKey) &&
@@ -407,10 +410,21 @@ service cloud.firestore {
       data.highlight is string && data.highlight.size() <= 240 &&
       data.tomorrowGoal is string && data.tomorrowGoal.size() <= 240 &&
       data.mood in ['', 'calm', 'focused', 'proud', 'tired', 'grateful', 'stressed'] &&
-      data.paperStyle in ['ruled-yellow', 'plain-cream', 'ruled-white', 'plain-white', 'plain-night'] &&
+      data.paperStyle in ['ruled-yellow', 'plain-cream', 'ruled-white', 'plain-white', 'plain-night', 'dot-cream', 'grid-sage', 'ruled-parchment'] &&
       data.inkStyle in ['serif', 'sans', 'mono'] &&
+      (!('fontSize' in data) || data.fontSize in ['sm', 'md', 'lg']) &&
+      (!('template' in data) || data.template in ['', 'free', 'debrief', 'wins', 'reset']) &&
+      (!('starred' in data) || data.starred is bool) &&
+      (!('energy' in data) || (data.energy is number && data.energy >= 0 && data.energy <= 5)) &&
+      (!('dayRating' in data) || (data.dayRating is number && data.dayRating >= 0 && data.dayRating <= 5)) &&
+      (!('tags' in data) || (data.tags is list && data.tags.size() <= 5 && (data.tags.size() == 0 || (data.tags[0] is string && data.tags[0].size() >= 1 && data.tags[0].size() <= 24)))) &&
+      (!('gratitude' in data) || (data.gratitude is list && data.gratitude.size() <= 3 && (data.gratitude.size() == 0 || (data.gratitude[0] is string && data.gratitude[0].size() <= 120)))) &&
+      (!('promptQ' in data) || (data.promptQ is string && data.promptQ.size() <= 160)) &&
+      (!('promptA' in data) || (data.promptA is string && data.promptA.size() <= 500)) &&
       data.focusMinutes is number && data.focusMinutes >= 0 && data.focusMinutes <= 1440 &&
       data.questionsSolved is number && data.questionsSolved >= 0 && data.questionsSolved <= 2000 &&
+      (!('leftOnTime' in data) || (data.leftOnTime is number && data.leftOnTime >= 0 && data.leftOnTime <= 2000)) &&
+      (!('overtimeSkips' in data) || (data.overtimeSkips is number && data.overtimeSkips >= 0 && data.overtimeSkips <= 2000)) &&
       data.tasksDone is number && data.tasksDone >= 0 && data.tasksDone <= 500 &&
       data.wordCount is number && data.wordCount >= 0 && data.wordCount <= 3000 &&
       data.createdAtMs is number && data.createdAtMs >= 0 && data.createdAtMs <= 9999999999999 &&
@@ -561,8 +575,11 @@ service cloud.firestore {
           incoming().updatedAt == request.time &&
           incoming().diff(existing()).affectedKeys().hasOnly([
             'title', 'body', 'highlight', 'tomorrowGoal', 'mood',
-            'paperStyle', 'inkStyle', 'focusMinutes', 'questionsSolved',
-            'tasksDone', 'wordCount', 'updatedAtMs', 'updatedAt'
+            'paperStyle', 'inkStyle', 'fontSize', 'template',
+            'starred', 'energy', 'dayRating', 'tags', 'gratitude',
+            'promptQ', 'promptA', 'focusMinutes', 'questionsSolved',
+            'leftOnTime', 'overtimeSkips', 'tasksDone', 'wordCount',
+            'updatedAtMs', 'updatedAt'
           ]) &&
           exists(/databases/$(database)/documents/players/$(userId));
 

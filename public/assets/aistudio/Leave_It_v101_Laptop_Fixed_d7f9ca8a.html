@@ -16,7 +16,7 @@ html[data-mode="light"]:not([data-diwali="on"])::before{opacity:.5}
 <script>try{var s=JSON.parse(localStorage.getItem('leaveit')||'{}'),m=s.mode;if(m==='light'||(m==='auto'&&matchMedia('(prefers-color-scheme: light)').matches))document.documentElement.dataset.mode='light'}catch(e){}</script>
 
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Hour</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2054,7 +2054,7 @@ if(!hasX){let t=0;Object.values(H).forEach(o=>{t+=(o.s||0)*10+(o.l||0)*15+(o.k||
 {const _sc=shareCanvas;shareCanvas=function(){const c=_sc(),x=c.getContext('2d'),r=RK[rankOf(X.xp)];x.fillStyle='#7ed957';x.font='700 34px system-ui,-apple-system,Segoe UI,Roboto,sans-serif';x.textAlign='center';x.fillText(r[1]+' '+r[0]+' · '+X.xp+' XP',540,575);return c}}
 $('resetAll').onclick=()=>{if(confirm('Clear all saved progress, XP and ranks?')){H={};saveH();X={xp:0,b:{},last:''};saveX();stats();xpRender()}};
 /* bottom navigation, ring fix, zoom lock */
-document.head.insertAdjacentHTML('beforeend',`<style>html,body{touch-action:pan-x pan-y!important}svg{overflow:visible}.fm-ring circle{stroke-linecap:round}
+document.head.insertAdjacentHTML('beforeend',`<style>html,body{touch-action:pan-x pan-y pinch-zoom!important}svg{overflow:visible}.fm-ring circle{stroke-linecap:round}
 .app{padding-bottom:calc(120px + env(safe-area-inset-bottom,0px))}
 .app>[data-tab]{display:none}
 body[data-tab=home] .app>[data-tab=home],body[data-tab=mock] .app>[data-tab=mock],body[data-tab=stats] .app>[data-tab=stats],body[data-tab=rank] .app>[data-tab=rank],body[data-tab=settings] .app>[data-tab=settings]{display:block}
@@ -2082,8 +2082,8 @@ $('mkStart').addEventListener('click',()=>{if(M.on)go('home')});
 {const _f2=fmRender;fmRender=function(){_f2();$('fmP').style.opacity=Math.max(0,left)/S.dur>.004?1:0}}
 {const _r4=render;render=function(){_r4();$('pg').style.opacity=Math.max(0,left)/S.dur>.004?1:0}}
 /* v47: never globally cancel native page scrolling, pinch zoom, or wheel gestures. */
-document.documentElement.style.touchAction='auto';
-document.body.style.touchAction='pan-y pinch-zoom';
+document.documentElement.style.touchAction='pan-x pan-y pinch-zoom';
+document.body.style.touchAction='pan-x pan-y pinch-zoom';
 /* visual styles + independent colour palettes */
 /* ===== DISABLED: Classic UI 5-styles (COMMAND/GLASS/STUDIO/ARCADE/ZEN), 7-palettes, 3-layouts & Magic Mix — Regain UI is now permanent =====
 const TK=['bg','card','track','text','muted','accent','ok','warn','bad'];
@@ -4546,18 +4546,18 @@ html[data-layout="aurora"] .app>#timerCard,html[data-layout="aurora"] .app>#sess
 </style>
 
 <style id="v47-native-scroll-restoration">
-html{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-x:clip!important;overflow-y:auto!important;touch-action:pan-x pan-y!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:auto!important}
-body:not(.focus){display:block!important;position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:100%!important;margin:0!important;overflow:visible!important;overflow-x:clip!important;overflow-y:visible!important;touch-action:pan-x pan-y!important;overscroll-behavior:auto!important}
+html{height:auto!important;min-height:100%!important;overflow-x:hidden!important;overflow-x:clip!important;overflow-y:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:auto!important}
+body:not(.focus){display:block!important;position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:100%!important;margin:0!important;overflow:visible!important;overflow-x:clip!important;overflow-y:visible!important;touch-action:pan-x pan-y pinch-zoom!important;overscroll-behavior:auto!important}
 body.focus{overflow:hidden!important;position:fixed!important;inset:0!important;width:100%!important}
-.app{height:auto!important;min-height:100vh;min-height:100dvh;margin-left:auto;margin-right:auto;overflow:visible!important;touch-action:pan-x pan-y!important}
+.app{height:auto!important;min-height:100vh;min-height:100dvh;margin-left:auto;margin-right:auto;overflow:visible!important;touch-action:pan-x pan-y pinch-zoom!important}
 html[data-ui="regain"][data-rg="home"] #rg,
 html[data-ui="regain"][data-rg="stats"] #rg,
-html[data-ui="regain"][data-rg="arena"] #rg{position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:100dvh!important;overflow:visible!important;touch-action:pan-x pan-y!important}
+html[data-ui="regain"][data-rg="arena"] #rg{position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:100dvh!important;overflow:visible!important;touch-action:pan-x pan-y pinch-zoom!important}
 #hourPullSync{touch-action:none;pointer-events:none}
 </style>
 <script id="v47-scroll-safety">
 (()=>{
-  // Restore page scrolling whenever focus mode is not active.
+  // Restore page scrolling and pinch-zoom whenever focus mode is not active.
   const restore=()=>{
     if(!document.body.classList.contains('focus')){
       document.documentElement.style.overflowX='clip';
@@ -4570,8 +4570,8 @@ html[data-ui="regain"][data-rg="arena"] #rg{position:relative!important;inset:au
       }
       document.body.style.position='relative';
       document.body.style.width='';
-      document.documentElement.style.touchAction='pan-x pan-y';
-      document.body.style.touchAction='pan-x pan-y';
+      document.documentElement.style.touchAction='pan-x pan-y pinch-zoom';
+      document.body.style.touchAction='pan-x pan-y pinch-zoom';
     }
   };
   document.addEventListener('DOMContentLoaded',restore,{once:true});
@@ -4590,9 +4590,9 @@ html[data-ui="regain"][data-rg="arena"] #rg{position:relative!important;inset:au
 @media(max-width:360px){#timerCard .controls #skip{width:min(72%,210px)}}
 </style>
 <style id="v49-native-swipe-scroll">
-html{overflow-x:clip!important;overflow-y:auto!important;min-height:100%!important;height:auto!important;touch-action:pan-x pan-y!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:auto!important}
-html body:not(.focus),html[data-ui] body:not(.focus){display:block!important;position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:100%!important;overflow:visible!important;overflow-x:clip!important;overflow-y:visible!important;touch-action:pan-x pan-y!important;overscroll-behavior:auto!important}
-body:not(.focus) .app{height:auto!important;min-height:100dvh!important;overflow:visible!important;touch-action:pan-x pan-y!important}
+html{overflow-x:clip!important;overflow-y:auto!important;min-height:100%!important;height:auto!important;touch-action:pan-x pan-y pinch-zoom!important;-webkit-overflow-scrolling:touch!important;overscroll-behavior-y:auto!important}
+html body:not(.focus),html[data-ui] body:not(.focus){display:block!important;position:relative!important;inset:auto!important;width:100%!important;height:auto!important;min-height:100%!important;overflow:visible!important;overflow-x:clip!important;overflow-y:visible!important;touch-action:pan-x pan-y pinch-zoom!important;overscroll-behavior:auto!important}
+body:not(.focus) .app{height:auto!important;min-height:100dvh!important;overflow:visible!important;touch-action:pan-x pan-y pinch-zoom!important}
 #hourPullSync{pointer-events:none!important}
 </style>
 
@@ -6801,7 +6801,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     background: transparent !important;
   }
   html, body {
-    touch-action: pan-x pan-y !important;
+    touch-action: pan-x pan-y pinch-zoom !important;
     overscroll-behavior: auto;
   }
   button, a, [role="button"] {
@@ -10943,23 +10943,7 @@ try{Object.defineProperty(QB,'cpMsg',{get(){return 'Name your next step. Cannot?
     }
   });
 
-  // Disable pinch zoom, gesture zoom, double-tap zoom & Ctrl/Cmd zoom across the SPA
-  if(!window.__hourNoZoomHooked){
-    window.__hourNoZoomHooked=true;
-    let lastTouchEnd=0;
-    window.addEventListener('wheel',e=>{if(e.ctrlKey||e.metaKey)e.preventDefault()},{passive:false});
-    document.addEventListener('touchstart',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
-    document.addEventListener('touchmove',e=>{if(e.touches&&e.touches.length>1)e.preventDefault()},{passive:false});
-    document.addEventListener('touchend',e=>{
-      const now=Date.now();
-      if(now-lastTouchEnd<=300&&!(e.target&&/INPUT|TEXTAREA|SELECT|BUTTON/.test(e.target.tagName))){e.preventDefault()}
-      lastTouchEnd=now;
-    },{passive:false});
-    ['gesturestart','gesturechange','gestureend'].forEach(ev=>document.addEventListener(ev,e=>e.preventDefault(),{passive:false}));
-    window.addEventListener('keydown',e=>{
-      if((e.ctrlKey||e.metaKey)&&(e.key==='+'||e.key==='-'||e.key==='='||e.key==='_'||e.key==='0')){e.preventDefault()}
-    },{passive:false});
-  }
+  // Native pinch zoom & scrolling remain enabled across the SPA
 
   refreshTopLeftProfile();
 
@@ -18187,281 +18171,138 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     border: 1px solid rgba(245, 198, 92, 0.34);
     color: var(--text);
   }
-  .dy-eod-banner .dy-eb-l {
-    min-width: 0;
-    flex: 1;
-  }
-  .dy-eod-banner .dy-eb-l b {
-    display: block;
-    font-size: 14px;
-    font-weight: 800;
-  }
-  .dy-eod-banner .dy-eb-l small {
-    display: block;
-    font-size: 12px;
-    color: var(--muted);
-    margin-top: 2px;
-  }
-  .dy-eod-banner .dy-eb-r {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
+  .dy-eod-banner .dy-eb-l { min-width: 0; flex: 1; }
+  .dy-eod-banner .dy-eb-l b { display: block; font-size: 14px; font-weight: 800; }
+  .dy-eod-banner .dy-eb-l small { display: block; font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .dy-eod-banner .dy-eb-r { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .dy-eod-banner .dy-eb-go {
-    min-height: 40px;
-    padding: 9px 15px;
-    border-radius: 99px;
-    border: 0;
-    background: #f5d27a;
-    color: #2b1d0c;
-    font-size: 12.5px;
-    font-weight: 800;
-    cursor: pointer;
-    white-space: nowrap;
+    min-height: 40px; padding: 9px 15px; border-radius: 99px; border: 0;
+    background: #f5d27a; color: #2b1d0c; font-size: 12.5px; font-weight: 800; cursor: pointer; white-space: nowrap;
   }
   .dy-eod-banner .dy-eb-x {
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    border: 1px solid rgba(255,255,255,0.14);
-    background: transparent;
-    color: var(--muted);
-    font-size: 14px;
-    cursor: pointer;
+    width: 36px; height: 36px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.14);
+    background: transparent; color: var(--muted); font-size: 14px; cursor: pointer;
   }
 
   /* End-of-Day Closing Modal Prompt */
   #dyEodModal {
-    position: fixed;
-    inset: 0;
-    z-index: 305;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    background: rgba(8, 10, 16, 0.74);
-    backdrop-filter: blur(10px);
+    position: fixed; inset: 0; z-index: 305; display: none;
+    align-items: center; justify-content: center; padding: 18px;
+    background: rgba(8, 10, 16, 0.74); backdrop-filter: blur(10px);
+    overflow-y: auto; -webkit-overflow-scrolling: touch; touch-action: pan-x pan-y pinch-zoom;
   }
   #dyEodModal.on { display: flex; }
   .dy-eod-card {
-    width: min(460px, 100%);
-    border-radius: 26px;
-    background: var(--card, #171a24);
-    border: 1px solid rgba(250, 204, 107, 0.3);
-    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
-    overflow: hidden;
-    color: var(--text);
+    width: min(460px, 100%); border-radius: 26px; background: var(--card, #171a24);
+    border: 1px solid rgba(250, 204, 107, 0.3); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+    overflow: hidden; color: var(--text);
   }
   .dy-eod-top {
     padding: 18px 20px 14px;
     background: linear-gradient(135deg, rgba(245, 200, 95, 0.16), rgba(88, 60, 22, 0.14));
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
-  .dy-eod-top span {
-    font-size: 11px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #f4c86a;
-  }
-  .dy-eod-top h3 {
-    margin: 5px 0 4px;
-    font-family: "Playfair Display", Georgia, serif;
-    font-size: 22px;
-    font-weight: 700;
-  }
-  .dy-eod-top p {
-    margin: 0;
-    font-size: 13px;
-    color: var(--muted);
-    line-height: 1.45;
-  }
-  .dy-eod-body {
-    padding: 16px 20px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
+  .dy-eod-top span { font-size: 11px; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: #f4c86a; }
+  .dy-eod-top h3 { margin: 5px 0 4px; font-family: "Playfair Display", Georgia, serif; font-size: 22px; font-weight: 700; }
+  .dy-eod-top p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.45; }
+  .dy-eod-body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 12px; }
   .dy-eod-stats {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    text-align: center;
-    padding: 10px 8px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    font-variant-numeric: tabular-nums;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center;
+    padding: 10px 8px; border-radius: 16px; background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.07); font-variant-numeric: tabular-nums;
   }
-  .dy-eod-stats b {
-    display: block;
-    font-size: 17px;
-    font-weight: 800;
-  }
-  .dy-eod-stats small {
-    font-size: 11px;
-    color: var(--muted);
-  }
+  .dy-eod-stats b { display: block; font-size: 17px; font-weight: 800; }
+  .dy-eod-stats small { font-size: 11px; color: var(--muted); }
   .dy-eod-prompt-preview {
-    padding: 10px 12px;
-    border-radius: 14px;
-    background: rgba(245, 200, 95, 0.08);
-    border: 1px solid rgba(245, 200, 95, 0.2);
-    font-size: 12.5px;
-    line-height: 1.45;
+    padding: 10px 12px; border-radius: 14px; background: rgba(245, 200, 95, 0.08);
+    border: 1px solid rgba(245, 200, 95, 0.2); font-size: 12.5px; line-height: 1.45;
   }
   .dy-eod-prompt-preview small {
-    display: block;
-    font-size: 10.5px;
-    font-weight: 800;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: #f4c86a;
-    margin-bottom: 3px;
+    display: block; font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em;
+    text-transform: uppercase; color: #f4c86a; margin-bottom: 3px;
   }
-  .dy-eod-choices {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
+  .dy-eod-choices { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .dy-eod-pad-btn {
-    min-height: 56px;
-    padding: 11px 10px;
-    border-radius: 16px;
-    border: 1px solid rgba(0, 0, 0, 0.14);
-    font-size: 12.5px;
-    font-weight: 800;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    text-align: left;
+    min-height: 56px; padding: 11px 10px; border-radius: 16px; border: 1px solid rgba(0, 0, 0, 0.14);
+    font-size: 12.5px; font-weight: 800; cursor: pointer; display: flex;
+    flex-direction: column; align-items: flex-start; gap: 2px; text-align: left;
   }
-  .dy-eod-pad-btn.yellow {
-    background: linear-gradient(180deg, #fef4cc, #f8e7a6);
-    color: #2c1e0f;
-  }
-  .dy-eod-pad-btn.plain {
-    background: #fbf8f1;
-    color: #22201d;
-  }
+  .dy-eod-pad-btn.yellow { background: linear-gradient(180deg, #fef4cc, #f8e7a6); color: #2c1e0f; }
+  .dy-eod-pad-btn.plain { background: #fbf8f1; color: #22201d; }
   .dy-eod-pad-btn.dot {
-    background: #faf5e8;
-    color: #2a241b;
-    background-image: radial-gradient(rgba(120, 100, 70, 0.3) 1px, transparent 1px);
-    background-size: 10px 10px;
+    background: #faf5e8 radial-gradient(rgba(120, 100, 70, 0.3) 1px, transparent 1px);
+    background-size: 10px 10px; color: #2a241b;
   }
-  .dy-eod-pad-btn small {
-    font-size: 10.5px;
-    font-weight: 600;
-    opacity: 0.72;
-  }
+  .dy-eod-pad-btn small { font-size: 10.5px; font-weight: 600; opacity: 0.72; }
   .dy-eod-later {
-    width: 100%;
-    min-height: 44px;
-    padding: 11px;
-    border-radius: 14px;
-    border: 1px solid var(--track, rgba(255,255,255,0.12));
-    background: transparent;
-    color: var(--muted);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
+    width: 100%; min-height: 44px; padding: 11px; border-radius: 14px;
+    border: 1px solid var(--track, rgba(255,255,255,0.12)); background: transparent;
+    color: var(--muted); font-size: 13px; font-weight: 700; cursor: pointer;
   }
 
-  /* Main Tactile Daily Diary Studio Modal */
+  /* Main Daily Diary Overlay — Naturally Scrollable & Pinch-Zoomable */
   #dyModal {
     position: fixed;
     inset: 0;
     z-index: 310;
     display: none;
-    flex-direction: column;
     background: color-mix(in srgb, var(--bg, #0d1017) 96%, #000);
     color: var(--text, #eef2ff);
-    padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
-    overflow: hidden;
+    padding: env(safe-area-inset-top, 0px) 0 calc(28px + env(safe-area-inset-bottom, 0px));
+    overflow-y: auto;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y pinch-zoom;
     font-family: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
   }
-  #dyModal.on { display: flex; }
+  #dyModal.on { display: block; }
   #dyModal ::-webkit-scrollbar { display: none; }
-  #dyModal * { scrollbar-width: none; box-sizing: border-box; }
+  #dyModal * {
+    scrollbar-width: none;
+    box-sizing: border-box;
+    touch-action: pan-x pan-y pinch-zoom;
+  }
+  #dyModal button, #dyModal a { touch-action: manipulation; }
 
   .dy-shell {
-    width: min(1140px, 100%);
-    height: 100%;
+    width: min(1040px, 100%);
+    min-height: 100%;
+    height: auto;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
-    min-height: 0;
   }
   .dy-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 5;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
     padding: 10px 16px;
+    background: color-mix(in srgb, var(--bg, #0d1017) 92%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-    flex-shrink: 0;
   }
-  .dy-top-l {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    min-width: 0;
-  }
-  .dy-top-l h2 {
-    margin: 0;
-    font-family: "Playfair Display", Georgia, serif;
-    font-size: 20px;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-  .dy-acct-meta {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
+  .dy-top-l { display: flex; align-items: center; gap: 10px; min-width: 0; }
+  .dy-top-l h2 { margin: 0; font-family: "Playfair Display", Georgia, serif; font-size: 20px; font-weight: 700; white-space: nowrap; }
+  .dy-acct-meta { font-size: 12px; font-weight: 600; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dy-acct-meta.synced { color: #86efac; }
   .dy-acct-link-btn {
-    border: 0;
-    background: transparent;
-    padding: 4px 2px;
-    color: #fcd34d;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 3px;
-    white-space: nowrap;
+    border: 0; background: transparent; padding: 4px 2px; color: #fcd34d;
+    font: inherit; font-size: 12px; font-weight: 700; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px; white-space: nowrap;
   }
-  .dy-top-r {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
-  }
+  .dy-top-r { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
   .dy-ic-btn {
-    height: 38px;
-    min-width: 38px;
-    padding: 0 11px;
-    border-radius: 12px;
+    height: 38px; min-width: 38px; padding: 0 11px; border-radius: 12px;
     border: 1px solid var(--track, rgba(255,255,255,0.12));
-    background: var(--card, rgba(255,255,255,0.05));
-    color: var(--text);
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    white-space: nowrap;
+    background: var(--card, rgba(255,255,255,0.05)); color: var(--text);
+    font-size: 12.5px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap;
   }
   .dy-ic-btn.on {
     background: color-mix(in srgb, var(--accent, #7ed957) 20%, transparent);
@@ -18469,7 +18310,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     color: var(--accent, #7ed957);
   }
   @media (max-width: 640px) {
-    .dy-ic-btn { height: 42px; min-width: 42px; padding: 0 10px; }
+    .dy-ic-btn { height: 40px; min-width: 40px; padding: 0 9px; }
     .dy-hide-sm { display: none; }
   }
 
@@ -18481,64 +18322,28 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     padding: 8px 16px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.06);
     flex-wrap: wrap;
-    flex-shrink: 0;
   }
-  .dy-date-nav {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
+  .dy-date-nav { display: flex; align-items: center; gap: 6px; }
   .dy-date-btn {
-    height: 36px;
-    min-width: 36px;
-    padding: 0 11px;
-    border-radius: 10px;
+    height: 36px; min-width: 36px; padding: 0 11px; border-radius: 10px;
     border: 1px solid var(--track, rgba(255,255,255,0.12));
-    background: var(--card, rgba(255,255,255,0.05));
-    color: var(--text);
-    font-size: 13px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
+    background: var(--card, rgba(255,255,255,0.05)); color: var(--text);
+    font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
   }
-  .dy-date-btn:disabled {
-    opacity: 0.35;
-    cursor: default;
-  }
+  .dy-date-btn:disabled { opacity: 0.35; cursor: default; }
   .dy-date-input {
-    height: 36px;
-    padding: 0 10px;
-    border-radius: 10px;
+    height: 36px; padding: 0 10px; border-radius: 10px;
     border: 1px solid var(--track, rgba(255,255,255,0.14));
-    background: var(--card, rgba(255,255,255,0.05));
-    color: var(--text);
-    font: inherit;
-    font-size: 12.5px;
-    font-weight: 700;
+    background: var(--card, rgba(255,255,255,0.05)); color: var(--text);
+    font: inherit; font-size: 12.5px; font-weight: 700;
   }
-  .dy-style-strip {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    overflow-x: auto;
-    max-width: 100%;
-    padding: 2px 0;
-  }
+  .dy-quick-papers { display: flex; align-items: center; gap: 6px; overflow-x: auto; max-width: 100%; }
   .dy-style-btn {
-    flex: none;
-    height: 34px;
-    padding: 0 11px;
-    border-radius: 99px;
+    flex: none; height: 34px; padding: 0 11px; border-radius: 99px;
     border: 1px solid var(--track, rgba(255,255,255,0.14));
-    background: var(--card, rgba(255,255,255,0.04));
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    white-space: nowrap;
+    background: var(--card, rgba(255,255,255,0.04)); color: var(--text);
+    font-size: 12px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
   }
   .dy-style-btn.on {
     border-color: var(--accent, #7ed957);
@@ -18546,12 +18351,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     color: var(--accent, #7ed957);
   }
   .dy-swatch {
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-    border: 1px solid rgba(0, 0, 0, 0.25);
-    display: inline-block;
-    flex: none;
+    width: 12px; height: 12px; border-radius: 3px; border: 1px solid rgba(0, 0, 0, 0.25);
+    display: inline-block; flex: none;
   }
   .dy-swatch.ruled-yellow { background: linear-gradient(180deg, #fef3c2 50%, #d8c074 51%, #fef3c2 56%); }
   .dy-swatch.ruled-parchment { background: linear-gradient(180deg, #f6ead4 50%, #c7a97b 51%, #f6ead4 56%); }
@@ -18561,144 +18362,59 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   .dy-swatch.plain-cream { background: #fbf6e8; }
   .dy-swatch.plain-white { background: #ffffff; }
   .dy-swatch.plain-night { background: #181c24; border-color: rgba(255,255,255,0.28); }
-  .dy-sep {
-    width: 1px;
-    height: 20px;
-    background: rgba(255, 255, 255, 0.12);
-    flex: none;
-    margin: 0 2px;
-  }
 
-  /* Diary Settings & Tools Drawer */
-  .dy-prefs-panel {
+  /* Collapsible Drawers (Paper Studio & Settings) */
+  .dy-drawer {
     padding: 12px 16px;
     background: rgba(255, 255, 255, 0.04);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
     display: none;
     flex-direction: column;
     gap: 10px;
-    flex-shrink: 0;
   }
-  .dy-prefs-panel.on { display: flex; }
-  .dy-prefs-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  .dy-prefs-panel label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 13px;
-    font-weight: 600;
-  }
-  .dy-prefs-hours {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-  }
-  .dy-prefs-hours span {
-    font-size: 12px;
-    color: var(--muted);
-    margin-right: 4px;
-  }
+  .dy-drawer.on { display: flex; }
+  .dy-drawer-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .dy-drawer-row label { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .dy-drawer-grp { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .dy-drawer-lbl { font-size: 11.5px; font-weight: 700; color: var(--muted); margin-right: 2px; }
   .dy-hr-chip {
-    min-height: 32px;
-    padding: 5px 11px;
-    border-radius: 99px;
+    min-height: 32px; padding: 5px 11px; border-radius: 99px;
     border: 1px solid var(--track, rgba(255,255,255,0.14));
-    background: transparent;
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
+    background: transparent; color: var(--text); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
   }
-  .dy-hr-chip.on {
-    background: var(--accent, #7ed957);
-    border-color: var(--accent, #7ed957);
-    color: #06241a;
-  }
-  .dy-pin-setup {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+  .dy-hr-chip.on { background: var(--accent, #7ed957); border-color: var(--accent, #7ed957); color: #06241a; }
   .dy-pin-in {
-    width: 112px;
-    height: 36px;
-    padding: 0 10px;
-    border-radius: 10px;
-    border: 1px solid var(--track, rgba(255,255,255,0.16));
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text);
-    font-family: "JetBrains Mono", monospace;
-    font-size: 14px;
-    letter-spacing: 0.25em;
-    text-align: center;
+    width: 112px; height: 36px; padding: 0 10px; border-radius: 10px;
+    border: 1px solid var(--track, rgba(255,255,255,0.16)); background: rgba(255, 255, 255, 0.05);
+    color: var(--text); font-family: "JetBrains Mono", monospace; font-size: 14px; letter-spacing: 0.25em; text-align: center;
   }
 
-  /* Zen / Distraction-Free Focus Writing Mode */
+  /* Zen / Focus Mode */
   #dyModal.dy-zen .dy-topbar,
   #dyModal.dy-zen .dy-controls,
-  #dyModal.dy-zen .dy-prefs-panel,
-  #dyModal.dy-zen .dy-archive-col {
-    display: none !important;
-  }
-  #dyModal.dy-zen .dy-shell {
-    width: min(820px, 100%);
-  }
-  #dyModal.dy-zen .dy-workspace {
-    padding: 18px 16px 24px;
-  }
-  .dy-zen-bar {
-    display: none;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 10px 18px 4px;
-    flex-shrink: 0;
-  }
+  #dyModal.dy-zen .dy-drawer,
+  #dyModal.dy-zen .dy-archive-col { display: none !important; }
+  #dyModal.dy-zen .dy-shell { width: min(780px, 100%); }
+  .dy-zen-bar { display: none; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px 4px; }
   #dyModal.dy-zen .dy-zen-bar { display: flex; }
 
   .dy-workspace {
-    flex: 1;
-    min-height: 0;
     display: flex;
     gap: 16px;
-    padding: 14px 16px 20px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
+    padding: 14px 16px 28px;
+    align-items: flex-start;
   }
-  .dy-pad-col {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-  }
+  .dy-pad-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   .dy-archive-col {
-    width: 340px;
-    flex: none;
-    display: none;
-    flex-direction: column;
-    gap: 10px;
+    width: 340px; flex: none; display: none; flex-direction: column; gap: 10px;
     background: var(--card, rgba(255,255,255,0.04));
     border: 1px solid var(--track, rgba(255,255,255,0.1));
-    border-radius: 22px;
-    padding: 14px;
-    max-height: 100%;
-    overflow: hidden;
+    border-radius: 22px; padding: 14px;
   }
-  .dy-workspace.show-archive .dy-archive-col {
-    display: flex;
-  }
+  .dy-workspace.show-archive .dy-archive-col { display: flex; }
   @media (max-width: 860px) {
     .dy-workspace.show-archive .dy-pad-col { display: none; }
-    .dy-workspace.show-archive .dy-archive-col { width: 100%; min-height: 420px; }
+    .dy-workspace.show-archive .dy-archive-col { width: 100%; }
   }
 
   /* Physical Stationery Notepad */
@@ -18706,10 +18422,10 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     position: relative;
     border-radius: 18px;
     overflow: hidden;
-    box-shadow: 0 22px 54px rgba(0, 0, 0, 0.42), 0 2px 10px rgba(0, 0, 0, 0.22);
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), 0 2px 10px rgba(0, 0, 0, 0.2);
     display: flex;
     flex-direction: column;
-    transition: background-color 0.22s ease, color 0.22s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
     --dy-lh: 30px;
     --dy-fz: 16px;
     --dy-paper: #fdf3c7;
@@ -18720,7 +18436,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     --dy-margin: rgba(196, 67, 54, 0.36);
     --dy-head: linear-gradient(135deg, #5e3820, #3f2414);
     --dy-head-line: rgba(246, 212, 134, 0.42);
-    --dy-subbox: rgba(132, 98, 38, 0.08);
+    --dy-subbox: rgba(132, 98, 38, 0.07);
     --dy-subborder: rgba(132, 98, 38, 0.22);
     --dy-font: "Playfair Display", "Iowan Old Style", Georgia, serif;
     background: linear-gradient(180deg, var(--dy-paper) 0%, var(--dy-paper-2) 100%);
@@ -18732,617 +18448,253 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
   .dy-pad[data-fsize="lg"] { --dy-fz: 18px; --dy-lh: 34px; }
 
   .dy-pad[data-paper="ruled-parchment"] {
-    --dy-paper: #f7ebd3;
-    --dy-paper-2: #efe0c1;
-    --dy-ink: #2b1d12;
-    --dy-muted: #705843;
-    --dy-rule: rgba(128, 95, 58, 0.25);
-    --dy-margin: rgba(154, 52, 52, 0.34);
-    --dy-head: linear-gradient(135deg, #4b2f21, #2c1910);
-    --dy-head-line: rgba(238, 200, 146, 0.4);
-    --dy-subbox: rgba(112, 78, 42, 0.07);
-    --dy-subborder: rgba(112, 78, 42, 0.22);
+    --dy-paper: #f7ebd3; --dy-paper-2: #efe0c1; --dy-ink: #2b1d12; --dy-muted: #705843;
+    --dy-rule: rgba(128, 95, 58, 0.25); --dy-margin: rgba(154, 52, 52, 0.34);
+    --dy-head: linear-gradient(135deg, #4b2f21, #2c1910); --dy-head-line: rgba(238, 200, 146, 0.4);
+    --dy-subbox: rgba(112, 78, 42, 0.07); --dy-subborder: rgba(112, 78, 42, 0.22);
   }
   .dy-pad[data-paper="dot-cream"] {
-    --dy-paper: #fbf7ec;
-    --dy-paper-2: #f6efe0;
-    --dy-ink: #252019;
-    --dy-muted: #726656;
-    --dy-rule: rgba(130, 114, 86, 0.28);
-    --dy-margin: transparent;
-    --dy-head: linear-gradient(135deg, #3e382e, #242019);
-    --dy-head-line: rgba(242, 224, 188, 0.32);
-    --dy-subbox: rgba(94, 82, 62, 0.06);
-    --dy-subborder: rgba(94, 82, 62, 0.17);
+    --dy-paper: #fbf7ec; --dy-paper-2: #f6efe0; --dy-ink: #252019; --dy-muted: #726656;
+    --dy-rule: rgba(130, 114, 86, 0.28); --dy-margin: transparent;
+    --dy-head: linear-gradient(135deg, #3e382e, #242019); --dy-head-line: rgba(242, 224, 188, 0.32);
+    --dy-subbox: rgba(94, 82, 62, 0.06); --dy-subborder: rgba(94, 82, 62, 0.17);
   }
   .dy-pad[data-paper="grid-sage"] {
-    --dy-paper: #f3f7f1;
-    --dy-paper-2: #ebf2e7;
-    --dy-ink: #1b281c;
-    --dy-muted: #526854;
-    --dy-rule: rgba(84, 128, 92, 0.17);
-    --dy-margin: transparent;
-    --dy-head: linear-gradient(135deg, #273e2c, #18291c);
-    --dy-head-line: rgba(186, 230, 194, 0.32);
-    --dy-subbox: rgba(46, 94, 58, 0.06);
-    --dy-subborder: rgba(46, 94, 58, 0.18);
+    --dy-paper: #f3f7f1; --dy-paper-2: #ebf2e7; --dy-ink: #1b281c; --dy-muted: #526854;
+    --dy-rule: rgba(84, 128, 92, 0.17); --dy-margin: transparent;
+    --dy-head: linear-gradient(135deg, #273e2c, #18291c); --dy-head-line: rgba(186, 230, 194, 0.32);
+    --dy-subbox: rgba(46, 94, 58, 0.06); --dy-subborder: rgba(46, 94, 58, 0.18);
   }
   .dy-pad[data-paper="plain-cream"] {
-    --dy-paper: #fcf8ee;
-    --dy-paper-2: #f7f0e1;
-    --dy-ink: #24201b;
-    --dy-muted: #6e6456;
-    --dy-rule: transparent;
-    --dy-margin: transparent;
-    --dy-head: linear-gradient(135deg, #473d31, #2e271f);
-    --dy-head-line: rgba(255, 240, 210, 0.32);
-    --dy-subbox: rgba(82, 70, 52, 0.06);
-    --dy-subborder: rgba(82, 70, 52, 0.16);
+    --dy-paper: #fcf8ee; --dy-paper-2: #f7f0e1; --dy-ink: #24201b; --dy-muted: #6e6456;
+    --dy-rule: transparent; --dy-margin: transparent;
+    --dy-head: linear-gradient(135deg, #473d31, #2e271f); --dy-head-line: rgba(255, 240, 210, 0.32);
+    --dy-subbox: rgba(82, 70, 52, 0.06); --dy-subborder: rgba(82, 70, 52, 0.16);
   }
   .dy-pad[data-paper="ruled-white"] {
-    --dy-paper: #ffffff;
-    --dy-paper-2: #f8fafc;
-    --dy-ink: #172030;
-    --dy-muted: #5a677d;
-    --dy-rule: rgba(92, 145, 214, 0.26);
-    --dy-margin: rgba(212, 68, 76, 0.34);
-    --dy-head: linear-gradient(135deg, #27364e, #182234);
-    --dy-head-line: rgba(186, 214, 255, 0.32);
-    --dy-subbox: rgba(30, 64, 118, 0.05);
-    --dy-subborder: rgba(30, 64, 118, 0.15);
+    --dy-paper: #ffffff; --dy-paper-2: #f8fafc; --dy-ink: #172030; --dy-muted: #5a677d;
+    --dy-rule: rgba(92, 145, 214, 0.26); --dy-margin: rgba(212, 68, 76, 0.34);
+    --dy-head: linear-gradient(135deg, #27364e, #182234); --dy-head-line: rgba(186, 214, 255, 0.32);
+    --dy-subbox: rgba(30, 64, 118, 0.05); --dy-subborder: rgba(30, 64, 118, 0.15);
   }
   .dy-pad[data-paper="plain-white"] {
-    --dy-paper: #ffffff;
-    --dy-paper-2: #fafafa;
-    --dy-ink: #16181d;
-    --dy-muted: #606775;
-    --dy-rule: transparent;
-    --dy-margin: transparent;
-    --dy-head: linear-gradient(135deg, #2b2f3a, #191c24);
-    --dy-head-line: rgba(255, 255, 255, 0.25);
-    --dy-subbox: rgba(0, 0, 0, 0.04);
-    --dy-subborder: rgba(0, 0, 0, 0.12);
+    --dy-paper: #ffffff; --dy-paper-2: #fafafa; --dy-ink: #16181d; --dy-muted: #606775;
+    --dy-rule: transparent; --dy-margin: transparent;
+    --dy-head: linear-gradient(135deg, #2b2f3a, #191c24); --dy-head-line: rgba(255, 255, 255, 0.25);
+    --dy-subbox: rgba(0, 0, 0, 0.04); --dy-subborder: rgba(0, 0, 0, 0.12);
   }
   .dy-pad[data-paper="plain-night"] {
-    --dy-paper: #171b24;
-    --dy-paper-2: #12161e;
-    --dy-ink: #efe6d6;
-    --dy-muted: #98a2b8;
-    --dy-rule: transparent;
-    --dy-margin: transparent;
-    --dy-head: linear-gradient(135deg, #0d1017, #1c2230);
-    --dy-head-line: rgba(246, 212, 134, 0.28);
-    --dy-subbox: rgba(255, 255, 255, 0.04);
-    --dy-subborder: rgba(255, 255, 255, 0.12);
+    --dy-paper: #171b24; --dy-paper-2: #12161e; --dy-ink: #efe6d6; --dy-muted: #98a2b8;
+    --dy-rule: transparent; --dy-margin: transparent;
+    --dy-head: linear-gradient(135deg, #0d1017, #1c2230); --dy-head-line: rgba(246, 212, 134, 0.28);
+    --dy-subbox: rgba(255, 255, 255, 0.04); --dy-subborder: rgba(255, 255, 255, 0.12);
   }
-  .dy-pad[data-ink="sans"] {
-    --dy-font: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
-  }
-  .dy-pad[data-ink="mono"] {
-    --dy-font: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
-  }
+  .dy-pad[data-ink="sans"] { --dy-font: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif; }
+  .dy-pad[data-ink="mono"] { --dy-font: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace; }
 
   .dy-pad-binding {
-    height: 28px;
-    background: var(--dy-head);
-    border-bottom: 2px dashed var(--dy-head-line);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 22px;
-    position: relative;
-  }
-  .dy-pad-binding::after {
-    content: "";
-    position: absolute;
-    left: 14px;
-    right: 14px;
-    bottom: 6px;
-    border-bottom: 1px dashed rgba(255, 255, 255, 0.26);
-    pointer-events: none;
+    height: 24px; background: var(--dy-head); border-bottom: 2px dashed var(--dy-head-line);
+    display: flex; align-items: center; justify-content: space-between; padding: 0 22px; position: relative;
   }
   .dy-rivet {
-    width: 9px;
-    height: 9px;
-    border-radius: 50%;
+    width: 8px; height: 8px; border-radius: 50%;
     background: radial-gradient(circle at 30% 30%, #f7e4b2, #9e7a3c);
     box-shadow: inset 0 1px 2px rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.45);
   }
 
   .dy-page-head {
-    padding: 16px 22px 12px 62px;
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    border-bottom: 1.5px solid var(--dy-margin);
-    position: relative;
+    padding: 14px 20px 12px 62px; display: flex; align-items: flex-start;
+    justify-content: space-between; gap: 10px; flex-wrap: wrap;
+    border-bottom: 1.5px solid var(--dy-margin); position: relative;
   }
   .dy-pad[data-paper="plain-cream"] .dy-page-head,
   .dy-pad[data-paper="plain-white"] .dy-page-head,
   .dy-pad[data-paper="plain-night"] .dy-page-head,
   .dy-pad[data-paper="dot-cream"] .dy-page-head,
-  .dy-pad[data-paper="grid-sage"] .dy-page-head {
-    padding-left: 24px;
-    border-bottom: 1px solid var(--dy-subborder);
-  }
+  .dy-pad[data-paper="grid-sage"] .dy-page-head { padding-left: 22px; border-bottom: 1px solid var(--dy-subborder); }
   .dy-pad[data-paper="ruled-yellow"] .dy-page-head::before,
   .dy-pad[data-paper="ruled-parchment"] .dy-page-head::before,
   .dy-pad[data-paper="ruled-white"] .dy-page-head::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 46px;
-    width: 4px;
-    border-left: 1.5px solid var(--dy-margin);
-    border-right: 1px solid var(--dy-margin);
-    pointer-events: none;
+    content: ""; position: absolute; top: 0; bottom: 0; left: 46px; width: 4px;
+    border-left: 1.5px solid var(--dy-margin); border-right: 1px solid var(--dy-margin); pointer-events: none;
   }
   .dy-stamp-kicker {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    font-size: 10.5px;
-    font-weight: 800;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--dy-muted);
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif; font-size: 10.5px; font-weight: 800;
+    letter-spacing: 0.12em; text-transform: uppercase; color: var(--dy-muted);
   }
-  .dy-date-title {
-    margin: 3px 0 0;
-    font-size: clamp(19px, 3vw, 24px);
-    font-weight: 700;
-    color: var(--dy-ink);
-    line-height: 1.2;
-  }
-  .dy-head-actions {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 6px;
-  }
+  .dy-date-title { margin: 2px 0 0; font-size: clamp(19px, 3vw, 23px); font-weight: 700; color: var(--dy-ink); line-height: 1.2; }
   .dy-day-telemetry {
-    font-family: "JetBrains Mono", ui-monospace, monospace;
-    font-variant-numeric: tabular-nums;
-    font-size: 11.5px;
-    font-weight: 600;
-    color: var(--dy-muted);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    justify-content: flex-end;
+    margin-top: 4px; font-family: "JetBrains Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums;
+    font-size: 11px; font-weight: 600; color: var(--dy-muted); display: flex; align-items: center; gap: 7px; flex-wrap: wrap;
   }
   .dy-star-btn {
-    min-height: 36px;
-    padding: 0 11px;
-    border-radius: 99px;
-    border: 1px solid var(--dy-subborder);
-    background: var(--dy-subbox);
-    color: var(--dy-muted);
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    white-space: nowrap;
+    min-height: 36px; min-width: 36px; padding: 0 11px; border-radius: 99px;
+    border: 1px solid var(--dy-subborder); background: var(--dy-subbox); color: var(--dy-muted);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif; font-size: 13px; font-weight: 700; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
   }
-  .dy-star-btn.on {
-    background: #d97706;
-    border-color: #d97706;
-    color: #fff;
-  }
+  .dy-star-btn.on { background: #d97706; border-color: #d97706; color: #fff; }
 
-  /* Margin-aware horizontal rows on the sheet */
-  .dy-sheet-row {
-    padding: 8px 22px 6px 62px;
-    position: relative;
-  }
+  .dy-sheet-row { padding: 8px 20px 6px 62px; position: relative; }
   .dy-pad[data-paper="plain-cream"] .dy-sheet-row,
   .dy-pad[data-paper="plain-white"] .dy-sheet-row,
   .dy-pad[data-paper="plain-night"] .dy-sheet-row,
   .dy-pad[data-paper="dot-cream"] .dy-sheet-row,
-  .dy-pad[data-paper="grid-sage"] .dy-sheet-row {
-    padding-left: 24px;
-  }
+  .dy-pad[data-paper="grid-sage"] .dy-sheet-row { padding-left: 22px; }
   .dy-pad[data-paper="ruled-yellow"] .dy-sheet-row::before,
   .dy-pad[data-paper="ruled-parchment"] .dy-sheet-row::before,
   .dy-pad[data-paper="ruled-white"] .dy-sheet-row::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    bottom: 0;
-    left: 46px;
-    width: 4px;
-    border-left: 1.5px solid var(--dy-margin);
-    border-right: 1px solid var(--dy-margin);
-    pointer-events: none;
+    content: ""; position: absolute; top: 0; bottom: 0; left: 46px; width: 4px;
+    border-left: 1.5px solid var(--dy-margin); border-right: 1px solid var(--dy-margin); pointer-events: none;
   }
 
-  .dy-mood-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    overflow-x: auto;
-    padding-top: 10px;
-  }
+  .dy-mood-row { display: flex; align-items: center; gap: 6px; overflow-x: auto; padding-top: 10px; }
   .dy-mood-chip {
-    flex: none;
-    min-height: 32px;
-    padding: 4px 11px;
-    border-radius: 99px;
-    border: 1px solid var(--dy-subborder);
-    background: transparent;
-    color: var(--dy-muted);
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
+    flex: none; min-height: 32px; padding: 4px 11px; border-radius: 99px;
+    border: 1px solid var(--dy-subborder); background: transparent; color: var(--dy-muted);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
   }
-  .dy-mood-chip.on {
-    background: var(--dy-ink);
-    border-color: var(--dy-ink);
-    color: var(--dy-paper);
-  }
-
-  /* Energy + Day Rating + Font Size inline bar */
-  .dy-meters-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    flex-wrap: wrap;
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    font-size: 12px;
-    color: var(--dy-muted);
-  }
-  .dy-meter-grp {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    flex-wrap: wrap;
-  }
-  .dy-meter-lbl {
-    font-weight: 700;
-    margin-right: 2px;
-  }
-  .dy-step-btn {
-    min-width: 28px;
-    height: 28px;
-    padding: 0 6px;
-    border-radius: 8px;
-    border: 1px solid var(--dy-subborder);
-    background: transparent;
-    color: var(--dy-muted);
-    font: inherit;
-    font-size: 11.5px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .dy-step-btn.on {
-    background: var(--dy-ink);
-    border-color: var(--dy-ink);
-    color: var(--dy-paper);
-  }
-
-  /* Templates & Daily Reflection Prompt */
-  .dy-tpl-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    overflow-x: auto;
-  }
-  .dy-tpl-lbl {
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    font-size: 11px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.08em;
-    color: var(--dy-muted);
-    flex: none;
-  }
-  .dy-tpl-btn {
-    flex: none;
-    min-height: 30px;
-    padding: 4px 10px;
-    border-radius: 8px;
-    border: 1px dashed var(--dy-subborder);
-    background: var(--dy-subbox);
-    color: var(--dy-ink);
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    font-size: 11.5px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .dy-tpl-btn.on {
-    border-style: solid;
-    border-color: var(--dy-ink);
-  }
-
-  .dy-prompt-card {
-    margin: 4px 0 2px;
-    padding: 10px 12px;
-    border-radius: 12px;
-    background: var(--dy-subbox);
-    border: 1px solid var(--dy-subborder);
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-  }
-  .dy-prompt-top {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .dy-prompt-q {
-    font-size: 13px;
-    font-weight: 700;
-    color: var(--dy-ink);
-    line-height: 1.4;
-  }
-  .dy-prompt-q small {
-    display: block;
-    font-size: 10px;
-    font-weight: 800;
-    letter-spacing: 0.09em;
-    text-transform: uppercase;
-    color: var(--dy-muted);
-    margin-bottom: 2px;
-  }
-  .dy-prompt-acts {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    flex-shrink: 0;
-  }
-  .dy-mini-paper-btn {
-    min-height: 28px;
-    padding: 3px 8px;
-    border-radius: 8px;
-    border: 1px solid var(--dy-subborder);
-    background: transparent;
-    color: var(--dy-ink);
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    font-size: 11px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .dy-prompt-ans {
-    width: 100%;
-    margin-top: 6px;
-    border: 0;
-    border-bottom: 1px solid var(--dy-subborder);
-    background: transparent;
-    color: var(--dy-ink);
-    font-family: var(--dy-font);
-    font-size: 14px;
-    padding: 4px 0;
-    outline: none;
-  }
-  .dy-prompt-ans::placeholder {
-    color: var(--dy-muted);
-    opacity: 0.65;
-  }
+  .dy-mood-chip.on { background: var(--dy-ink); border-color: var(--dy-ink); color: var(--dy-paper); }
 
   .dy-title-in {
-    width: 100%;
-    border: 0;
-    border-bottom: 1.5px solid var(--dy-rule);
-    background: transparent;
-    color: var(--dy-ink);
-    font-family: inherit;
-    font-size: 19px;
-    font-weight: 700;
-    padding: 6px 0 8px;
-    outline: none;
+    width: 100%; border: 0; border-bottom: 1.5px solid var(--dy-rule); background: transparent;
+    color: var(--dy-ink); font-family: inherit; font-size: 19px; font-weight: 700; padding: 6px 0 8px; outline: none;
   }
-  .dy-title-in::placeholder {
-    color: var(--dy-muted);
-    opacity: 0.65;
-  }
+  .dy-title-in::placeholder { color: var(--dy-muted); opacity: 0.65; }
   .dy-pad[data-paper="plain-cream"] .dy-title-in,
   .dy-pad[data-paper="plain-white"] .dy-title-in,
   .dy-pad[data-paper="plain-night"] .dy-title-in,
   .dy-pad[data-paper="dot-cream"] .dy-title-in,
-  .dy-pad[data-paper="grid-sage"] .dy-title-in {
-    border-bottom-color: var(--dy-subborder);
-  }
+  .dy-pad[data-paper="grid-sage"] .dy-title-in { border-bottom-color: var(--dy-subborder); }
 
-  /* Scroll-Locked Writing Area across Ruled, Dot, Grid & Plain Sheets */
+  /* Auto-growing Writing Area so Page Scrolls & Pinches Freely */
   .dy-body-in {
     width: 100%;
-    min-height: clamp(250px, 38vh, 420px);
+    min-height: 240px;
     border: 0;
     outline: none;
-    resize: vertical;
+    resize: none;
+    overflow: hidden;
     color: var(--dy-ink);
     font-family: inherit;
     font-size: var(--dy-fz);
     line-height: var(--dy-lh);
-    padding: 8px 22px 28px 62px;
+    padding: 8px 20px 28px 62px;
     background-color: transparent;
     background-image:
-      linear-gradient(
-        90deg,
-        transparent 46px,
-        var(--dy-margin) 46px,
-        var(--dy-margin) 47.5px,
-        transparent 47.5px,
-        transparent 50px,
-        var(--dy-margin) 50px,
-        var(--dy-margin) 51.2px,
-        transparent 51.2px
-      ),
-      repeating-linear-gradient(
-        to bottom,
-        transparent 0px,
-        transparent calc(var(--dy-lh) - 1px),
-        var(--dy-rule) calc(var(--dy-lh) - 1px),
-        var(--dy-rule) var(--dy-lh)
-      );
+      linear-gradient(90deg, transparent 46px, var(--dy-margin) 46px, var(--dy-margin) 47.5px, transparent 47.5px, transparent 50px, var(--dy-margin) 50px, var(--dy-margin) 51.2px, transparent 51.2px),
+      repeating-linear-gradient(to bottom, transparent 0px, transparent calc(var(--dy-lh) - 1px), var(--dy-rule) calc(var(--dy-lh) - 1px), var(--dy-rule) var(--dy-lh));
     background-attachment: local, local;
     background-position: 0 0, 0 8px;
     background-repeat: no-repeat, repeat;
   }
   .dy-pad[data-paper="dot-cream"] .dy-body-in {
-    padding: 12px 24px 28px 24px;
-    line-height: 1.75;
+    padding: 12px 22px 28px 22px; line-height: 1.75;
     background-image: radial-gradient(var(--dy-rule) 1.3px, transparent 1.3px);
-    background-size: 22px 22px;
-    background-position: 12px 12px;
-    background-repeat: repeat;
-    background-attachment: local;
+    background-size: 22px 22px; background-position: 12px 12px; background-repeat: repeat;
   }
   .dy-pad[data-paper="grid-sage"] .dy-body-in {
-    padding: 12px 24px 28px 24px;
-    line-height: 1.75;
-    background-image:
-      linear-gradient(to right, var(--dy-rule) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--dy-rule) 1px, transparent 1px);
-    background-size: 24px 24px;
-    background-position: 0 0;
-    background-repeat: repeat;
-    background-attachment: local;
+    padding: 12px 22px 28px 22px; line-height: 1.75;
+    background-image: linear-gradient(to right, var(--dy-rule) 1px, transparent 1px), linear-gradient(to bottom, var(--dy-rule) 1px, transparent 1px);
+    background-size: 24px 24px; background-position: 0 0; background-repeat: repeat;
   }
   .dy-pad[data-paper="plain-cream"] .dy-body-in,
   .dy-pad[data-paper="plain-white"] .dy-body-in,
-  .dy-pad[data-paper="plain-night"] .dy-body-in {
-    padding: 12px 24px 28px 24px;
-    background-image: none;
-    line-height: 1.75;
-  }
-  .dy-body-in::placeholder {
-    color: var(--dy-muted);
-    opacity: 0.62;
-  }
+  .dy-pad[data-paper="plain-night"] .dy-body-in { padding: 12px 22px 28px 22px; background-image: none; line-height: 1.75; }
+  .dy-body-in::placeholder { color: var(--dy-muted); opacity: 0.62; }
 
-  /* Tags Strip */
-  .dy-tags-row {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-wrap: wrap;
-    padding-top: 6px;
-    padding-bottom: 8px;
-    border-top: 1px solid var(--dy-subborder);
+  /* Optional Progressive-Disclosure Reflection & Closing Accordion */
+  .dy-extras-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 20px; border-top: 1px solid var(--dy-subborder); background: var(--dy-subbox);
     font-family: "Plus Jakarta Sans", system-ui, sans-serif;
   }
+  .dy-extras-btn {
+    flex: 1; text-align: left; border: 0; background: transparent; padding: 4px 0;
+    color: var(--dy-ink); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  }
+  .dy-extras-btn small { font-size: 11.5px; font-weight: 600; color: var(--dy-muted); }
+  .dy-extras-body {
+    padding: 12px 20px 16px; border-top: 1px solid var(--dy-subborder); background: var(--dy-subbox);
+    display: flex; flex-direction: column; gap: 12px; font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  }
+
+  .dy-meters-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-size: 12px; color: var(--dy-muted); }
+  .dy-meter-grp { display: inline-flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+  .dy-meter-lbl { font-weight: 700; margin-right: 2px; }
+  .dy-step-btn {
+    min-width: 28px; height: 28px; padding: 0 7px; border-radius: 8px;
+    border: 1px solid var(--dy-subborder); background: transparent; color: var(--dy-muted);
+    font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  }
+  .dy-step-btn.on { background: var(--dy-ink); border-color: var(--dy-ink); color: var(--dy-paper); }
+
+  .dy-tpl-row { display: flex; align-items: center; gap: 6px; overflow-x: auto; }
+  .dy-tpl-btn {
+    flex: none; min-height: 30px; padding: 4px 10px; border-radius: 8px;
+    border: 1px dashed var(--dy-subborder); background: transparent; color: var(--dy-ink);
+    font: inherit; font-size: 11.5px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .dy-tpl-btn.on { border-style: solid; border-color: var(--dy-ink); background: var(--dy-subbox); }
+
+  .dy-prompt-card { padding: 10px 12px; border-radius: 12px; border: 1px solid var(--dy-subborder); background: rgba(255,255,255,0.18); }
+  .dy-pad[data-paper="plain-night"] .dy-prompt-card { background: rgba(255,255,255,0.03); }
+  .dy-prompt-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .dy-prompt-q { font-size: 13px; font-weight: 700; color: var(--dy-ink); line-height: 1.4; }
+  .dy-prompt-q small { display: block; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--dy-muted); margin-bottom: 2px; }
+  .dy-prompt-acts { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+  .dy-mini-paper-btn {
+    min-height: 28px; padding: 3px 8px; border-radius: 8px; border: 1px solid var(--dy-subborder);
+    background: transparent; color: var(--dy-ink); font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+  .dy-prompt-ans {
+    width: 100%; margin-top: 6px; border: 0; border-bottom: 1px solid var(--dy-subborder);
+    background: transparent; color: var(--dy-ink); font-family: var(--dy-font); font-size: 14px; padding: 4px 0; outline: none;
+  }
+  .dy-prompt-ans::placeholder { color: var(--dy-muted); opacity: 0.65; }
+
+  .dy-tags-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .dy-tag-chip {
-    min-height: 28px;
-    padding: 3px 9px;
-    border-radius: 99px;
-    border: 1px solid var(--dy-subborder);
-    background: transparent;
-    color: var(--dy-muted);
-    font-size: 11.5px;
-    font-weight: 700;
-    cursor: pointer;
+    min-height: 28px; padding: 3px 9px; border-radius: 99px; border: 1px solid var(--dy-subborder);
+    background: transparent; color: var(--dy-muted); font-size: 11.5px; font-weight: 700; cursor: pointer;
   }
-  .dy-tag-chip.on {
-    background: var(--dy-ink);
-    border-color: var(--dy-ink);
-    color: var(--dy-paper);
-  }
+  .dy-tag-chip.on { background: var(--dy-ink); border-color: var(--dy-ink); color: var(--dy-paper); }
   .dy-tag-add {
-    width: 112px;
-    border: 0;
-    border-bottom: 1px dashed var(--dy-subborder);
-    background: transparent;
-    color: var(--dy-ink);
-    font: inherit;
-    font-size: 12px;
-    padding: 3px 2px;
-    outline: none;
+    width: 108px; border: 0; border-bottom: 1px dashed var(--dy-subborder); background: transparent;
+    color: var(--dy-ink); font: inherit; font-size: 12px; padding: 3px 2px; outline: none;
   }
 
-  /* Gratitude Trio + Win / Tomorrow Intention */
-  .dy-closing-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    padding-top: 12px;
-    padding-bottom: 14px;
-    border-top: 1px solid var(--dy-subborder);
-    background: var(--dy-subbox);
-  }
-  .dy-grat-box {
-    grid-column: 1 / -1;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-  }
+  .dy-closing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .dy-grat-box { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .dy-prompt-box label {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--dy-muted);
-    margin-bottom: 4px;
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+    font-size: 11px; font-weight: 800; color: var(--dy-muted); margin-bottom: 4px;
   }
   .dy-prompt-box input {
-    width: 100%;
-    border: 0;
-    border-bottom: 1.5px solid var(--dy-subborder);
-    background: transparent;
-    color: var(--dy-ink);
-    font-family: inherit;
-    font-size: 14px;
-    padding: 5px 0;
-    outline: none;
+    width: 100%; border: 0; border-bottom: 1.5px solid var(--dy-subborder); background: transparent;
+    color: var(--dy-ink); font-family: var(--dy-font); font-size: 14px; padding: 5px 0; outline: none;
   }
-  .dy-prompt-box input::placeholder {
-    color: var(--dy-muted);
-    opacity: 0.65;
-  }
+  .dy-prompt-box input::placeholder { color: var(--dy-muted); opacity: 0.65; }
 
   @media (max-width: 640px) {
     .dy-closing-grid { grid-template-columns: 1fr; }
     .dy-grat-box { grid-template-columns: 1fr; }
-    .dy-page-head, .dy-sheet-row {
-      padding-left: 52px;
-      padding-right: 14px;
-    }
-    .dy-body-in { padding-left: 52px; padding-right: 14px; }
+    .dy-page-head, .dy-sheet-row { padding-left: 50px; padding-right: 14px; }
+    .dy-body-in { padding-left: 50px; padding-right: 14px; }
     .dy-pad[data-paper="ruled-yellow"] .dy-page-head::before,
     .dy-pad[data-paper="ruled-parchment"] .dy-page-head::before,
     .dy-pad[data-paper="ruled-white"] .dy-page-head::before,
     .dy-pad[data-paper="ruled-yellow"] .dy-sheet-row::before,
     .dy-pad[data-paper="ruled-parchment"] .dy-sheet-row::before,
-    .dy-pad[data-paper="ruled-white"] .dy-sheet-row::before {
-      left: 38px;
-    }
+    .dy-pad[data-paper="ruled-white"] .dy-sheet-row::before { left: 36px; }
     .dy-pad[data-paper="ruled-yellow"] .dy-body-in,
     .dy-pad[data-paper="ruled-parchment"] .dy-body-in,
     .dy-pad[data-paper="ruled-white"] .dy-body-in {
       background-image:
-        linear-gradient(
-          90deg,
-          transparent 38px,
-          var(--dy-margin) 38px,
-          var(--dy-margin) 39.5px,
-          transparent 39.5px,
-          transparent 42px,
-          var(--dy-margin) 42px,
-          var(--dy-margin) 43.2px,
-          transparent 43.2px
-        ),
-        repeating-linear-gradient(
-          to bottom,
-          transparent 0px,
-          transparent calc(var(--dy-lh) - 1px),
-          var(--dy-rule) calc(var(--dy-lh) - 1px),
-          var(--dy-rule) var(--dy-lh)
-        );
+        linear-gradient(90deg, transparent 36px, var(--dy-margin) 36px, var(--dy-margin) 37.5px, transparent 37.5px, transparent 40px, var(--dy-margin) 40px, var(--dy-margin) 41.2px, transparent 41.2px),
+        repeating-linear-gradient(to bottom, transparent 0px, transparent calc(var(--dy-lh) - 1px), var(--dy-rule) calc(var(--dy-lh) - 1px), var(--dy-rule) var(--dy-lh));
     }
     .dy-pad[data-paper="plain-cream"] .dy-page-head,
     .dy-pad[data-paper="plain-white"] .dy-page-head,
@@ -19358,309 +18710,85 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     .dy-pad[data-paper="plain-white"] .dy-body-in,
     .dy-pad[data-paper="plain-night"] .dy-body-in,
     .dy-pad[data-paper="dot-cream"] .dy-body-in,
-    .dy-pad[data-paper="grid-sage"] .dy-body-in {
-      padding-left: 16px;
-      padding-right: 16px;
-    }
+    .dy-pad[data-paper="grid-sage"] .dy-body-in { padding-left: 16px; padding-right: 16px; }
   }
 
   .dy-pad-foot {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    padding: 11px 18px;
-    border-top: 1px solid var(--dy-subborder);
-    font-family: "Plus Jakarta Sans", system-ui, sans-serif;
-    flex-wrap: wrap;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 11px 18px; border-top: 1px solid var(--dy-subborder);
+    font-family: "Plus Jakarta Sans", system-ui, sans-serif; flex-wrap: wrap;
   }
-  .dy-meta-txt {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--dy-muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .dy-foot-btns {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    flex-wrap: wrap;
-  }
+  .dy-meta-txt { font-size: 12px; font-weight: 600; color: var(--dy-muted); font-variant-numeric: tabular-nums; }
+  .dy-foot-btns { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
   .dy-foot-sec-btn {
-    min-height: 38px;
-    padding: 0 11px;
-    border-radius: 12px;
-    border: 1px solid var(--dy-subborder);
-    background: transparent;
-    color: var(--dy-ink);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-    white-space: nowrap;
+    min-height: 38px; padding: 0 11px; border-radius: 12px; border: 1px solid var(--dy-subborder);
+    background: transparent; color: var(--dy-ink); font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap;
   }
   .dy-del-btn {
-    min-height: 38px;
-    padding: 0 12px;
-    border-radius: 12px;
-    border: 1px solid rgba(220, 38, 38, 0.35);
-    background: rgba(220, 38, 38, 0.08);
-    color: #b91c1c;
-    font-size: 12.5px;
-    font-weight: 700;
-    cursor: pointer;
+    min-height: 38px; padding: 0 12px; border-radius: 12px;
+    border: 1px solid rgba(220, 38, 38, 0.35); background: rgba(220, 38, 38, 0.08);
+    color: #b91c1c; font-size: 12.5px; font-weight: 700; cursor: pointer;
   }
-  .dy-pad[data-paper="plain-night"] .dy-del-btn {
-    color: #fca5a5;
-  }
+  .dy-pad[data-paper="plain-night"] .dy-del-btn { color: #fca5a5; }
   .dy-save-btn {
-    min-height: 38px;
-    padding: 0 16px;
-    border-radius: 12px;
-    border: 0;
-    background: var(--dy-ink);
-    color: var(--dy-paper);
-    font-size: 13px;
-    font-weight: 800;
-    cursor: pointer;
-    white-space: nowrap;
+    min-height: 38px; padding: 0 16px; border-radius: 12px; border: 0;
+    background: var(--dy-ink); color: var(--dy-paper); font-size: 13px; font-weight: 800; cursor: pointer; white-space: nowrap;
   }
 
   /* Archive Sidebar: Entries | Calendar | Insights */
-  .dy-arch-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-  }
-  .dy-arch-tabs {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 4px;
-    padding: 3px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.05);
-  }
-  .dy-arch-tab {
-    min-height: 32px;
-    border: 0;
-    border-radius: 9px;
-    background: transparent;
-    color: var(--muted);
-    font-size: 12px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-  .dy-arch-tab.on {
-    background: var(--accent, #7ed957);
-    color: #06241a;
-  }
+  .dy-arch-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .dy-arch-tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 3px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); }
+  .dy-arch-tab { min-height: 32px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); font-size: 12px; font-weight: 700; cursor: pointer; }
+  .dy-arch-tab.on { background: var(--accent, #7ed957); color: #06241a; }
   .dy-arch-search {
-    width: 100%;
-    min-height: 38px;
-    padding: 8px 12px;
-    border-radius: 12px;
-    border: 1px solid var(--track, rgba(255,255,255,0.14));
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text);
-    font: inherit;
-    font-size: 13px;
+    width: 100%; min-height: 38px; padding: 8px 12px; border-radius: 12px;
+    border: 1px solid var(--track, rgba(255,255,255,0.14)); background: rgba(255, 255, 255, 0.04);
+    color: var(--text); font: inherit; font-size: 13px;
   }
-  .dy-arch-list {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
+  .dy-arch-list { display: flex; flex-direction: column; gap: 8px; }
   .dy-arch-item {
-    width: 100%;
-    text-align: left;
-    padding: 11px 12px;
-    border-radius: 14px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--text);
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+    width: 100%; text-align: left; padding: 11px 12px; border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.08); background: rgba(255, 255, 255, 0.03);
+    color: var(--text); cursor: pointer; display: flex; flex-direction: column; gap: 4px;
   }
-  .dy-arch-item.on {
-    border-color: var(--accent, #7ed957);
-    background: color-mix(in srgb, var(--accent, #7ed957) 13%, transparent);
-  }
-  .dy-arch-item-top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    font-size: 11.5px;
-    font-weight: 700;
-    color: var(--muted);
-    font-variant-numeric: tabular-nums;
-  }
-  .dy-arch-item-title {
-    font-size: 13.5px;
-    font-weight: 700;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .dy-arch-item-snip {
-    font-size: 12px;
-    color: var(--muted);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    line-height: 1.4;
-  }
-  .dy-arch-empty {
-    text-align: center;
-    padding: 28px 12px;
-    font-size: 13px;
-    color: var(--muted);
-  }
+  .dy-arch-item.on { border-color: var(--accent, #7ed957); background: color-mix(in srgb, var(--accent, #7ed957) 13%, transparent); }
+  .dy-arch-item-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 11.5px; font-weight: 700; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .dy-arch-item-title { font-size: 13.5px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dy-arch-item-snip { font-size: 12px; color: var(--muted); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.4; }
+  .dy-arch-empty { text-align: center; padding: 28px 12px; font-size: 13px; color: var(--muted); }
 
-  /* Mini Calendar */
-  .dy-cal-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    font-size: 13.5px;
-    font-weight: 800;
-    margin-bottom: 6px;
-  }
-  .dy-cal-grid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    text-align: center;
-  }
-  .dy-cal-wd {
-    font-size: 10.5px;
-    font-weight: 700;
-    color: var(--muted);
-    padding: 4px 0;
-  }
+  .dy-cal-head { display: flex; align-items: center; justify-content: space-between; font-size: 13.5px; font-weight: 800; margin-bottom: 6px; }
+  .dy-cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; }
+  .dy-cal-wd { font-size: 10.5px; font-weight: 700; color: var(--muted); padding: 4px 0; }
   .dy-cal-day {
-    min-height: 38px;
-    border-radius: 10px;
-    border: 1px solid transparent;
-    background: rgba(255, 255, 255, 0.03);
-    color: var(--text);
-    font-size: 12px;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 2px;
-    padding: 2px;
+    min-height: 38px; border-radius: 10px; border: 1px solid transparent; background: rgba(255, 255, 255, 0.03);
+    color: var(--text); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 2px;
   }
   .dy-cal-day.empty { background: transparent; cursor: default; }
   .dy-cal-day.future { opacity: 0.3; cursor: default; }
-  .dy-cal-day.has {
-    background: color-mix(in srgb, var(--accent, #7ed957) 14%, transparent);
-    border-color: color-mix(in srgb, var(--accent, #7ed957) 35%, transparent);
-  }
-  .dy-cal-day.on {
-    border-color: var(--accent, #7ed957);
-    box-shadow: inset 0 0 0 1px var(--accent, #7ed957);
-  }
-  .dy-cal-dot {
-    font-size: 9px;
-    line-height: 1;
-  }
+  .dy-cal-day.has { background: color-mix(in srgb, var(--accent, #7ed957) 14%, transparent); border-color: color-mix(in srgb, var(--accent, #7ed957) 35%, transparent); }
+  .dy-cal-day.on { border-color: var(--accent, #7ed957); box-shadow: inset 0 0 0 1px var(--accent, #7ed957); }
+  .dy-cal-dot { font-size: 9px; line-height: 1; }
 
-  /* Insights View */
-  .dy-ins-stats {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  .dy-ins-stat {
-    padding: 10px 12px;
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-    border: 1px solid rgba(255, 255, 255, 0.07);
-    font-variant-numeric: tabular-nums;
-  }
-  .dy-ins-stat b {
-    display: block;
-    font-size: 18px;
-    font-weight: 800;
-  }
-  .dy-ins-stat small {
-    font-size: 11px;
-    color: var(--muted);
-  }
-  .dy-ins-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 2px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
-    font-size: 12.5px;
-    font-variant-numeric: tabular-nums;
-  }
+  .dy-ins-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .dy-ins-stat { padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.07); font-variant-numeric: tabular-nums; }
+  .dy-ins-stat b { display: block; font-size: 18px; font-weight: 800; }
+  .dy-ins-stat small { font-size: 11px; color: var(--muted); }
+  .dy-ins-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.07); font-size: 12.5px; font-variant-numeric: tabular-nums; }
 
   /* PIN Lock Screen */
-  .dy-lock-wrap {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 24px 18px;
-    gap: 14px;
-    text-align: center;
-  }
-  .dy-lock-dots {
-    display: flex;
-    gap: 12px;
-    margin: 4px 0;
-  }
-  .dy-lock-dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 2px solid var(--muted);
-  }
-  .dy-lock-dot.on {
-    background: var(--accent, #7ed957);
-    border-color: var(--accent, #7ed957);
-  }
-  .dy-keypad {
-    display: grid;
-    grid-template-columns: repeat(3, 68px);
-    gap: 10px;
-  }
-  .dy-key-btn {
-    height: 56px;
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    background: rgba(255, 255, 255, 0.06);
-    color: var(--text);
-    font-size: 20px;
-    font-weight: 700;
-    cursor: pointer;
-  }
+  .dy-lock-wrap { flex: 1; min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 18px; gap: 14px; text-align: center; }
+  .dy-lock-dots { display: flex; gap: 12px; margin: 4px 0; }
+  .dy-lock-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--muted); }
+  .dy-lock-dot.on { background: var(--accent, #7ed957); border-color: var(--accent, #7ed957); }
+  .dy-keypad { display: grid; grid-template-columns: repeat(3, 68px); gap: 10px; }
+  .dy-key-btn { height: 56px; border-radius: 16px; border: 1px solid rgba(255, 255, 255, 0.14); background: rgba(255, 255, 255, 0.06); color: var(--text); font-size: 20px; font-weight: 700; cursor: pointer; }
 
   @media print {
     body > *:not(#dyModal) { display: none !important; }
-    #dyModal {
-      position: static !important;
-      display: block !important;
-      background: #fff !important;
-      overflow: visible !important;
-    }
-    .dy-topbar, .dy-controls, .dy-prefs-panel, .dy-archive-col, .dy-zen-bar, .dy-pad-foot, .dy-foot-sec-btn {
-      display: none !important;
-    }
+    #dyModal { position: static !important; display: block !important; background: #fff !important; overflow: visible !important; }
+    .dy-topbar, .dy-controls, .dy-drawer, .dy-archive-col, .dy-zen-bar, .dy-pad-foot, .dy-extras-bar { display: none !important; }
     .dy-pad { box-shadow: none !important; }
   }
 </style>
@@ -19904,6 +19032,8 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     open: false,
     eodOpen: false,
     prefsOpen: false,
+    styleOpen: false,
+    extrasOpen: false,
     archiveOpen: false,
     archiveTab: 'list',
     zenMode: false,
@@ -19929,6 +19059,13 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     moodFilter: '',
     starOnly: false,
   };
+
+  function autoGrowBody(el) {
+    const node = el || document.getElementById('dyBodyIn');
+    if (!node) return;
+    node.style.height = 'auto';
+    node.style.height = Math.max(240, node.scrollHeight) + 'px';
+  }
 
   function getFB() {
     return window.firebaseArenaBridge || null;
@@ -20369,10 +19506,22 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     const saveBadge = STATE.saving
       ? 'Saving…'
       : STATE.dirty
-      ? 'Unsaved edits'
-      : STATE.saveNote || (hasExisting ? (STATE.user ? 'Synced to account ✓' : 'Saved on device ✓') : 'Ready to write');
+      ? 'Unsaved'
+      : STATE.saveNote || (hasExisting ? (STATE.user ? 'Synced ✓' : 'Saved ✓') : 'Ready');
 
     const availableTags = Array.from(new Set([...QUICK_TAGS, ...(d.tags || [])]));
+    const quickPaperIds = ['ruled-yellow', 'plain-cream', 'plain-night'];
+    if (!quickPaperIds.includes(d.paperStyle)) quickPaperIds.splice(2, 0, d.paperStyle);
+    const quickPapers = quickPaperIds.map((id) => PAPERS.find((p) => p.id === id)).filter(Boolean);
+
+    const extrasBadges = [
+      d.dayRating ? `★ ${d.dayRating}/5` : '',
+      d.energy ? `⚡ ${d.energy}/5` : '',
+      d.tags && d.tags.length ? `${d.tags.length} tag${d.tags.length === 1 ? '' : 's'}` : '',
+      (d.gratitude && d.gratitude.some((g) => String(g || '').trim())) ? 'Gratitude' : '',
+      d.tomorrowGoal ? 'Tomorrow goal' : '',
+      d.promptA ? 'Prompt' : '',
+    ].filter(Boolean);
 
     modal.classList.toggle('dy-zen', Boolean(STATE.zenMode));
     modal.innerHTML = `
@@ -20391,13 +19540,14 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
             ${
               STATE.user
                 ? `<span class="dy-acct-meta synced">☁️ @${escHtml(STATE.user.username)}${streak > 1 ? ' · 🔥 ' + streak + 'd' : ''}</span>`
-                : `<button type="button" class="dy-acct-link-btn" data-dy-act="login" title="Sign in to sync diary across devices">Link account to sync</button>`
+                : `<button type="button" class="dy-acct-link-btn" data-dy-act="login" title="Sign in to sync diary across devices">Sync account</button>`
             }
           </div>
           <div class="dy-top-r">
-            <button type="button" class="dy-ic-btn ${STATE.zenMode ? 'on' : ''}" data-dy-act="toggleZen" title="Distraction-free writing">⛶ <span class="dy-hide-sm">Focus</span></button>
-            <button type="button" class="dy-ic-btn ${STATE.archiveOpen ? 'on' : ''}" data-dy-act="toggleArchive">📚 <span class="dy-hide-sm">Entries</span> (${allCount})</button>
-            <button type="button" class="dy-ic-btn ${STATE.prefsOpen ? 'on' : ''}" data-dy-act="togglePrefs" aria-label="Diary settings" title="Reminder &amp; Privacy PIN">⚙</button>
+            <button type="button" class="dy-ic-btn ${STATE.zenMode ? 'on' : ''}" data-dy-act="toggleZen" title="Focus mode">⛶</button>
+            <button type="button" class="dy-ic-btn ${STATE.styleOpen ? 'on' : ''}" data-dy-act="toggleStyle" title="Paper &amp; Typography">🎨 <span class="dy-hide-sm">Style</span></button>
+            <button type="button" class="dy-ic-btn ${STATE.archiveOpen ? 'on' : ''}" data-dy-act="toggleArchive">📚 (${allCount})</button>
+            <button type="button" class="dy-ic-btn ${STATE.prefsOpen ? 'on' : ''}" data-dy-act="togglePrefs" aria-label="Diary settings" title="Settings &amp; Lock">⚙</button>
             <button type="button" class="dy-ic-btn" data-dy-act="close" aria-label="Close Diary">✕</button>
           </div>
         </div>
@@ -20409,45 +19559,69 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
             <button type="button" class="dy-date-btn" data-dy-act="nextDay" ${isToday || isFuture ? 'disabled' : ''} aria-label="Next day">›</button>
             ${!isToday ? `<button type="button" class="dy-date-btn" data-dy-act="goToday">Today</button>` : ''}
           </div>
-          <div class="dy-style-strip" aria-label="Paper and ink style">
-            ${PAPERS.map(
+          <div class="dy-quick-papers" aria-label="Quick paper switch">
+            ${quickPapers.map(
               (p) => `<button type="button" class="dy-style-btn ${d.paperStyle === p.id ? 'on' : ''}" data-dy-paper="${p.id}"><i class="dy-swatch ${p.id}"></i>${p.label}</button>`
             ).join('')}
-            <span class="dy-sep"></span>
-            ${INKS.map(
-              (ink) => `<button type="button" class="dy-style-btn ${d.inkStyle === ink.id ? 'on' : ''}" data-dy-ink="${ink.id}">${ink.label}</button>`
-            ).join('')}
+            <button type="button" class="dy-style-btn ${STATE.styleOpen ? 'on' : ''}" data-dy-act="toggleStyle">More ▾</button>
           </div>
         </div>
 
-        <div class="dy-prefs-panel ${STATE.prefsOpen ? 'on' : ''}">
-          <div class="dy-prefs-row">
+        <div class="dy-drawer ${STATE.styleOpen ? 'on' : ''}">
+          <div class="dy-drawer-row">
+            <div class="dy-drawer-grp">
+              <span class="dy-drawer-lbl">Paper:</span>
+              ${PAPERS.map(
+                (p) => `<button type="button" class="dy-style-btn ${d.paperStyle === p.id ? 'on' : ''}" data-dy-paper="${p.id}"><i class="dy-swatch ${p.id}"></i>${p.label}</button>`
+              ).join('')}
+            </div>
+          </div>
+          <div class="dy-drawer-row">
+            <div class="dy-drawer-grp">
+              <span class="dy-drawer-lbl">Font:</span>
+              ${INKS.map(
+                (ink) => `<button type="button" class="dy-hr-chip ${d.inkStyle === ink.id ? 'on' : ''}" data-dy-ink="${ink.id}">${ink.label}</button>`
+              ).join('')}
+            </div>
+            <div class="dy-drawer-grp">
+              <span class="dy-drawer-lbl">Size:</span>
+              ${FONT_SIZES.map(
+                (fs) => `<button type="button" class="dy-hr-chip ${(d.fontSize || 'md') === fs.id ? 'on' : ''}" data-dy-fsize="${fs.id}">${fs.label}</button>`
+              ).join('')}
+            </div>
+          </div>
+        </div>
+
+        <div class="dy-drawer ${STATE.prefsOpen ? 'on' : ''}">
+          <div class="dy-drawer-row">
             <label>
               <input type="checkbox" class="sw" id="dyPromptSw" ${STATE.prefs.promptEnabled ? 'checked' : ''}>
               <span>🌙 Prompt me at close of day</span>
             </label>
-            <div class="dy-prefs-hours">
-              <span>Closing time:</span>
+            <div class="dy-drawer-grp">
+              <span class="dy-drawer-lbl">Closing time:</span>
               ${PROMPT_HOURS.map(
                 (hr) => `<button type="button" class="dy-hr-chip ${Number(STATE.prefs.promptHour) === hr ? 'on' : ''}" data-dy-hr="${hr}">${formatHourLabel(hr)}</button>`
               ).join('')}
             </div>
           </div>
-          <div class="dy-prefs-row">
-            <div class="dy-pin-setup">
-              <span style="font-size:12.5px;font-weight:700">🔒 Privacy Lock:</span>
+          <div class="dy-drawer-row">
+            <div class="dy-drawer-grp">
+              <span style="font-size:12.5px;font-weight:700">🔒 Lock:</span>
               ${
                 STATE.prefs.pinHash
                   ? `<span style="font-size:12px;color:#86efac;font-weight:700">PIN active</span>
                      <button type="button" class="dy-hr-chip" data-dy-act="lockNow">Lock Now</button>
                      <button type="button" class="dy-hr-chip" data-dy-act="clearPin">Remove PIN</button>`
                   : `<input type="password" inputmode="numeric" maxlength="4" id="dyPinNewIn" class="dy-pin-in" placeholder="4 digits" autocomplete="off">
-                     <button type="button" class="dy-hr-chip on" data-dy-act="setPin">Set 4-Digit PIN</button>`
+                     <button type="button" class="dy-hr-chip on" data-dy-act="setPin">Set PIN</button>`
               }
               ${STATE.pinFeedback ? `<span style="font-size:12px;color:var(--muted)">${escHtml(STATE.pinFeedback)}</span>` : ''}
             </div>
-            <div style="display:flex;gap:6px;flex-wrap:wrap">
-              <button type="button" class="dy-hr-chip" data-dy-act="exportAll">⬇ Export All (.md)</button>
+            <div class="dy-drawer-grp">
+              <button type="button" class="dy-hr-chip" data-dy-act="exportEntry">⬇ Page (.md)</button>
+              <button type="button" class="dy-hr-chip" data-dy-act="exportAll">⬇ All (.md)</button>
+              <button type="button" class="dy-hr-chip" data-dy-act="printEntry">🖨 Print</button>
             </div>
           </div>
         </div>
@@ -20458,22 +19632,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
               <div class="dy-pad-binding"><span class="dy-rivet"></span><span class="dy-rivet"></span></div>
 
               <div class="dy-page-head">
-                <div>
-                  <span class="dy-stamp-kicker">${isToday ? (new Date().getHours() >= (Number(STATE.prefs.promptHour) || 21) ? '🌙 END OF DAY · CLOSING LOG' : '✦ TODAY’S PAGE') : '📖 JOURNAL ARCHIVE'}</span>
+                <div style="min-width:0;flex:1">
+                  <span class="dy-stamp-kicker">${isToday ? (new Date().getHours() >= (Number(STATE.prefs.promptHour) || 21) ? '🌙 END OF DAY' : '✦ TODAY’S PAGE') : '📖 JOURNAL ARCHIVE'}</span>
                   <h3 class="dy-date-title">${escHtml(formatFullDate(d.dateKey))}</h3>
-                </div>
-                <div class="dy-head-actions">
-                  <button type="button" class="dy-star-btn ${d.starred ? 'on' : ''}" data-dy-act="toggleStar">${d.starred ? '★ Milestone' : '☆ Star Page'}</button>
                   <div class="dy-day-telemetry">
                     <span>${stats.focusMinutes}m focus</span>
                     <span>·</span>
                     <span>${stats.questionsSolved} solved</span>
-                    ${(stats.leftOnTime || stats.overtimeSkips) ? `<span>·</span><span>${stats.leftOnTime} on-time / ${stats.overtimeSkips} OT</span>` : ''}
                     <span>·</span>
                     <span>${stats.tasksDone} tasks</span>
                     ${stats.topSubject ? `<span>·</span><span>${escHtml(stats.topSubject)}</span>` : ''}
                   </div>
                 </div>
+                <button type="button" class="dy-star-btn ${d.starred ? 'on' : ''}" data-dy-act="toggleStar" title="Star milestone page">${d.starred ? '★ Milestone' : '☆ Star'}</button>
               </div>
 
               <div class="dy-sheet-row dy-mood-row" aria-label="Mood check-in">
@@ -20482,83 +19653,86 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
                 ).join('')}
               </div>
 
-              <div class="dy-sheet-row dy-meters-row">
-                <div class="dy-meter-grp">
-                  <span class="dy-meter-lbl">⚡ Energy:</span>
-                  ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="dy-step-btn ${d.energy >= n ? 'on' : ''}" data-dy-energy="${n}">${n}</button>`).join('')}
-                  <span style="margin:0 4px;opacity:.4">·</span>
-                  <span class="dy-meter-lbl">★ Day:</span>
-                  ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="dy-step-btn ${d.dayRating >= n ? 'on' : ''}" data-dy-rating="${n}">${n}</button>`).join('')}
-                </div>
-                <div class="dy-meter-grp">
-                  <span class="dy-meter-lbl">Text:</span>
-                  ${FONT_SIZES.map((fs) => `<button type="button" class="dy-step-btn ${(d.fontSize || 'md') === fs.id ? 'on' : ''}" data-dy-fsize="${fs.id}">${fs.label}</button>`).join('')}
-                </div>
-              </div>
-
-              <div class="dy-sheet-row dy-tpl-row" aria-label="Guided writing templates">
-                <span class="dy-tpl-lbl">Templates:</span>
-                ${TEMPLATES.map((t) => `<button type="button" class="dy-tpl-btn ${d.template === t.id ? 'on' : ''}" data-dy-tpl="${t.id}">${escHtml(t.label)}</button>`).join('')}
-              </div>
-
               <div class="dy-sheet-row">
-                <div class="dy-prompt-card">
-                  <div class="dy-prompt-top">
-                    <div class="dy-prompt-q">
-                      <small>Daily Prompt</small>
-                      ${escHtml(d.promptQ || promptForDate(d.dateKey))}
+                <input type="text" id="dyTitleIn" class="dy-title-in" maxlength="80" placeholder="Give today a headline (optional)…" value="${escHtml(d.title)}" autocomplete="off">
+              </div>
+
+              <textarea id="dyBodyIn" class="dy-body-in" maxlength="8000" placeholder="Write freely about how today went, what clicked in your study, or whatever is on your mind…">${escHtml(d.body)}</textarea>
+
+              <div class="dy-extras-bar">
+                <button type="button" class="dy-extras-btn" data-dy-act="toggleExtras">
+                  <span>✨ Prompts, Ratings, Gratitude &amp; Tomorrow’s Goal</span>
+                  <small>${extrasBadges.length ? escHtml(extrasBadges.join(' · ')) + ' ' : ''}${STATE.extrasOpen ? '▲' : '▾'}</small>
+                </button>
+              </div>
+
+              ${STATE.extrasOpen ? `
+                <div class="dy-extras-body">
+                  <div class="dy-meters-row">
+                    <div class="dy-meter-grp">
+                      <span class="dy-meter-lbl">⚡ Energy:</span>
+                      ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="dy-step-btn ${d.energy >= n ? 'on' : ''}" data-dy-energy="${n}">${n}</button>`).join('')}
                     </div>
-                    <div class="dy-prompt-acts">
-                      <button type="button" class="dy-mini-paper-btn" data-dy-act="shufflePrompt" title="Switch prompt">↻ Shuffle</button>
-                      <button type="button" class="dy-mini-paper-btn" data-dy-act="insertPrompt" title="Paste prompt onto page">+ To Page</button>
+                    <div class="dy-meter-grp">
+                      <span class="dy-meter-lbl">★ Day:</span>
+                      ${[1, 2, 3, 4, 5].map((n) => `<button type="button" class="dy-step-btn ${d.dayRating >= n ? 'on' : ''}" data-dy-rating="${n}">${n}</button>`).join('')}
                     </div>
                   </div>
-                  <input type="text" id="dyPromptAIn" class="dy-prompt-ans" maxlength="500" placeholder="Jot a quick answer right here (optional)…" value="${escHtml(d.promptA)}" autocomplete="off">
-                </div>
-              </div>
 
-              <div class="dy-sheet-row">
-                <input type="text" id="dyTitleIn" class="dy-title-in" maxlength="80" placeholder="Give this day a headline (optional)…" value="${escHtml(d.title)}" autocomplete="off">
-              </div>
+                  <div class="dy-tpl-row" aria-label="Writing templates">
+                    <span class="dy-drawer-lbl" style="color:var(--dy-muted)">Template:</span>
+                    ${TEMPLATES.map((t) => `<button type="button" class="dy-tpl-btn ${d.template === t.id ? 'on' : ''}" data-dy-tpl="${t.id}">${escHtml(t.label)}</button>`).join('')}
+                  </div>
 
-              <textarea id="dyBodyIn" class="dy-body-in" maxlength="8000" placeholder="Write freely about how today went, what clicked in your study, what tested your patience, and anything on your mind…">${escHtml(d.body)}</textarea>
-
-              <div class="dy-sheet-row dy-tags-row" aria-label="Entry tags">
-                <span style="font-size:11px;font-weight:800;color:var(--dy-muted);text-transform:uppercase;letter-spacing:.07em">Tags:</span>
-                ${availableTags.map((tag) => `<button type="button" class="dy-tag-chip ${(d.tags || []).includes(tag) ? 'on' : ''}" data-dy-tag="${escHtml(tag)}">#${escHtml(tag)}</button>`).join('')}
-                ${(d.tags || []).length < 5 ? `<input type="text" id="dyTagCustomIn" class="dy-tag-add" maxlength="24" placeholder="+ custom tag" autocomplete="off">` : ''}
-              </div>
-
-              <div class="dy-sheet-row dy-closing-grid">
-                <div class="dy-grat-box">
-                  ${[0, 1, 2].map((idx) => `
-                    <div class="dy-prompt-box">
-                      <label for="dyGrat${idx}">🙏 Gratitude #${idx + 1}</label>
-                      <input type="text" id="dyGrat${idx}" data-dy-grat-idx="${idx}" maxlength="120" placeholder="${idx === 0 ? 'Something good today…' : idx === 1 ? 'Someone or a moment…' : 'One small win…'}" value="${escHtml((d.gratitude && d.gratitude[idx]) || '')}" autocomplete="off">
+                  <div class="dy-prompt-card">
+                    <div class="dy-prompt-top">
+                      <div class="dy-prompt-q">
+                        <small>Daily Prompt</small>
+                        ${escHtml(d.promptQ || promptForDate(d.dateKey))}
+                      </div>
+                      <div class="dy-prompt-acts">
+                        <button type="button" class="dy-mini-paper-btn" data-dy-act="shufflePrompt" title="Switch prompt">↻</button>
+                        <button type="button" class="dy-mini-paper-btn" data-dy-act="insertPrompt" title="Paste prompt onto page">+ Page</button>
+                      </div>
                     </div>
-                  `).join('')}
+                    <input type="text" id="dyPromptAIn" class="dy-prompt-ans" maxlength="500" placeholder="Quick answer (optional)…" value="${escHtml(d.promptA)}" autocomplete="off">
+                  </div>
+
+                  <div class="dy-tags-row" aria-label="Entry tags">
+                    ${availableTags.map((tag) => `<button type="button" class="dy-tag-chip ${(d.tags || []).includes(tag) ? 'on' : ''}" data-dy-tag="${escHtml(tag)}">#${escHtml(tag)}</button>`).join('')}
+                    ${(d.tags || []).length < 5 ? `<input type="text" id="dyTagCustomIn" class="dy-tag-add" maxlength="24" placeholder="+ custom tag" autocomplete="off">` : ''}
+                  </div>
+
+                  <div class="dy-closing-grid">
+                    <div class="dy-grat-box">
+                      ${[0, 1, 2].map((idx) => `
+                        <div class="dy-prompt-box">
+                          <label for="dyGrat${idx}">🙏 Gratitude #${idx + 1}</label>
+                          <input type="text" id="dyGrat${idx}" data-dy-grat-idx="${idx}" maxlength="120" placeholder="${idx === 0 ? 'Something good…' : idx === 1 ? 'Someone…' : 'Small win…'}" value="${escHtml((d.gratitude && d.gratitude[idx]) || '')}" autocomplete="off">
+                        </div>
+                      `).join('')}
+                    </div>
+                    <div class="dy-prompt-box">
+                      <label for="dyHighlightIn">✨ Best Win Today</label>
+                      <input type="text" id="dyHighlightIn" maxlength="240" placeholder="One breakthrough you're glad happened…" value="${escHtml(d.highlight)}" autocomplete="off">
+                    </div>
+                    <div class="dy-prompt-box">
+                      <label for="dyTomorrowIn">
+                        <span>📌 Tomorrow's #1 Goal</span>
+                        <button type="button" class="dy-mini-paper-btn" data-dy-act="pushPlanner">+ Planner</button>
+                      </label>
+                      <input type="text" id="dyTomorrowIn" maxlength="240" placeholder="Main focus for tomorrow…" value="${escHtml(d.tomorrowGoal)}" autocomplete="off">
+                    </div>
+                  </div>
                 </div>
-                <div class="dy-prompt-box">
-                  <label for="dyHighlightIn">✨ Best Win Today</label>
-                  <input type="text" id="dyHighlightIn" maxlength="240" placeholder="One breakthrough you're glad happened…" value="${escHtml(d.highlight)}" autocomplete="off">
-                </div>
-                <div class="dy-prompt-box">
-                  <label for="dyTomorrowIn">
-                    <span>📌 Tomorrow's #1 Intention</span>
-                    <button type="button" class="dy-mini-paper-btn" data-dy-act="pushPlanner">+ Add to Planner</button>
-                  </label>
-                  <input type="text" id="dyTomorrowIn" maxlength="240" placeholder="If you nail one thing tomorrow, what is it?" value="${escHtml(d.tomorrowGoal)}" autocomplete="off">
-                </div>
-              </div>
+              ` : ''}
 
               <div class="dy-pad-foot">
-                <span class="dy-meta-txt" id="dyStatusTxt">${words} word${words === 1 ? '' : 's'}${words > 0 ? ' · ~' + readMin + 'm read' : ''} · ${escHtml(saveBadge)}</span>
+                <span class="dy-meta-txt" id="dyStatusTxt">${words}w${words > 0 ? ' · ~' + readMin + 'm' : ''} · ${escHtml(saveBadge)}</span>
                 <div class="dy-foot-btns">
-                  <button type="button" class="dy-foot-sec-btn" data-dy-act="askLily" title="Ask AI Coach Lily to reflect on this diary entry">✨ Reflect w/ Lily</button>
-                  <button type="button" class="dy-foot-sec-btn" data-dy-act="exportEntry" title="Download this page as Markdown">⬇ .md</button>
-                  <button type="button" class="dy-foot-sec-btn" data-dy-act="printEntry" title="Print page">🖨</button>
+                  <button type="button" class="dy-foot-sec-btn" data-dy-act="askLily" title="Reflect with AI Coach Lily">✨ Ask Lily</button>
                   ${hasExisting ? `<button type="button" class="dy-del-btn" data-dy-act="delete">${STATE.deleteArmed ? 'Confirm Delete' : '🗑'}</button>` : ''}
-                  <button type="button" class="dy-save-btn" data-dy-act="save">${STATE.saving ? 'Saving…' : isToday ? '🌙 Save Entry' : '✓ Save'}</button>
+                  <button type="button" class="dy-save-btn" data-dy-act="save">${STATE.saving ? 'Saving…' : isToday ? '🌙 Save' : '✓ Save'}</button>
                 </div>
               </div>
             </div>
@@ -20596,6 +19770,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     `;
     modal.classList.add('on');
     modal.setAttribute('aria-hidden', 'false');
+    requestAnimationFrame(() => autoGrowBody());
   }
 
   function updateStatusLineOnly() {
@@ -20836,6 +20011,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
     }
     STATE.open = false;
     STATE.prefsOpen = false;
+    STATE.styleOpen = false;
     STATE.zenMode = false;
     STATE.unlockedThisOpen = false;
     if (STATE.prefs.pinHash) STATE.locked = true;
@@ -20901,6 +20077,7 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       scheduleAutosave();
     } else if (id === 'dyBodyIn') {
       STATE.draft.body = e.target.value;
+      autoGrowBody(e.target);
       scheduleAutosave();
     } else if (id === 'dyHighlightIn') {
       STATE.draft.highlight = e.target.value;
@@ -21000,7 +20177,19 @@ html[data-mode="light"]:not([data-diwali="on"]) .ht-btn.p {
       }
       if (act === 'togglePrefs') {
         STATE.prefsOpen = !STATE.prefsOpen;
+        if (STATE.prefsOpen) STATE.styleOpen = false;
         STATE.pinFeedback = '';
+        renderModal();
+        return;
+      }
+      if (act === 'toggleStyle') {
+        STATE.styleOpen = !STATE.styleOpen;
+        if (STATE.styleOpen) STATE.prefsOpen = false;
+        renderModal();
+        return;
+      }
+      if (act === 'toggleExtras') {
+        STATE.extrasOpen = !STATE.extrasOpen;
         renderModal();
         return;
       }
